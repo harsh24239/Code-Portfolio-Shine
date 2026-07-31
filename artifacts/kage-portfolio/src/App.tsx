@@ -1,14 +1,121 @@
 import './index.css';
+import { useState, useEffect } from 'react';
 import heroImg from '@assets/43aacf07-6d68-4564-9e49-16083d623024_1785459834010.jpg';
 
+interface Project {
+  id: number;
+  title: string;
+  tag: string;
+  description: string;
+  year: string;
+  link: string;
+  iconText: string;
+  featured: boolean;
+  sortOrder: number;
+}
+
+const DEFAULT_PROJECTS: Project[] = [
+  {
+    id: 1,
+    title: 'ShadowBoard',
+    tag: 'Full-Stack — SaaS',
+    description: 'A real-time project management SaaS built with Next.js, Supabase, and WebSockets. 10K+ active users, 99.9% uptime, deployed on AWS with zero-downtime CI/CD pipeline.',
+    year: '2025',
+    link: '',
+    iconText: 'SB',
+    featured: true,
+    sortOrder: 0,
+  },
+  {
+    id: 2,
+    title: 'KageUI',
+    tag: 'React — TypeScript',
+    description: 'Open-source component library with 40+ dark-themed UI components. 2.3K GitHub stars, full TypeScript support, Storybook docs.',
+    year: '2025',
+    link: '',
+    iconText: 'KU',
+    featured: false,
+    sortOrder: 1,
+  },
+  {
+    id: 3,
+    title: 'NinjaBot',
+    tag: 'Python — AI',
+    description: 'LLM-powered code review bot that integrates with GitHub PRs. Catches bugs, suggests refactors, enforces style guides. 94% accuracy on test suite.',
+    year: '2024',
+    link: '',
+    iconText: 'NB',
+    featured: false,
+    sortOrder: 2,
+  },
+  {
+    id: 4,
+    title: 'StealthAPI',
+    tag: 'Go — Microservices',
+    description: 'High-performance REST API gateway in Go handling 1M+ requests/day. Rate limiting, JWT auth, Redis caching, Kubernetes orchestration.',
+    year: '2024',
+    link: '',
+    iconText: 'SA',
+    featured: false,
+    sortOrder: 3,
+  },
+];
+
+function ProjectCard({ project, featured }: { project: Project; featured?: boolean }) {
+  return (
+    <div className={`project-card${featured ? ' project-card-featured' : ''}`}>
+      <div className="project-card-image">
+        <div className="project-card-image-inner">
+          <span className="project-card-image-icon">{project.iconText || project.title.slice(0, 2).toUpperCase()}</span>
+        </div>
+      </div>
+      <div className="project-card-body">
+        <p className="project-tag">{project.tag}</p>
+        <h3 className="project-title">{project.title}</h3>
+        <p className="project-desc">{project.description}</p>
+        <div className="project-footer">
+          <span className="project-year">{project.year}</span>
+          <a className="project-link" href={project.link || '#contact'}>
+            {featured ? 'View Project →' : (
+              <>
+                View Intel
+                <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <polyline points="2,6 10,6" stroke="currentColor" strokeWidth="1.5" />
+                  <polyline points="7,3 10,6 7,9" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                </svg>
+              </>
+            )}
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
+  const [projects, setProjects] = useState<Project[]>(DEFAULT_PROJECTS);
+
+  useEffect(() => {
+    fetch('/api/projects')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: Project[] | null) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProjects(data);
+        }
+      })
+      .catch(() => {/* keep defaults on error */});
+  }, []);
+
+  const featured = projects.find((p) => p.featured) ?? projects[0];
+  const rest = projects.filter((p) => p.id !== featured?.id);
+
   return (
     <>
       {/* NAV */}
       <nav aria-label="Primary navigation">
         <div className="container">
           <div className="nav-inner">
-            <a className="nav-logo" href="#">KAGE.DEV</a>
+            <a className="nav-logo" href="#">HARSH.DEV</a>
             <nav className="nav-desktop" aria-label="Desktop navigation">
               <ul className="nav-links">
                 <li><a href="#skills">Skills</a></li>
@@ -190,92 +297,10 @@ export default function App() {
               <span className="projects-header-meta">2024 — 2026</span>
             </div>
             <div className="projects-grid">
-              {/* Featured */}
-              <div className="project-card project-card-featured">
-                <div className="project-card-image">
-                  <div className="project-card-image-inner">
-                    <span className="project-card-image-icon">SB</span>
-                  </div>
-                </div>
-                <div className="project-card-body">
-                  <p className="project-tag">Full-Stack — SaaS</p>
-                  <h3 className="project-title">ShadowBoard</h3>
-                  <p className="project-desc">A real-time project management SaaS built with Next.js, Supabase, and WebSockets. 10K+ active users, 99.9% uptime, deployed on AWS with zero-downtime CI/CD pipeline.</p>
-                  <div className="project-footer">
-                    <span className="project-year">2025</span>
-                    <a className="project-link" href="#contact">View Project →</a>
-                  </div>
-                </div>
-              </div>
-
-              <div className="project-card">
-                <div className="project-card-image">
-                  <div className="project-card-image-inner">
-                    <span className="project-card-image-icon">KU</span>
-                  </div>
-                </div>
-                <div className="project-card-body">
-                  <p className="project-tag">React — TypeScript</p>
-                  <h3 className="project-title">KageUI</h3>
-                  <p className="project-desc">Open-source component library with 40+ dark-themed UI components. 2.3K GitHub stars, full TypeScript support, Storybook docs.</p>
-                  <div className="project-footer">
-                    <span className="project-year">2025</span>
-                    <a className="project-link" href="#contact">
-                      View Intel
-                      <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <polyline points="2,6 10,6" stroke="currentColor" strokeWidth="1.5" />
-                        <polyline points="7,3 10,6 7,9" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                      </svg>
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <div className="project-card">
-                <div className="project-card-image">
-                  <div className="project-card-image-inner">
-                    <span className="project-card-image-icon">NB</span>
-                  </div>
-                </div>
-                <div className="project-card-body">
-                  <p className="project-tag">Python — AI</p>
-                  <h3 className="project-title">NinjaBot</h3>
-                  <p className="project-desc">LLM-powered code review bot that integrates with GitHub PRs. Catches bugs, suggests refactors, enforces style guides. 94% accuracy on test suite.</p>
-                  <div className="project-footer">
-                    <span className="project-year">2024</span>
-                    <a className="project-link" href="#contact">
-                      View Intel
-                      <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <polyline points="2,6 10,6" stroke="currentColor" strokeWidth="1.5" />
-                        <polyline points="7,3 10,6 7,9" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                      </svg>
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <div className="project-card">
-                <div className="project-card-image">
-                  <div className="project-card-image-inner">
-                    <span className="project-card-image-icon">SA</span>
-                  </div>
-                </div>
-                <div className="project-card-body">
-                  <p className="project-tag">Go — Microservices</p>
-                  <h3 className="project-title">StealthAPI</h3>
-                  <p className="project-desc">High-performance REST API gateway in Go handling 1M+ requests/day. Rate limiting, JWT auth, Redis caching, Kubernetes orchestration.</p>
-                  <div className="project-footer">
-                    <span className="project-year">2024</span>
-                    <a className="project-link" href="#contact">
-                      View Intel
-                      <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <polyline points="2,6 10,6" stroke="currentColor" strokeWidth="1.5" />
-                        <polyline points="7,3 10,6 7,9" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                      </svg>
-                    </a>
-                  </div>
-                </div>
-              </div>
+              {featured && <ProjectCard project={featured} featured />}
+              {rest.map((p) => (
+                <ProjectCard key={p.id} project={p} />
+              ))}
             </div>
           </div>
         </section>
@@ -339,7 +364,7 @@ export default function App() {
                   org: 'Strategic Intelligence',
                 },
                 {
-                  quote: 'The OSINT pipeline has been running for 14 months without downtime. It processes threat data our analysts didn\'t know to ask for. Transformational work.',
+                  quote: "The OSINT pipeline has been running for 14 months without downtime. It processes threat data our analysts didn't know to ask for. Transformational work.",
                   name: 'Kwame Osei',
                   role: 'Director of Operations — SentryWatch Ltd',
                   org: 'Threat Intelligence',
@@ -375,13 +400,13 @@ export default function App() {
                 <h2 className="contact-heading">OPEN A<br />CHANNEL</h2>
                 <p className="contact-intro">Engagements are accepted by referral or direct contact. All communications are encrypted and treated with full discretion. Response within 24 hours.</p>
                 <div className="contact-channels">
-                  <a className="contact-channel" href="mailto:shadow@kage.ops">
+                  <a className="contact-channel" href="mailto:kumarharsh1851@gmail.com">
                     <svg className="contact-channel-icon" aria-hidden="true" viewBox="0 0 20 20" fill="none">
                       <rect x="2" y="4" width="16" height="12" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none" />
                       <polyline points="2,5 10,11 18,5" stroke="currentColor" strokeWidth="1.5" fill="none" />
                     </svg>
-                    <span className="contact-channel-label">Encrypted Mail</span>
-                    <span className="contact-channel-detail">shadow@kage.ops</span>
+                    <span className="contact-channel-label">Email</span>
+                    <span className="contact-channel-detail">kumarharsh1851@gmail.com</span>
                   </a>
                   <a className="contact-channel" href="#">
                     <svg className="contact-channel-icon" aria-hidden="true" viewBox="0 0 20 20" fill="none">
@@ -441,7 +466,7 @@ export default function App() {
                   <line x1="26" y1="10" x2="2" y2="18" stroke="#c8001e" strokeWidth="1" />
                   <circle cx="14" cy="14" r="2.5" fill="#c8001e" />
                 </svg>
-                KAGE
+                HARSH
               </a>
               <p className="footer-tagline">A shadow portfolio for disciplines that require precision, discretion, and a complete absence of wasted motion.</p>
             </div>
@@ -465,7 +490,7 @@ export default function App() {
           </div>
           <hr className="footer-divider" aria-hidden="true" />
           <div className="footer-bottom">
-            <p className="footer-legal">© 2026 Kage. All operations classified.</p>
+            <p className="footer-legal">© 2026 Harsh Kumar. All operations classified.</p>
             <span className="footer-mark" aria-hidden="true">影</span>
           </div>
         </div>
