@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shadow HQ // Portfolio Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+  <!-- LOGIN MODAL -->
+  <div id="login-overlay" class="modal-overlay">
+    <div class="modal-card">
+      <div class="brand-badge">SHADOW HQ</div>
+      <h2>ADMIN AUTHENTICATION</h2>
+      <p class="modal-sub">Enter credentials to access portfolio control system.</p>
+      
+      <form id="login-form">
+        <div class="form-group">
+          <label>USERNAME</label>
+          <input type="text" id="login-username" required placeholder="admin" value="admin">
+        </div>
+        <div class="form-group">
+          <label>PASSWORD</label>
+          <input type="password" id="login-password" required placeholder="••••••••" value="admin123">
+        </div>
+        <div id="login-error" class="error-text"></div>
+        <button type="submit" class="btn-primary">ACCESS HQ →</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="app-container" class="hidden">
+    <!-- HEADER NAV -->
+    <header class="admin-header">
+      <div class="container nav-inner">
+        <div class="brand-group">
+          <span class="kanji-mark">影</span>
+          <span class="brand-title">SHADOW HQ // ADMIN</span>
+        </div>
+        <div class="user-group">
+          <span id="user-display">Logged in as Admin</span>
+          <button id="btn-logout" class="btn-ghost-sm">LOGOUT</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="container main-content">
+      <!-- NAVIGATION TABS -->
+      <nav class="admin-tabs">
+        <button class="tab-btn active" data-tab="profile">PROFILE & HERO</button>
+        <button class="tab-btn" data-tab="projects">PROJECTS DOSSIER</button>
+        <button class="tab-btn" data-tab="skills">SKILLS ARSENAL</button>
+        <button class="tab-btn" data-tab="testimonials">FIELD REPORTS</button>
+        <button class="tab-btn" data-tab="messages">
+          MESSAGES INBOX <span id="msg-badge" class="badge">0</span>
+        </button>
+      </nav>
+
+      <!-- TAB 1: PROFILE & HERO -->
+      <section id="tab-profile" class="tab-content active">
+        <div class="section-card">
+          <div class="card-header">
+            <h3>HERO & GENERAL PROFILE</h3>
+            <p>Update headline text, status, and stats shown on your live portfolio.</p>
+          </div>
+
+          <form id="profile-form" class="grid-form">
+            <div class="form-group full-width">
+              <label>EYEBROW TITLE</label>
+              <input type="text" id="prof-eyebrow" required>
+            </div>
+
+            <div class="form-group">
+              <label>HERO TITLE LINE 1</label>
+              <input type="text" id="prof-title1" required>
+            </div>
+            <div class="form-group">
+              <label>HERO TITLE ACCENT (RED)</label>
+              <input type="text" id="prof-titleAccent" required>
+            </div>
+            <div class="form-group">
+              <label>HERO TITLE LINE 2</label>
+              <input type="text" id="prof-title2" required>
+            </div>
+
+            <div class="form-group full-width">
+              <label>SUBTITLE / BIO DESCRIPTION</label>
+              <textarea id="prof-subtext" rows="3" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>PROJECTS SHIPPED STAT</label>
+              <input type="text" id="prof-projectsShipped" required>
+            </div>
+            <div class="form-group">
+              <label>YEARS CODING STAT</label>
+              <input type="text" id="prof-yearsCoding" required>
+            </div>
+            <div class="form-group">
+              <label>CLIENTS SERVED STAT</label>
+              <input type="text" id="prof-clientsServed" required>
+            </div>
+
+            <div class="form-group">
+              <label>CURRENT STATUS</label>
+              <input type="text" id="prof-status" required>
+            </div>
+            <div class="form-group full-width">
+              <label>STATUS DETAIL DESCRIPTION</label>
+              <textarea id="prof-statusDetail" rows="2" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>PUBLIC EMAIL</label>
+              <input type="email" id="prof-email" required>
+            </div>
+            <div class="form-group">
+              <label>PGP KEY</label>
+              <input type="text" id="prof-pgpKey" required>
+            </div>
+
+            <div class="form-actions full-width">
+              <button type="submit" class="btn-primary">SAVE PROFILE CHANGES</button>
+              <span id="profile-save-msg" class="success-text"></span>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB 2: PROJECTS -->
+      <section id="tab-projects" class="tab-content">
+        <div class="section-card">
+          <div class="card-header flex-between">
+            <div>
+              <h3>PROJECTS DOSSIER</h3>
+              <p>Add, edit, or remove portfolio projects dynamically.</p>
+            </div>
+            <button id="btn-add-project" class="btn-primary-sm">+ NEW PROJECT</button>
+          </div>
+
+          <div id="projects-list" class="items-grid"></div>
+        </div>
+      </section>
+
+      <!-- TAB 3: SKILLS -->
+      <section id="tab-skills" class="tab-content">
+        <div class="section-card">
+          <div class="card-header flex-between">
+            <div>
+              <h3>SKILLS & TECH ARSENAL</h3>
+              <p>Manage your technical capabilities and mastery rank pips (1-5).</p>
+            </div>
+            <button id="btn-add-skill" class="btn-primary-sm">+ NEW SKILL</button>
+          </div>
+
+          <div id="skills-list" class="items-grid"></div>
+        </div>
+      </section>
+
+      <!-- TAB 4: TESTIMONIALS -->
+      <section id="tab-testimonials" class="tab-content">
+        <div class="section-card">
+          <div class="card-header flex-between">
+            <div>
+              <h3>FIELD REPORTS / TESTIMONIALS</h3>
+              <p>Manage client reviews and strategic accounts.</p>
+            </div>
+            <button id="btn-add-testimonial" class="btn-primary-sm">+ NEW REPORT</button>
+          </div>
+
+          <div id="testimonials-list" class="items-grid"></div>
+        </div>
+      </section>
+
+      <!-- TAB 5: MESSAGES INBOX -->
+      <section id="tab-messages" class="tab-content">
+        <div class="section-card">
+          <div class="card-header">
+            <h3>TRANSMISSION INBOX</h3>
+            <p>Messages received from portfolio visitors via the frontend contact form.</p>
+          </div>
+
+          <div id="messages-list" class="messages-stack"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- PROJECT EDIT MODAL -->
+  <div id="project-modal" class="modal-overlay hidden">
+    <div class="modal-card wide">
+      <h3 id="project-modal-title">NEW PROJECT</h3>
+      <form id="project-form" class="grid-form">
+        <input type="hidden" id="proj-id">
+        <div class="form-group">
+          <label>PROJECT TITLE</label>
+          <input type="text" id="proj-title" required placeholder="ShadowBoard">
+        </div>
+        <div class="form-group">
+          <label>TAG / CATEGORY</label>
+          <input type="text" id="proj-tag" required placeholder="Full-Stack — SaaS">
+        </div>
+        <div class="form-group full-width">
+          <label>DESCRIPTION</label>
+          <textarea id="proj-desc" rows="3" required placeholder="A real-time project management SaaS..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>YEAR</label>
+          <input type="text" id="proj-year" required placeholder="2026">
+        </div>
+        <div class="form-group">
+          <label>PROJECT LINK (URL)</label>
+          <input type="text" id="proj-link" placeholder="https://demo.example.com">
+        </div>
+        <div class="form-group">
+          <label>ICON INITIALS (e.g. SB)</label>
+          <input type="text" id="proj-iconText" placeholder="SB">
+        </div>
+        <div class="form-group checkbox-group">
+          <label><input type="checkbox" id="proj-featured"> FEATURED PROJECT (HERO CAROUSEL)</label>
+        </div>
+        <div class="form-actions full-width">
+          <button type="submit" class="btn-primary">SAVE PROJECT</button>
+          <button type="button" class="btn-ghost modal-close">CANCEL</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SKILL EDIT MODAL -->
+  <div id="skill-modal" class="modal-overlay hidden">
+    <div class="modal-card wide">
+      <h3 id="skill-modal-title">NEW SKILL</h3>
+      <form id="skill-form" class="grid-form">
+        <input type="hidden" id="skill-id">
+        <div class="form-group">
+          <label>SKILL NAME</label>
+          <input type="text" id="skill-name" required placeholder="Frontend Mastery">
+        </div>
+        <div class="form-group">
+          <label>MASTERY RANK PIPS (1 - 5)</label>
+          <input type="number" id="skill-pips" min="1" max="5" value="5" required>
+        </div>
+        <div class="form-group full-width">
+          <label>DESCRIPTION</label>
+          <textarea id="skill-desc" rows="2" required placeholder="React, Next.js, TypeScript, Tailwind CSS..."></textarea>
+        </div>
+        <div class="form-actions full-width">
+          <button type="submit" class="btn-primary">SAVE SKILL</button>
+          <button type="button" class="btn-ghost modal-close">CANCEL</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TESTIMONIAL EDIT MODAL -->
+  <div id="testimonial-modal" class="modal-overlay hidden">
+    <div class="modal-card wide">
+      <h3 id="testimonial-modal-title">NEW FIELD REPORT</h3>
+      <form id="testimonial-form" class="grid-form">
+        <input type="hidden" id="test-id">
+        <div class="form-group">
+          <label>CLIENT NAME</label>
+          <input type="text" id="test-name" required placeholder="Marcus Reyes">
+        </div>
+        <div class="form-group">
+          <label>ROLE / TITLE</label>
+          <input type="text" id="test-role" required placeholder="CISO — Pacific Meridian Holdings">
+        </div>
+        <div class="form-group full-width">
+          <label>ORGANIZATION / INDUSTRY</label>
+          <input type="text" id="test-org" required placeholder="Financial Services">
+        </div>
+        <div class="form-group full-width">
+          <label>QUOTE / TESTIMONIAL</label>
+          <textarea id="test-quote" rows="3" required placeholder="Our security posture was compromised..."></textarea>
+        </div>
+        <div class="form-actions full-width">
+          <button type="submit" class="btn-primary">SAVE REPORT</button>
+          <button type="button" class="btn-ghost modal-close">CANCEL</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/admin.js"></script>
+</body>
+</html>
