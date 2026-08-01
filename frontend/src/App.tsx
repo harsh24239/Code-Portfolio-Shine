@@ -23,12 +23,11 @@ interface Skill {
   pips: number;
 }
 
-interface Testimonial {
+interface FocusArea {
   id?: string | number;
-  quote: string;
-  name: string;
-  role: string;
-  org: string;
+  tag: string;
+  title: string;
+  desc: string;
 }
 
 interface Tenet {
@@ -154,30 +153,26 @@ const DEFAULT_TENETS: Tenet[] = [
   { num: 'IV', title: 'Adapt & Evolve', text: 'No rigid stack dogma. The situation and requirements define the solution — not preference.' },
 ];
 
-const DEFAULT_TESTIMONIALS: Testimonial[] = [
+const DEFAULT_FOCUS: FocusArea[] = [
   {
-    quote: 'Harsh delivered clean, maintainable architecture under tight deadlines. His understanding of full-stack systems is exceptional.',
-    name: 'Marcus Reyes',
-    role: 'Lead Architect',
-    org: 'Software Engineering',
+    tag: 'SYSTEMS & BACKEND',
+    title: 'Scalable Infrastructure',
+    desc: 'Dedicated to building high-throughput backend services, RESTful APIs, database optimization, and microservices architecture.',
   },
   {
-    quote: 'The design system and component library built for our project surpassed all expectations. Fast, responsive, and beautifully crafted.',
-    name: 'Yuki Tanaka',
-    role: 'Product Lead',
-    org: 'Tech Innovations',
+    tag: 'FULL-STACK & UI',
+    title: 'Pixel-Perfect Interfaces',
+    desc: 'Crafting modern, responsive, and high-performance user interfaces with React, Next.js, and TypeScript.',
   },
   {
-    quote: 'The real-time data pipeline has been running seamlessly without downtime. Highly technical, dedicated, and thorough engineer.',
-    name: 'Kwame Osei',
-    role: 'Engineering Manager',
-    org: 'Cloud Solutions',
+    tag: 'DSA & CORE CS',
+    title: 'Algorithmic Rigor',
+    desc: 'Consistent problem solver focused on Data Structures, Algorithms, time/space complexity optimization, and software design principles.',
   },
   {
-    quote: 'Outstanding work ethic and problem-solving ability. Delivered modular code with zero friction.',
-    name: 'Dmitri Volkov',
-    role: 'Senior Engineer',
-    org: 'Dev Systems',
+    tag: 'ACADEMIC & RESEARCH',
+    title: 'Computer Science Foundation',
+    desc: 'Strong foundation in Operating Systems, Database Management Systems (DBMS), Computer Networks, and Object-Oriented Design.',
   },
 ];
 
@@ -216,7 +211,7 @@ export default function App() {
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [projects, setProjects] = useState<Project[]>(DEFAULT_PROJECTS);
   const [skills, setSkills] = useState<Skill[]>(DEFAULT_SKILLS);
-  const [testimonials, setTestimonials] = useState<Testimonial[]>(DEFAULT_TESTIMONIALS);
+  const [focusAreas, setFocusAreas] = useState<FocusArea[]>(DEFAULT_FOCUS);
 
   // Contact form state
   const [contactName, setContactName] = useState('');
@@ -233,7 +228,7 @@ export default function App() {
         if (data.profile) setProfile(data.profile);
         if (Array.isArray(data.projects) && data.projects.length > 0) setProjects(data.projects);
         if (Array.isArray(data.skills) && data.skills.length > 0) setSkills(data.skills);
-        if (Array.isArray(data.testimonials) && data.testimonials.length > 0) setTestimonials(data.testimonials);
+        if (Array.isArray(data.focusAreas) && data.focusAreas.length > 0) setFocusAreas(data.focusAreas);
       })
       .catch(() => {/* Keep fallbacks */});
   }, []);
@@ -284,7 +279,7 @@ export default function App() {
               <ul className="nav-links">
                 <li><a href="#skills">Skills</a></li>
                 <li><a href="#projects">Projects</a></li>
-                <li><a href="#philosophy">About</a></li>
+                <li><a href="#about">About</a></li>
                 <li><a href="#contact">Contact</a></li>
               </ul>
             </nav>
@@ -391,7 +386,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* PHILOSOPHY */}
+        {/* PHILOSOPHY / ABOUT CODE */}
         <section id="philosophy" aria-label="Code of the Shadow">
           <div className="philosophy-stripe" aria-hidden="true" />
           <div className="container">
@@ -423,23 +418,17 @@ export default function App() {
           </div>
         </section>
 
-        {/* TESTIMONIALS */}
-        <section id="testimonials" aria-label="Client accounts">
+        {/* BACKGROUND & FOCUS (REPLACING FIELD REPORTS) */}
+        <section id="about" aria-label="Background & Focus">
           <div className="container">
-            <p className="testimonials-eyebrow">Client Accounts</p>
-            <h2 className="testimonials-heading">FIELD REPORTS</h2>
-          </div>
-          <div className="testimonials-track-wrap">
-            <div className="testimonials-track" style={{ paddingInline: 'clamp(1rem, 5vw, 4rem)' }}>
-              {testimonials.map((t, i) => (
-                <div className="testimonial-card" key={t.name + i}>
-                  <div className="testimonial-mark" aria-hidden="true">"</div>
-                  <p className="testimonial-quote">{t.quote}</p>
-                  <div>
-                    <div className="testimonial-name">{t.name}</div>
-                    <div className="testimonial-role">{t.role}</div>
-                    <div className="testimonial-org">{t.org}</div>
-                  </div>
+            <p className="testimonials-eyebrow">BACKGROUND &amp; FOCUS</p>
+            <h2 className="testimonials-heading">OPERATIONAL FOCUS</h2>
+            <div className="skills-grid" style={{ marginTop: '2.5rem' }}>
+              {focusAreas.map((f, i) => (
+                <div className="skill-item" key={f.title + i} style={{ padding: '2.25rem 1.75rem' }}>
+                  <div className="project-tag" style={{ marginBottom: '0.75rem' }}>{f.tag}</div>
+                  <div className="skill-name" style={{ fontSize: '1.35rem', marginBottom: '0.75rem' }}>{f.title}</div>
+                  <p className="skill-desc">{f.desc}</p>
                 </div>
               ))}
             </div>
@@ -612,6 +601,7 @@ export default function App() {
                 <li><a href="#skills">Disciplines</a></li>
                 <li><a href="#projects">Missions</a></li>
                 <li><a href="#philosophy">The Code</a></li>
+                <li><a href="#about">About</a></li>
                 <li><a href="#contact">Contact</a></li>
               </ul>
             </div>

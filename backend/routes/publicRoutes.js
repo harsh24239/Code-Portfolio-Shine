@@ -4,7 +4,6 @@ import { memoryStore } from '../store/memoryStore.js';
 import { Profile } from '../models/Profile.js';
 import { Project } from '../models/Project.js';
 import { Skill } from '../models/Skill.js';
-import { Testimonial } from '../models/Testimonial.js';
 import { Message } from '../models/Message.js';
 
 const router = express.Router();
@@ -17,27 +16,26 @@ router.get('/portfolio', async (req, res) => {
         profile: memoryStore.profile,
         projects: memoryStore.projects,
         skills: memoryStore.skills,
-        testimonials: memoryStore.testimonials,
+        focusAreas: memoryStore.focusAreas,
       });
     }
 
     const profile = await Profile.findOne().sort({ createdAt: -1 });
     const projects = await Project.find().sort({ sortOrder: 1, createdAt: -1 });
     const skills = await Skill.find().sort({ createdAt: 1 });
-    const testimonials = await Testimonial.find().sort({ createdAt: 1 });
 
     res.json({
       profile: profile || memoryStore.profile,
       projects: projects.length > 0 ? projects : memoryStore.projects,
       skills: skills.length > 0 ? skills : memoryStore.skills,
-      testimonials: testimonials.length > 0 ? testimonials : memoryStore.testimonials,
+      focusAreas: memoryStore.focusAreas,
     });
   } catch (error) {
     res.json({
       profile: memoryStore.profile,
       projects: memoryStore.projects,
       skills: memoryStore.skills,
-      testimonials: memoryStore.testimonials,
+      focusAreas: memoryStore.focusAreas,
     });
   }
 });
