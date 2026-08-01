@@ -724,24 +724,15 @@ export default function App() {
 
                   <button
                     type="submit"
-                    className="btn-submit"
+                    className="btn-primary"
                     disabled={contactStatus === 'sending'}
                     style={{
                       width: '100%',
-                      display: 'inline-flex',
-                      alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: 'color-mix(in srgb, var(--accent) 10%, var(--surface))',
-                      border: '1px solid var(--accent)',
-                      color: 'var(--accent)',
-                      fontFamily: 'inherit',
-                      fontSize: 'var(--text-sm)',
+                      color: '#ffffff',
                       fontWeight: 600,
-                      letterSpacing: '0.15em',
+                      letterSpacing: '0.12em',
                       padding: '0.875rem 1.5rem',
-                      textTransform: 'uppercase',
-                      cursor: 'pointer',
-                      transition: 'all 200ms ease',
                     }}
                   >
                     {contactStatus === 'sending' ? 'TRANSMITTING...' : 'TRANSMIT SIGNAL →'}
