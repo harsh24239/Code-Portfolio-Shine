@@ -726,14 +726,7 @@ export default function App() {
                     type="submit"
                     className="btn-primary"
                     disabled={contactStatus === 'sending'}
-                    style={{
-                      width: '100%',
-                      justifyContent: 'center',
-                      color: '#ffffff',
-                      fontWeight: 600,
-                      letterSpacing: '0.12em',
-                      padding: '0.875rem 1.5rem',
-                    }}
+                    style={{ width: '100%', justifyContent: 'center' }}
                   >
                     {contactStatus === 'sending' ? 'TRANSMITTING...' : 'TRANSMIT SIGNAL →'}
                   </button>

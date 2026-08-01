@@ -555,23 +555,21 @@ nav {
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  background-color: transparent;
+  gap: 1px;
+  background-color: var(--border);
 }
 
 .project-card {
   background-color: var(--bg);
-  border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: background-color var(--duration-base) ease, border-color var(--duration-base) ease;
+  transition: background-color var(--duration-base) ease;
 }
 
 .project-card:hover {
   background-color: var(--surface);
-  border-color: var(--accent);
 }
 
 .project-card-upcoming {
