@@ -1,4 +1,9 @@
-export const memoryStore = {
+import fs from 'fs';
+import path from 'path';
+
+const DATA_FILE = path.join(process.cwd(), 'backend', 'store', 'user_data.json');
+
+const defaultData = {
   profile: {
     eyebrow: 'WEB DEVELOPER & AI BUILDER',
     title1: 'CODE',
@@ -54,47 +59,57 @@ export const memoryStore = {
       _id: '4',
       title: 'University ERP System',
       tag: 'Java — Swing & JDBC — Systems',
-      description: 'Role-based desktop ERP application built in Java with a 4-layer architecture (UI, API, Service, DAO). Features BCrypt authentication, deadline-enforced grade management, and JUnit automated unit tests.',
+      description: 'Desktop ERP application for university course registration, grade tracking, and fee management built with Java Swing and JDBC.',
       year: '2025',
       link: 'https://github.com/harsh24239',
-      iconText: 'UE',
+      iconText: 'ERP',
       featured: false,
       sortOrder: 3,
     },
   ],
   skills: [
-    { _id: '1', name: 'Web Development', desc: 'HTML5, CSS3, JavaScript, React.js, Vite, Node.js, Express.js. Building responsive web UIs & REST APIs.', pips: 5 },
-    { _id: '2', name: 'AI & Automation', desc: 'LangGraph, FastAPI, ChromaDB, RAG Vector Retrieval, Gemini API, Multi-Agent Workflows.', pips: 5 },
-    { _id: '3', name: 'Core Languages & DSA', desc: 'Python, Java, C, SQL. Data Structures, Algorithms, Object-Oriented Programming (OOP).', pips: 5 },
-    { _id: '4', name: 'Database Systems', desc: 'MySQL, SQLite, SQLAlchemy, DBMS, Schema Normalization, Relational Modeling, JDBC.', pips: 4 },
-    { _id: '5', name: 'Security & Testing', desc: 'RBAC Auth, BCrypt Password Hashing, JWT Tokens, JUnit Automated Unit Testing.', pips: 4 },
-    { _id: '6', name: 'Developer Tools & OS', desc: 'Git, GitHub, Linux/Unix Shell, Postman, VS Code, IntelliJ IDEA, Operating Systems.', pips: 5 },
+    { _id: '1', category: 'Languages', name: 'JavaScript / TypeScript', level: 'Advanced' },
+    { _id: '2', category: 'Languages', name: 'Python', level: 'Advanced' },
+    { _id: '3', category: 'Languages', name: 'C++', level: 'Proficient' },
+    { _id: '4', category: 'Frontend', name: 'React & Vite', level: 'Advanced' },
+    { _id: '5', category: 'Backend', name: 'Node.js & Express', level: 'Advanced' },
+    { _id: '6', category: 'Backend', name: 'FastAPI & Python Web', level: 'Proficient' },
+    { _id: '7', category: 'Databases', name: 'MongoDB & MySQL', level: 'Proficient' },
+    { _id: '8', category: 'AI & ML', name: 'LangGraph & RAG Systems', level: 'Proficient' },
   ],
   focusAreas: [
-    {
-      _id: '1',
-      tag: 'WEB DEVELOPMENT',
-      title: 'Responsive Web Applications',
-      desc: 'Building modern, clean, and responsive web interfaces using React.js, Vite, Node.js, Express.js, and RESTful APIs.',
-    },
-    {
-      _id: '2',
-      tag: 'AI & AUTOMATION',
-      title: 'AI Workflows & RAG',
-      desc: 'Integrating autonomous multi-agent pipelines using LangGraph, ChromaDB vector retrieval, RAG, and FastAPI.',
-    },
-    {
-      _id: '3',
-      tag: 'CORE CS & DSA',
-      title: 'Algorithmic Problem Solving',
-      desc: '3rd-Year Computer Science B.Tech student actively solving Data Structures and Algorithms problems in Python, Java, and C.',
-    },
-    {
-      _id: '4',
-      tag: 'SOFTWARE CRAFT',
-      title: 'Clean Architecture & Security',
-      desc: 'Applying 4-layer system design, MVC architecture, BCrypt password security, role-based access control (RBAC), and automated unit testing.',
-    },
+    { _id: '1', tag: 'DOMAIN 01', title: 'Web Application Development', desc: 'Designing and building scalable, responsive web apps using React, Node.js, Express, and modern database architectures.' },
+    { _id: '2', tag: 'DOMAIN 02', title: 'Agentic AI & RAG Workflows', desc: 'Developing intelligent workflows, multi-agent systems with LangGraph, and retrieval-augmented generation pipelines.' },
+    { _id: '3', tag: 'DOMAIN 03', title: 'Data Structures & Algorithms', desc: 'Strong foundation in computer science core principles, algorithmic problem solving, and software design patterns.' },
   ],
-  messages: [],
+};
+
+const loadInitialData = () => {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+      const loaded = JSON.parse(raw);
+      console.log('✓ Persistent user data loaded successfully from user_data.json');
+      return {
+        profile: { ...defaultData.profile, ...(loaded.profile || {}) },
+        projects: loaded.projects && loaded.projects.length > 0 ? loaded.projects : defaultData.projects,
+        skills: loaded.skills && loaded.skills.length > 0 ? loaded.skills : defaultData.skills,
+        focusAreas: loaded.focusAreas && loaded.focusAreas.length > 0 ? loaded.focusAreas : defaultData.focusAreas,
+      };
+    }
+  } catch (err) {
+    console.warn('⚠ Could not read user_data.json file, using defaults:', err.message);
+  }
+  return defaultData;
+};
+
+export const memoryStore = loadInitialData();
+
+export const persistMemoryStore = () => {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(memoryStore, null, 2), 'utf-8');
+    console.log('✓ Persistent user data saved to user_data.json');
+  } catch (err) {
+    console.error('⚠ Failed to persist memoryStore:', err.message);
+  }
 };

@@ -13,10 +13,14 @@ import { protect } from '../middleware/auth.js';
 const router = express.Router();
 
 import { sendPasswordResetOTP } from '../config/email.js';
+import { memoryStore, persistMemoryStore } from '../store/memoryStore.js';
 
 let memoryAdminUsername = process.env.ADMIN_USERNAME || 'admin';
 let memoryAdminPasswordHash = null;
 let activeOtpStore = { code: null, expiresAt: 0 };
+
+let failedLoginCount = 0;
+let lockoutExpiryTime = 0;
 
 const getMemoryAdminPasswordHash = async () => {
   if (!memoryAdminPasswordHash) {
@@ -33,33 +37,59 @@ const generateToken = (id) => {
   });
 };
 
-// POST /api/admin/login
+// POST /api/admin/login (With 24-Hour Lockout after 3 Failed Attempts)
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
+  // Check 24-hour Lockout
+  if (Date.now() < lockoutExpiryTime) {
+    const msRemaining = lockoutExpiryTime - Date.now();
+    const hoursLeft = Math.floor(msRemaining / (1000 * 60 * 60));
+    const minsLeft = Math.ceil((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
+    return res.status(429).json({
+      message: `SECURITY LOCKOUT ACTIVE: 3 failed password attempts reached. Account locked for 24 hours. Try again in ${hoursLeft}h ${minsLeft}m.`,
+    });
+  }
+
   try {
+    let isValid = false;
+    let authUserId = 'mem_admin_1';
+    let authUsername = memoryAdminUsername;
+
     if (!isDbConnected) {
       const hash = await getMemoryAdminPasswordHash();
       const isMatch = await bcrypt.compare(password, hash);
-
       if (username === memoryAdminUsername && isMatch) {
-        return res.json({
-          token: generateToken('mem_admin_1'),
-          username: memoryAdminUsername,
-        });
-      } else {
-        return res.status(401).json({ message: 'Invalid username or password' });
+        isValid = true;
+      }
+    } else {
+      const admin = await Admin.findOne({ username });
+      if (admin && (await admin.matchPassword(password))) {
+        isValid = true;
+        authUserId = admin._id;
+        authUsername = admin.username;
       }
     }
 
-    const admin = await Admin.findOne({ username });
-    if (admin && (await admin.matchPassword(password))) {
+    if (isValid) {
+      failedLoginCount = 0;
+      lockoutExpiryTime = 0;
       return res.json({
-        token: generateToken(admin._id),
-        username: admin.username,
+        token: generateToken(authUserId),
+        username: authUsername,
       });
     } else {
-      return res.status(401).json({ message: 'Invalid username or password' });
+      failedLoginCount += 1;
+      if (failedLoginCount >= 3) {
+        lockoutExpiryTime = Date.now() + 24 * 60 * 60 * 1000; // 24 Hours Lockout
+        return res.status(429).json({
+          message: 'SECURITY ALERT: 3 consecutive failed password attempts. Account is now LOCKED for 24 hours.',
+        });
+      }
+      const attemptsLeft = 3 - failedLoginCount;
+      return res.status(401).json({
+        message: `Invalid username or password. Warning: ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} remaining before 24-hour lockout.`,
+      });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -228,19 +258,19 @@ router.post('/verify-reset-code', async (req, res) => {
 // --- PROFILE ---
 router.put('/profile', protect, async (req, res) => {
   try {
-    if (!isDbConnected) {
-      Object.assign(memoryStore.profile, req.body);
-      return res.json(memoryStore.profile);
-    }
+    Object.assign(memoryStore.profile, req.body);
+    persistMemoryStore();
 
-    let profile = await Profile.findOne();
-    if (profile) {
-      Object.assign(profile, req.body);
-      await profile.save();
-    } else {
-      profile = await Profile.create(req.body);
+    if (isDbConnected) {
+      let profile = await Profile.findOne();
+      if (profile) {
+        Object.assign(profile, req.body);
+        await profile.save();
+      } else {
+        await Profile.create(req.body);
+      }
     }
-    res.json(profile);
+    res.json(memoryStore.profile);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
