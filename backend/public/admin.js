@@ -37,19 +37,23 @@ function setupEventListeners() {
   btnChangeUsernameTrigger?.addEventListener('click', () => {
     document.getElementById('user-current-pass').value = '';
     document.getElementById('user-new-name').value = '';
+    document.getElementById('user-otp-code').value = '';
     document.getElementById('username-msg').textContent = '';
     document.getElementById('username-modal').classList.remove('hidden');
   });
 
+  document.getElementById('btn-send-user-otp')?.addEventListener('click', () => requestSecurityOTP('Username Change', 'username-msg'));
   document.getElementById('username-form')?.addEventListener('submit', handleChangeUsername);
 
   btnChangePassTrigger?.addEventListener('click', () => {
     document.getElementById('pass-current').value = '';
     document.getElementById('pass-new').value = '';
+    document.getElementById('pass-otp-code').value = '';
     document.getElementById('pass-msg').textContent = '';
     document.getElementById('password-modal').classList.remove('hidden');
   });
 
+  document.getElementById('btn-send-pass-otp')?.addEventListener('click', () => requestSecurityOTP('Password Change', 'pass-msg'));
   document.getElementById('password-form')?.addEventListener('submit', handleChangePassword);
 
   btnForgotPass?.addEventListener('click', handleRequestOTP);
@@ -89,7 +93,34 @@ function setupEventListeners() {
   });
 }
 
+async function requestSecurityOTP(actionName, msgElementId) {
+  const msgEl = document.getElementById(msgElementId);
+  msgEl.className = 'success-text';
+  msgEl.textContent = `Sending 6-digit OTP to your registered email...`;
+
+  try {
+    const res = await fetch(`${API_BASE}/admin/request-security-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actionName }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      msgEl.textContent = `✓ ${data.message}`;
+    } else {
+      msgEl.className = 'error-text';
+      msgEl.textContent = data.message || 'Failed to send OTP code.';
+    }
+  } catch {
+    msgEl.className = 'error-text';
+    msgEl.textContent = 'Server connection error.';
+  }
+}
+
 // --- AUTHENTICATION ---
+let isLoggedOut = false;
+
 async function handleLogin(e) {
   e.preventDefault();
   loginError.textContent = '';
@@ -107,6 +138,7 @@ async function handleLogin(e) {
     const data = await res.json();
     if (res.ok && data.token) {
       authToken = data.token;
+      isLoggedOut = false;
       sessionStorage.setItem('shadow_admin_session', authToken);
       if (data.username) {
         document.getElementById('user-display').textContent = `Logged in as ${data.username}`;
@@ -125,6 +157,7 @@ async function handleChangeUsername(e) {
   e.preventDefault();
   const currentPassword = document.getElementById('user-current-pass').value;
   const newUsername = document.getElementById('user-new-name').value;
+  const otpCode = document.getElementById('user-otp-code').value;
   const msgEl = document.getElementById('username-msg');
 
   msgEl.className = 'error-text';
@@ -137,7 +170,7 @@ async function handleChangeUsername(e) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${authToken}`,
       },
-      body: JSON.stringify({ currentPassword, newUsername }),
+      body: JSON.stringify({ currentPassword, newUsername, otpCode }),
     });
 
     const data = await res.json();
@@ -218,6 +251,7 @@ async function handleChangePassword(e) {
   e.preventDefault();
   const currentPassword = document.getElementById('pass-current').value;
   const newPassword = document.getElementById('pass-new').value;
+  const otpCode = document.getElementById('pass-otp-code').value;
   const msgEl = document.getElementById('pass-msg');
 
   msgEl.className = 'error-text';
@@ -230,7 +264,7 @@ async function handleChangePassword(e) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${authToken}`,
       },
-      body: JSON.stringify({ currentPassword, newPassword }),
+      body: JSON.stringify({ currentPassword, newPassword, otpCode }),
     });
 
     const data = await res.json();
@@ -276,6 +310,8 @@ function showApp() {
 }
 
 function handleLogout() {
+  if (isLoggedOut && !authToken) return; // Prevent double logout
+  isLoggedOut = true;
   authToken = '';
   sessionStorage.removeItem('shadow_admin_session');
   showLogin();

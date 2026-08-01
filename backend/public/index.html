@@ -212,7 +212,7 @@
     <div class="modal-card">
       <div class="brand-badge">SECURITY HARDENING</div>
       <h3>CHANGE ADMIN USERNAME</h3>
-      <p class="modal-sub">Update your admin login username.</p>
+      <p class="modal-sub">Update your admin login username. Requires email OTP verification.</p>
       <form id="username-form">
         <div class="form-group">
           <label>CURRENT PASSWORD (FOR VERIFICATION)</label>
@@ -221,6 +221,13 @@
         <div class="form-group">
           <label>NEW USERNAME (MIN 3 CHARS)</label>
           <input type="text" id="user-new-name" required placeholder="admin">
+        </div>
+        <div class="form-group">
+          <label>EMAIL OTP VERIFICATION CODE</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="user-otp-code" required placeholder="123456" maxlength="6" style="flex: 1;">
+            <button type="button" id="btn-send-user-otp" class="btn-ghost-sm" style="white-space: nowrap;">SEND OTP TO EMAIL</button>
+          </div>
         </div>
         <div id="username-msg" class="error-text"></div>
         <div class="form-actions" style="margin-top: 1.5rem;">
@@ -236,7 +243,7 @@
     <div class="modal-card">
       <div class="brand-badge">SECURITY HARDENING</div>
       <h3>CHANGE ADMIN PASSWORD</h3>
-      <p class="modal-sub">Update your authentication password for HQ control panel access.</p>
+      <p class="modal-sub">Update your authentication password. Requires email OTP verification.</p>
       <form id="password-form">
         <div class="form-group">
           <label>CURRENT PASSWORD</label>
@@ -245,6 +252,13 @@
         <div class="form-group">
           <label>NEW PASSWORD (MIN 6 CHARS)</label>
           <input type="password" id="pass-new" required placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label>EMAIL OTP VERIFICATION CODE</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="pass-otp-code" required placeholder="123456" maxlength="6" style="flex: 1;">
+            <button type="button" id="btn-send-pass-otp" class="btn-ghost-sm" style="white-space: nowrap;">SEND OTP TO EMAIL</button>
+          </div>
         </div>
         <div id="pass-msg" class="error-text"></div>
         <div class="form-actions" style="margin-top: 1.5rem;">

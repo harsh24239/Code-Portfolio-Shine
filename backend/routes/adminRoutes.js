@@ -71,12 +71,37 @@ router.get('/me', protect, async (req, res) => {
   res.json({ status: 'authenticated', user: req.user });
 });
 
-// PUT /api/admin/change-username
+// POST /api/admin/request-security-otp (Send 6-digit OTP email for any action)
+router.post('/request-security-otp', async (req, res) => {
+  const { actionName = 'Security Verification' } = req.body || {};
+  try {
+    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+    activeOtpStore = {
+      code: otpCode,
+      expiresAt: Date.now() + 10 * 60 * 1000, // 10 mins
+    };
+
+    const emailSent = await sendPasswordResetOTP({ otpCode, actionName });
+    return res.json({
+      message: emailSent
+        ? `Verification OTP sent to registered email (kumarharsh1851@gmail.com).`
+        : `OTP Code [ ${otpCode} ] generated (check email settings).`,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// PUT /api/admin/change-username (Requires currentPassword + OTP)
 router.put('/change-username', protect, async (req, res) => {
-  const { currentPassword, newUsername } = req.body;
+  const { currentPassword, newUsername, otpCode } = req.body;
 
   if (!currentPassword || !newUsername || newUsername.trim().length < 3) {
     return res.status(400).json({ message: 'Username must be at least 3 characters.' });
+  }
+
+  if (!otpCode || !activeOtpStore.code || Date.now() > activeOtpStore.expiresAt || activeOtpStore.code !== otpCode.trim()) {
+    return res.status(400).json({ message: 'Invalid or expired 6-digit OTP code. Click "Send OTP" to receive a new code.' });
   }
 
   try {
@@ -87,6 +112,7 @@ router.put('/change-username', protect, async (req, res) => {
         return res.status(400).json({ message: 'Current password incorrect.' });
       }
       memoryAdminUsername = newUsername.trim();
+      activeOtpStore = { code: null, expiresAt: 0 };
       return res.json({ message: 'Username updated successfully!', username: memoryAdminUsername });
     }
 
@@ -94,6 +120,7 @@ router.put('/change-username', protect, async (req, res) => {
     if (admin && (await admin.matchPassword(currentPassword))) {
       admin.username = newUsername.trim();
       await admin.save();
+      activeOtpStore = { code: null, expiresAt: 0 };
       return res.json({ message: 'Username updated successfully!', username: admin.username });
     } else {
       return res.status(400).json({ message: 'Current password incorrect.' });
@@ -103,12 +130,16 @@ router.put('/change-username', protect, async (req, res) => {
   }
 });
 
-// PUT /api/admin/change-password
+// PUT /api/admin/change-password (Requires currentPassword + OTP)
 router.put('/change-password', protect, async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
+  const { currentPassword, newPassword, otpCode } = req.body;
 
   if (!currentPassword || !newPassword || newPassword.length < 6) {
     return res.status(400).json({ message: 'New password must be at least 6 characters.' });
+  }
+
+  if (!otpCode || !activeOtpStore.code || Date.now() > activeOtpStore.expiresAt || activeOtpStore.code !== otpCode.trim()) {
+    return res.status(400).json({ message: 'Invalid or expired 6-digit OTP code. Click "Send OTP" to receive a new code.' });
   }
 
   try {
@@ -120,6 +151,7 @@ router.put('/change-password', protect, async (req, res) => {
       }
       const salt = await bcrypt.genSalt(10);
       memoryAdminPasswordHash = await bcrypt.hash(newPassword, salt);
+      activeOtpStore = { code: null, expiresAt: 0 };
       return res.json({ message: 'Password updated successfully!' });
     }
 
@@ -127,6 +159,7 @@ router.put('/change-password', protect, async (req, res) => {
     if (admin && (await admin.matchPassword(currentPassword))) {
       admin.password = newPassword;
       await admin.save();
+      activeOtpStore = { code: null, expiresAt: 0 };
       return res.json({ message: 'Password updated successfully!' });
     } else {
       return res.status(400).json({ message: 'Current password incorrect.' });
@@ -145,11 +178,11 @@ router.post('/request-password-reset', async (req, res) => {
       expiresAt: Date.now() + 10 * 60 * 1000, // 10 mins
     };
 
-    const emailSent = await sendPasswordResetOTP({ otpCode });
+    const emailSent = await sendPasswordResetOTP({ otpCode, actionName: 'Password Reset' });
     return res.json({
       message: emailSent
         ? 'Verification OTP sent to your registered email (kumarharsh1851@gmail.com).'
-        : `OTP Code [ ${otpCode} ] generated (check backend logs or email env settings).`,
+        : `OTP Code [ ${otpCode} ] generated (check email settings).`,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
