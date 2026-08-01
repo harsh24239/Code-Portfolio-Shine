@@ -409,7 +409,7 @@ export default function App() {
                 {profile.eyebrow}
               </p>
               <h1 className="hero-title-main">
-                <span className="hero-title-block">{profile.title1}</span>
+                <span className="hero-title-code hero-title-block">{profile.title1}</span>
                 <span className="hero-title-accent hero-title-block">{profile.titleAccent}</span>
                 <span className="hero-title-nowrap hero-title-block">{profile.title2}</span>
               </h1>
