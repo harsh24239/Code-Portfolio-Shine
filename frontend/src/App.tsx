@@ -641,7 +641,10 @@ export default function App() {
 
               <div className="contact-right-stack">
                 <div className="contact-availability">
-                  <div className="contact-avail-label" style={{ color: 'rgb(194, 0, 0)', letterSpacing: '0.2em' }}>• CURRENT STATUS</div>
+                  <div className="contact-avail-label">
+                    <span className="contact-avail-dot" aria-hidden="true" />
+                    CURRENT STATUS
+                  </div>
                   <div className="contact-avail-status">{profile.status}</div>
                   <p className="contact-avail-detail">{profile.statusDetail}</p>
                 </div>
