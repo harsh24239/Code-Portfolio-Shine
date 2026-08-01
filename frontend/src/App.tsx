@@ -57,14 +57,14 @@ const DEFAULT_PROFILE: ProfileData = {
   title1: 'CODE',
   titleAccent: 'IN THE',
   title2: 'SHADOWS',
-  subtext: 'Full-stack engineer. Open-source contributor. I build scalable systems, craft pixel-perfect interfaces, and write code that runs silent and fast — like a shadow in the machine.',
-  projectsShipped: '48+',
-  yearsCoding: '9+',
-  clientsServed: '31+',
-  status: 'Taking Missions',
-  statusDetail: 'Available for engagements beginning September 2026. Priority given to long-duration contracts requiring sustained operational focus.',
+  subtext: 'Full-stack engineer & open-source developer. I build scalable backend systems, craft pixel-perfect interfaces, and write clean, high-performance code.',
+  projectsShipped: '15+',
+  yearsCoding: '3+',
+  clientsServed: '500+',
+  status: 'Open to Opportunities',
+  statusDetail: 'Available for Full-Stack & Software Engineering roles. Focused on building high-performance web applications and backend systems.',
   email: 'kumarharsh1851@gmail.com',
-  pgpKey: '0xA4B7C9E1',
+  pgpKey: 'github.com/harsh24239',
 };
 
 const DEFAULT_PROJECTS: Project[] = [
@@ -122,62 +122,62 @@ const DEFAULT_SKILLS: Skill[] = [
   },
   {
     name: 'Backend Engineering',
-    desc: 'Node.js, Python, Go, REST & GraphQL APIs. Scalable server architecture built to endure.',
+    desc: 'Node.js, Express, Python, REST & GraphQL APIs. Scalable server architecture built to endure.',
     pips: 5,
   },
   {
     name: 'Database & Cloud',
-    desc: 'PostgreSQL, MongoDB, Redis, AWS, Docker, Kubernetes. Infrastructure that never sleeps.',
+    desc: 'PostgreSQL, MongoDB, Redis, AWS, Docker. Data infrastructure built for speed.',
     pips: 4,
   },
   {
     name: 'DevOps & CI/CD',
-    desc: 'GitHub Actions, Jenkins, Terraform, Linux. Automated pipelines that deploy without hesitation.',
+    desc: 'GitHub Actions, Linux, Docker, Vercel, Render. Automated pipelines that deploy without friction.',
     pips: 4,
   },
   {
     name: 'Security & Auth',
-    desc: 'OAuth2, JWT, penetration testing, OWASP hardening. Code that guards itself like a fortress.',
+    desc: 'OAuth2, JWT, bcrypt encryption, OWASP hardening. Code that guards itself like a fortress.',
     pips: 5,
   },
   {
     name: 'AI & Automation',
-    desc: 'LLM integration, Python automation, web scraping, data pipelines. Machines that work while you sleep.',
+    desc: 'LLM API integration, Python automation, web scraping, data pipelines. Smart systems built for scale.',
     pips: 4,
   },
 ];
 
 const DEFAULT_TENETS: Tenet[] = [
   { num: 'I', title: 'Precision Over Volume', text: 'One deliberate action outperforms a hundred frantic ones. Quality of execution is the only measure that matters.' },
-  { num: 'II', title: 'Leave No Trace', text: 'Clean code. Clean contracts. Clean results. The footprint of a professional is the deliverable — nothing more.' },
-  { num: 'III', title: "The Client's Mission Is Sacred", text: 'Absolute discretion. Full commitment. Every engagement receives the same level of focus regardless of scale.' },
-  { num: 'IV', title: 'Adapt or Fail', text: 'No rigid methodology. No single tool. The situation defines the approach — not the other way around.' },
+  { num: 'II', title: 'Leave No Trace', text: 'Clean code. Clean contracts. Clean results. The footprint of a developer is maintainable software — nothing less.' },
+  { num: 'III', title: 'Code Efficiency First', text: 'Optimal algorithms, clean data structures, and zero unnecessary overhead. Performance is a feature, not an afterthought.' },
+  { num: 'IV', title: 'Adapt & Evolve', text: 'No rigid stack dogma. The situation and requirements define the solution — not preference.' },
 ];
 
 const DEFAULT_TESTIMONIALS: Testimonial[] = [
   {
-    quote: 'Our security posture was compromised in ways our internal team never identified. This engagement changed how we think about infrastructure permanently.',
+    quote: 'Harsh delivered clean, maintainable architecture under tight deadlines. His understanding of full-stack systems is exceptional.',
     name: 'Marcus Reyes',
-    role: 'CISO — Pacific Meridian Holdings',
-    org: 'Financial Services',
+    role: 'Lead Architect',
+    org: 'Software Engineering',
   },
   {
-    quote: 'The brand system delivered was unlike anything our previous agencies produced. Restrained, dangerous, and exactly right for our market position.',
+    quote: 'The design system and component library built for our project surpassed all expectations. Fast, responsive, and beautifully crafted.',
     name: 'Yuki Tanaka',
-    role: 'Founder — Katana Consulting Group',
-    org: 'Strategic Intelligence',
+    role: 'Product Lead',
+    org: 'Tech Innovations',
   },
   {
-    quote: "The OSINT pipeline has been running for 14 months without downtime. It processes threat data our analysts didn't know to ask for. Transformational work.",
+    quote: 'The real-time data pipeline has been running seamlessly without downtime. Highly technical, dedicated, and thorough engineer.',
     name: 'Kwame Osei',
-    role: 'Director of Operations — SentryWatch Ltd',
-    org: 'Threat Intelligence',
+    role: 'Engineering Manager',
+    org: 'Cloud Solutions',
   },
   {
-    quote: '12 seconds. No dialogue. Our users understood the product immediately. The motion work was precise, spare, and devastatingly effective.',
+    quote: 'Outstanding work ethic and problem-solving ability. Delivered modular code with zero friction.',
     name: 'Dmitri Volkov',
-    role: 'Head of Product — CipherChannel',
-    org: 'Encrypted Communications',
+    role: 'Senior Engineer',
+    org: 'Dev Systems',
   },
 ];
 
@@ -324,7 +324,7 @@ export default function App() {
                 </div>
                 <div>
                   <div className="hero-stat-value">{profile.clientsServed.replace('+', '')}<span>+</span></div>
-                  <div className="hero-stat-label">Clients Served</div>
+                  <div className="hero-stat-label">DSA Solved</div>
                 </div>
               </div>
             </div>
@@ -348,7 +348,7 @@ export default function App() {
                   THE<br />TECH<br />
                   <span style={{ color: 'rgb(194, 0, 0)' }}>ARSENAL</span>
                 </h2>
-                <p>Every tool mastered through real-world battle. From frontend finesse to backend fortresses — this is the stack that ships production-grade code.</p>
+                <p>Every tool mastered through real-world projects and problem solving. From frontend finesse to backend fortresses — this is the stack that ships production-grade code.</p>
               </div>
               <div className="skills-grid">
                 {skills.map((skill, index) => (
@@ -404,7 +404,7 @@ export default function App() {
                   It is the elimination<br />
                   of wasted motion."
                 </blockquote>
-                <p className="philosophy-body">Nine years of practice have produced one conclusion: every unnecessary element is a vulnerability. The strongest systems are not complex — they are ruthlessly refined.</p>
+                <p className="philosophy-body">Years of practice have produced one conclusion: every unnecessary element is a vulnerability. The strongest systems are not complex — they are ruthlessly refined.</p>
               </div>
               <div>
                 <ul className="tenets-list">
@@ -454,7 +454,7 @@ export default function App() {
               <div>
                 <p className="contact-eyebrow">Contact</p>
                 <h2 className="contact-heading">OPEN A<br />CHANNEL</h2>
-                <p className="contact-intro">Engagements are accepted by referral or direct contact. All communications are encrypted and treated with full discretion. Response within 24 hours.</p>
+                <p className="contact-intro">Direct contact for collaboration, engineering roles, and open-source inquiries. All communications are encrypted. Response within 24 hours.</p>
                 
                 {/* Contact Direct Links */}
                 <div className="contact-channels">
@@ -466,23 +466,23 @@ export default function App() {
                     <span className="contact-channel-label">Email</span>
                     <span className="contact-channel-detail">{profile.email}</span>
                   </a>
-                  <div className="contact-channel">
+                  <a className="contact-channel" href="https://github.com/harsh24239" target="_blank" rel="noreferrer">
                     <svg className="contact-channel-icon" aria-hidden="true" viewBox="0 0 20 20" fill="none">
                       <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" fill="none" />
                       <path d="M6 14 Q10 6 14 14" stroke="currentColor" strokeWidth="1.5" fill="none" />
                       <circle cx="10" cy="8" r="1.5" fill="currentColor" />
                     </svg>
-                    <span className="contact-channel-label">Signal Protocol</span>
-                    <span className="contact-channel-detail">By arrangement</span>
-                  </div>
+                    <span className="contact-channel-label">GitHub Protocol</span>
+                    <span className="contact-channel-detail">harsh24239</span>
+                  </a>
                   <div className="contact-channel">
                     <svg className="contact-channel-icon" aria-hidden="true" viewBox="0 0 20 20" fill="none">
                       <rect x="4" y="8" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none" />
                       <path d="M7 8 L7 5 Q7 2 10 2 Q13 2 13 5 L13 8" stroke="currentColor" strokeWidth="1.5" fill="none" />
                       <circle cx="10" cy="13" r="1.5" fill="currentColor" />
                     </svg>
-                    <span className="contact-channel-label">PGP Key</span>
-                    <span className="contact-channel-detail">{profile.pgpKey}</span>
+                    <span className="contact-channel-label">Identity Profile</span>
+                    <span className="contact-channel-detail">Harsh Kumar</span>
                   </div>
                 </div>
               </div>
@@ -604,7 +604,7 @@ export default function App() {
                 </svg>
                 HARSH
               </a>
-              <p className="footer-tagline">A shadow portfolio for disciplines that require precision, discretion, and a complete absence of wasted motion.</p>
+              <p className="footer-tagline">A portfolio built for disciplines that require precision, efficiency, and exceptional software craft.</p>
             </div>
             <div>
               <p className="footer-col-heading">Navigate</p>
@@ -619,14 +619,14 @@ export default function App() {
               <p className="footer-col-heading">Protocol</p>
               <ul className="footer-nav-list">
                 <li><a href="#contact">Open a Channel</a></li>
-                <li><a href="#contact">Referral Process</a></li>
-                <li><a href="#contact">PGP Key</a></li>
+                <li><a href="https://github.com/harsh24239" target="_blank" rel="noreferrer">GitHub Profile</a></li>
+                <li><a href={`mailto:${profile.email}`}>Email Contact</a></li>
               </ul>
             </div>
           </div>
           <hr className="footer-divider" aria-hidden="true" />
           <div className="footer-bottom">
-            <p className="footer-legal">© 2026 Harsh Kumar. All operations classified.</p>
+            <p className="footer-legal">© 2026 Harsh Kumar. All rights reserved.</p>
             <span className="footer-mark" aria-hidden="true">影</span>
           </div>
         </div>
