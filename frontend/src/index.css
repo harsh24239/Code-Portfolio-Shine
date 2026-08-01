@@ -221,7 +221,7 @@ nav {
 
 .nav-cta:hover { background-color: var(--link-hover); }
 
-/* HERO — PERFECTLY BALANCED RIGHT PORTRAIT IMAGE POSITION */
+/* HERO — VIBRANT VIVID BACKGROUND MATCHING ORIGINAL STARTING BUILD */
 .hero {
   padding-top: var(--nav-height);
   min-height: 100svh;
@@ -229,15 +229,13 @@ nav {
   overflow: hidden;
   display: flex;
   align-items: center;
-  background-color: var(--bg);
 }
 
 .hero-bg-image {
   position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 56%;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: 0;
 }
 
@@ -245,10 +243,10 @@ nav {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: right top;
+  object-position: center 20%;
   display: block;
-  filter: contrast(1.05) saturate(1.05);
-  opacity: 0.95;
+  filter: contrast(1.1) saturate(1.15);
+  opacity: 1;
 }
 
 .hero-bg-image::before {
@@ -256,10 +254,10 @@ nav {
   position: absolute;
   inset: 0;
   background: linear-gradient(
-    90deg,
+    105deg,
     var(--bg) 0%,
-    color-mix(in srgb, var(--bg) 85%, transparent) 35%,
-    color-mix(in srgb, var(--bg) 30%, transparent) 75%,
+    color-mix(in srgb, var(--bg) 65%, transparent) 40%,
+    color-mix(in srgb, var(--bg) 20%, transparent) 75%,
     transparent 100%
   );
   z-index: 1;
@@ -316,6 +314,7 @@ nav {
   max-width: 480px;
   margin-top: 1.5rem;
   line-height: 1.7;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7);
 }
 
 .hero-actions {
@@ -864,11 +863,12 @@ footer.site-footer {
 /* ADVANCED COMPREHENSIVE RESPONSIVENESS BREAKPOINTS */
 @media (max-width: 990px) {
   .hero-bg-image { width: 100%; }
+  .hero-bg-image img { object-position: center 20%; }
   .hero-bg-image::before {
     background: linear-gradient(
       105deg,
       var(--bg) 0%,
-      color-mix(in srgb, var(--bg) 80%, transparent) 40%,
+      color-mix(in srgb, var(--bg) 75%, transparent) 40%,
       transparent 100%
     );
   }
