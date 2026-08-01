@@ -64,7 +64,7 @@ const DEFAULT_PROFILE: ProfileData = {
   titleAccent: 'IN THE',
   title2: 'SHADOWS',
   subtext: '3rd-Year Computer Science B.Tech student & Web Developer. I build clean web applications, integrate intelligent AI workflows, and solve complex DSA problems.',
-  projectsShipped: '15+',
+  projectsShipped: '6+',
   yearsCoding: '3+',
   clientsServed: '500+',
   status: 'Available for Web Dev & Software Roles',
