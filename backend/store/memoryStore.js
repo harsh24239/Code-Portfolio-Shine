@@ -70,6 +70,8 @@ const defaultData = {
     { _id: '3', tag: 'DOMAIN 03', title: 'Data Structures & Algorithms', desc: 'Strong foundation in computer science core principles, algorithmic problem solving, and software design patterns.' },
     { _id: '4', tag: 'DOMAIN 04', title: 'Software Craft & Security', desc: 'Applying 4-layer system design, BCrypt password security, role-based access control (RBAC), and automated unit testing.' },
   ],
+  messages: [],
+  testimonials: [],
 };
 
 const loadInitialData = () => {
@@ -83,6 +85,8 @@ const loadInitialData = () => {
         projects: loaded.projects && loaded.projects.length > 0 ? loaded.projects : defaultData.projects,
         skills: loaded.skills && loaded.skills.length > 0 ? loaded.skills : defaultData.skills,
         focusAreas: loaded.focusAreas && loaded.focusAreas.length > 0 ? loaded.focusAreas : defaultData.focusAreas,
+        messages: Array.isArray(loaded.messages) ? loaded.messages : [],
+        testimonials: Array.isArray(loaded.testimonials) ? loaded.testimonials : [],
       };
     }
   } catch (err) {

@@ -1,6 +1,6 @@
 import express from 'express';
 import { isDbConnected } from '../config/db.js';
-import { memoryStore } from '../store/memoryStore.js';
+import { memoryStore, persistMemoryStore } from '../store/memoryStore.js';
 import { Profile } from '../models/Profile.js';
 import { Project } from '../models/Project.js';
 import { Skill } from '../models/Skill.js';
@@ -47,9 +47,9 @@ router.post('/contact', async (req, res) => {
     const { name, email, subject, message } = req.body;
     if (!name || !email || !message) {
       return res.status(400).json({ message: 'Name, email, and message are required.' });
-    }
-
     let messageId;
+
+    memoryStore.messages = memoryStore.messages || [];
 
     if (!isDbConnected) {
       const newMsg = {
@@ -61,6 +61,7 @@ router.post('/contact', async (req, res) => {
         createdAt: new Date().toISOString(),
       };
       memoryStore.messages.unshift(newMsg);
+      persistMemoryStore();
       messageId = newMsg._id;
     } else {
       const newMessage = await Message.create({
@@ -69,16 +70,30 @@ router.post('/contact', async (req, res) => {
         subject: subject || 'Portfolio Contact',
         message,
       });
+      memoryStore.messages.unshift({
+        _id: String(newMessage._id),
+        name,
+        email,
+        subject: subject || 'Portfolio Contact',
+        message,
+        createdAt: newMessage.createdAt || new Date().toISOString(),
+      });
+      persistMemoryStore();
       messageId = newMessage._id;
     }
 
     // Trigger instant email notification asynchronously
-    sendContactEmailNotification({ name, email, subject, message }).catch((err) => {
-      console.warn('Email notification error:', err.message);
-    });
+    try {
+      sendContactEmailNotification({ name, email, subject, message }).catch((err) => {
+        console.warn('Email notification note:', err.message);
+      });
+    } catch (e) {
+      console.warn('Email send exception:', e.message);
+    }
 
     res.status(201).json({ message: 'Transmission received.', messageId });
   } catch (error) {
+    console.error('Contact handler error:', error);
     res.status(500).json({ message: 'Failed to record transmission', error: error.message });
   }
 });
