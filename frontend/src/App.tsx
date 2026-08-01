@@ -212,6 +212,7 @@ export default function App() {
   const [projects, setProjects] = useState<Project[]>(DEFAULT_PROJECTS);
   const [skills, setSkills] = useState<Skill[]>(DEFAULT_SKILLS);
   const [focusAreas, setFocusAreas] = useState<FocusArea[]>(DEFAULT_FOCUS);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Contact form state
   const [contactName, setContactName] = useState('');
@@ -283,9 +284,41 @@ export default function App() {
                 <li><a href="#contact">Contact</a></li>
               </ul>
             </nav>
-            <a className="nav-cta" href="#contact">Hire Me</a>
+            <div className="nav-actions-right">
+              <a className="nav-cta" href="#contact">Hire Me</a>
+              <button
+                className="mobile-menu-toggle"
+                aria-label="Toggle mobile menu"
+                onClick={() => setMobileNavOpen(!mobileNavOpen)}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  {mobileNavOpen ? (
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  ) : (
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        {mobileNavOpen && (
+          <div className="mobile-nav-overlay" onClick={() => setMobileNavOpen(false)}>
+            <div className="mobile-nav-drawer" onClick={(e) => e.stopPropagation()}>
+              <ul className="mobile-nav-links">
+                <li><a href="#skills" onClick={() => setMobileNavOpen(false)}>Skills</a></li>
+                <li><a href="#projects" onClick={() => setMobileNavOpen(false)}>Projects</a></li>
+                <li><a href="#about" onClick={() => setMobileNavOpen(false)}>About</a></li>
+                <li><a href="#contact" onClick={() => setMobileNavOpen(false)}>Contact</a></li>
+              </ul>
+              <a className="btn-primary" href="#contact" onClick={() => setMobileNavOpen(false)} style={{ width: '100%', justifyContent: 'center', marginTop: '1rem' }}>
+                Hire Me →
+              </a>
+            </div>
+          </div>
+        )}
       </nav>
 
       <main>
@@ -418,7 +451,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* BACKGROUND & FOCUS (REPLACING FIELD REPORTS) */}
+        {/* BACKGROUND & FOCUS */}
         <section id="about" aria-label="Background & Focus">
           <div className="container">
             <p className="testimonials-eyebrow">BACKGROUND &amp; FOCUS</p>
@@ -488,7 +521,7 @@ export default function App() {
 
                 {/* Direct Interactive Form */}
                 <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div className="contact-inputs-row">
                     <input
                       type="text"
                       placeholder="YOUR NAME *"
