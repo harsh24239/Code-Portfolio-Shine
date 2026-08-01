@@ -498,7 +498,7 @@ export default function App() {
               
               {/* Upcoming Mission Placeholder Card when total projects < 4 to fill row 2 cleanly */}
               {projects.length < 4 && (
-                <div className="project-card project-card-featured project-card-upcoming" style={{ gridColumn: 'span 2' }}>
+                <div className="project-card project-card-featured project-card-upcoming">
                   <div className="project-card-image">
                     <div className="project-card-image-inner">
                       <span className="project-card-image-icon" style={{ opacity: 0.35 }}>✦</span>

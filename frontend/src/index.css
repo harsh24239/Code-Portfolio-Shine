@@ -981,8 +981,8 @@ footer.site-footer {
 @media (max-width: 640px) {
   .nav-desktop { display: none; }
   .mobile-menu-toggle { display: flex; }
-  .projects-grid { grid-template-columns: 1fr; }
-  .project-card-featured { grid-column: span 1; }
+  .projects-grid { grid-template-columns: 1fr !important; }
+  .project-card-featured { grid-column: span 1 !important; }
   .project-card-featured .project-card-image { aspect-ratio: 16 / 10; }
   .footer-inner { grid-template-columns: 1fr; }
   .footer-brand { grid-column: span 1; }
