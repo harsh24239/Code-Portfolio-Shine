@@ -5,6 +5,7 @@ import { Profile } from '../models/Profile.js';
 import { Project } from '../models/Project.js';
 import { Skill } from '../models/Skill.js';
 import { Message } from '../models/Message.js';
+import { sendContactEmailNotification } from '../config/email.js';
 
 const router = express.Router();
 
@@ -48,6 +49,8 @@ router.post('/contact', async (req, res) => {
       return res.status(400).json({ message: 'Name, email, and message are required.' });
     }
 
+    let messageId;
+
     if (!isDbConnected) {
       const newMsg = {
         _id: String(Date.now()),
@@ -58,17 +61,23 @@ router.post('/contact', async (req, res) => {
         createdAt: new Date().toISOString(),
       };
       memoryStore.messages.unshift(newMsg);
-      return res.status(201).json({ message: 'Transmission received.', messageId: newMsg._id });
+      messageId = newMsg._id;
+    } else {
+      const newMessage = await Message.create({
+        name,
+        email,
+        subject: subject || 'Portfolio Contact',
+        message,
+      });
+      messageId = newMessage._id;
     }
 
-    const newMessage = await Message.create({
-      name,
-      email,
-      subject: subject || 'Portfolio Contact',
-      message,
+    // Trigger instant email notification asynchronously
+    sendContactEmailNotification({ name, email, subject, message }).catch((err) => {
+      console.warn('Email notification error:', err.message);
     });
 
-    res.status(201).json({ message: 'Transmission received.', messageId: newMessage._id });
+    res.status(201).json({ message: 'Transmission received.', messageId });
   } catch (error) {
     res.status(500).json({ message: 'Failed to record transmission', error: error.message });
   }
