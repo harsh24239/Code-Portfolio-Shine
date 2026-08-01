@@ -451,7 +451,7 @@ export default function App() {
                 <p className="skills-eyebrow" style={{ color: 'rgb(194, 0, 0)', letterSpacing: '0.25em' }}>SKILLS &amp; STACK</p>
                 <h2>
                   THE<br />TECH<br />
-                  <span style={{ color: 'rgb(194, 0, 0)' }}>ARSENAL</span>
+                  <span className="hero-title-accent" style={{ color: 'rgb(194, 0, 0)', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>ARSENAL</span>
                 </h2>
                 <p>Every tool mastered through real-world battle. From frontend finesse to backend fortresses — this is the stack that ships production-grade code.</p>
               </div>

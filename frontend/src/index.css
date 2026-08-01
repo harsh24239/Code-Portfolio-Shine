@@ -76,13 +76,20 @@ h3 { font-size: var(--text-2xl); }
 }
 
 .hero-title-accent {
-  font-family: 'IBM Plex Mono', monospace;
-  font-weight: 700;
-  color: var(--text-display-accent);
+  font-family: 'IBM Plex Mono', monospace !important;
+  font-weight: 700 !important;
+  color: rgb(194, 0, 0) !important;
   margin-top: 0.2rem;
-  margin-bottom: 3.5rem;
+  margin-bottom: 0.5rem;
   letter-spacing: 0.06em;
   line-height: 0.95;
+}
+
+.skills-heading-col h2 span {
+  font-family: 'IBM Plex Mono', monospace !important;
+  font-weight: 700 !important;
+  color: rgb(194, 0, 0) !important;
+  letter-spacing: 0.06em;
 }
 
 .hero-title-nowrap {
