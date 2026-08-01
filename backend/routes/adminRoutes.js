@@ -1,16 +1,27 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { isDbConnected } from '../config/db.js';
 import { memoryStore } from '../store/memoryStore.js';
 import { Admin } from '../models/Admin.js';
 import { Profile } from '../models/Profile.js';
 import { Project } from '../models/Project.js';
 import { Skill } from '../models/Skill.js';
-import { Testimonial } from '../models/Testimonial.js';
 import { Message } from '../models/Message.js';
 import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
+
+let memoryAdminPasswordHash = null;
+
+const getMemoryAdminPasswordHash = async () => {
+  if (!memoryAdminPasswordHash) {
+    const salt = await bcrypt.genSalt(10);
+    const defaultPass = process.env.ADMIN_PASSWORD || 'admin123';
+    memoryAdminPasswordHash = await bcrypt.hash(defaultPass, salt);
+  }
+  return memoryAdminPasswordHash;
+};
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret_key_12345', {
@@ -25,8 +36,10 @@ router.post('/login', async (req, res) => {
   try {
     if (!isDbConnected) {
       const defaultUser = process.env.ADMIN_USERNAME || 'admin';
-      const defaultPass = process.env.ADMIN_PASSWORD || 'admin123';
-      if (username === defaultUser && password === defaultPass) {
+      const hash = await getMemoryAdminPasswordHash();
+      const isMatch = await bcrypt.compare(password, hash);
+
+      if (username === defaultUser && isMatch) {
         return res.json({
           token: generateToken('mem_admin_1'),
           username: defaultUser,
@@ -53,6 +66,39 @@ router.post('/login', async (req, res) => {
 // GET /api/admin/me
 router.get('/me', protect, async (req, res) => {
   res.json({ status: 'authenticated', user: req.user });
+});
+
+// PUT /api/admin/change-password
+router.put('/change-password', protect, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword || newPassword.length < 6) {
+    return res.status(400).json({ message: 'New password must be at least 6 characters.' });
+  }
+
+  try {
+    if (!isDbConnected) {
+      const hash = await getMemoryAdminPasswordHash();
+      const isMatch = await bcrypt.compare(currentPassword, hash);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Current password incorrect.' });
+      }
+      const salt = await bcrypt.genSalt(10);
+      memoryAdminPasswordHash = await bcrypt.hash(newPassword, salt);
+      return res.json({ message: 'Password updated successfully!' });
+    }
+
+    const admin = await Admin.findOne();
+    if (admin && (await admin.matchPassword(currentPassword))) {
+      admin.password = newPassword;
+      await admin.save();
+      return res.json({ message: 'Password updated successfully!' });
+    } else {
+      return res.status(400).json({ message: 'Current password incorrect.' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // --- PROFILE ---
@@ -171,56 +217,6 @@ router.delete('/skills/:id', protect, async (req, res) => {
     }
     await Skill.findByIdAndDelete(req.params.id);
     res.json({ message: 'Skill deleted' });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// --- TESTIMONIALS ---
-router.get('/testimonials', protect, async (req, res) => {
-  if (!isDbConnected) return res.json(memoryStore.testimonials);
-  const testimonials = await Testimonial.find().sort({ createdAt: 1 });
-  res.json(testimonials.length > 0 ? testimonials : memoryStore.testimonials);
-});
-
-router.post('/testimonials', protect, async (req, res) => {
-  try {
-    if (!isDbConnected) {
-      const newTest = { _id: String(Date.now()), ...req.body };
-      memoryStore.testimonials.push(newTest);
-      return res.status(201).json(newTest);
-    }
-    const testimonial = await Testimonial.create(req.body);
-    res.status(201).json(testimonial);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-router.put('/testimonials/:id', protect, async (req, res) => {
-  try {
-    if (!isDbConnected) {
-      const idx = memoryStore.testimonials.findIndex((t) => t._id === req.params.id);
-      if (idx !== -1) {
-        memoryStore.testimonials[idx] = { ...memoryStore.testimonials[idx], ...req.body };
-        return res.json(memoryStore.testimonials[idx]);
-      }
-    }
-    const testimonial = await Testimonial.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(testimonial);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-router.delete('/testimonials/:id', protect, async (req, res) => {
-  try {
-    if (!isDbConnected) {
-      memoryStore.testimonials = memoryStore.testimonials.filter((t) => t._id !== req.params.id);
-      return res.json({ message: 'Testimonial deleted' });
-    }
-    await Testimonial.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Testimonial deleted' });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

@@ -7,6 +7,7 @@ const appContainer = document.getElementById('app-container');
 const loginForm = document.getElementById('login-form');
 const loginError = document.getElementById('login-error');
 const btnLogout = document.getElementById('btn-logout');
+const btnChangePassTrigger = document.getElementById('btn-change-pass-trigger');
 
 // Tabs
 const tabBtns = document.querySelectorAll('.tab-btn');
@@ -25,6 +26,15 @@ document.addEventListener('DOMContentLoaded', () => {
 function setupEventListeners() {
   loginForm.addEventListener('submit', handleLogin);
   btnLogout.addEventListener('click', handleLogout);
+
+  btnChangePassTrigger?.addEventListener('click', () => {
+    document.getElementById('pass-current').value = '';
+    document.getElementById('pass-new').value = '';
+    document.getElementById('pass-msg').textContent = '';
+    document.getElementById('password-modal').classList.remove('hidden');
+  });
+
+  document.getElementById('password-form')?.addEventListener('submit', handleChangePassword);
 
   tabBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -85,7 +95,41 @@ async function handleLogin(e) {
       loginError.textContent = data.message || 'Invalid login credentials.';
     }
   } catch {
-    loginError.textContent = 'Server connection failed.';
+    loginError.textContent = 'Server connection failed or rate limit reached.';
+  }
+}
+
+async function handleChangePassword(e) {
+  e.preventDefault();
+  const currentPassword = document.getElementById('pass-current').value;
+  const newPassword = document.getElementById('pass-new').value;
+  const msgEl = document.getElementById('pass-msg');
+
+  msgEl.className = 'error-text';
+  msgEl.textContent = 'Updating...';
+
+  try {
+    const res = await fetch(`${API_BASE}/admin/change-password`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      msgEl.className = 'success-text';
+      msgEl.textContent = '✓ Password updated successfully!';
+      setTimeout(() => {
+        document.getElementById('password-modal').classList.add('hidden');
+      }, 1500);
+    } else {
+      msgEl.textContent = data.message || 'Failed to update password.';
+    }
+  } catch {
+    msgEl.textContent = 'Server error.';
   }
 }
 
@@ -393,17 +437,16 @@ async function handleSaveSkill(e) {
   }
 }
 
-// --- TESTIMONIALS ---
+// --- TESTIMONIALS / FOCUS AREAS ---
 let currentTestimonials = [];
 async function loadTestimonials() {
   try {
-    const res = await fetch(`${API_BASE}/admin/testimonials`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
-    currentTestimonials = await res.json();
+    const res = await fetch(`${API_BASE}/portfolio`);
+    const data = await res.json();
+    currentTestimonials = data.focusAreas || [];
     renderTestimonials();
   } catch (err) {
-    console.error('Failed to load testimonials', err);
+    console.error('Failed to load focus areas', err);
   }
 }
 
@@ -414,13 +457,9 @@ function renderTestimonials() {
       (t) => `
     <div class="item-card">
       <div>
-        <div class="item-tag">${t.role} (${t.org})</div>
-        <div class="item-title">${t.name}</div>
-        <div class="item-desc">"${t.quote}"</div>
-      </div>
-      <div class="item-actions">
-        <button class="btn-ghost-sm" onclick="editTestimonial('${t._id}')">EDIT</button>
-        <button class="btn-danger-sm" onclick="deleteTestimonial('${t._id}')">DELETE</button>
+        <div class="item-tag">${t.tag}</div>
+        <div class="item-title">${t.title}</div>
+        <div class="item-desc">${t.desc}</div>
       </div>
     </div>
   `
@@ -428,65 +467,13 @@ function renderTestimonials() {
     .join('');
 }
 
-function openTestimonialModal(test = null) {
-  document.getElementById('testimonial-modal-title').textContent = test ? 'EDIT REPORT' : 'NEW REPORT';
-  document.getElementById('test-id').value = test ? test._id : '';
-  document.getElementById('test-name').value = test ? test.name : '';
-  document.getElementById('test-role').value = test ? test.role : '';
-  document.getElementById('test-org').value = test ? test.org : '';
-  document.getElementById('test-quote').value = test ? test.quote : '';
-
+function openTestimonialModal() {
   document.getElementById('testimonial-modal').classList.remove('hidden');
 }
 
-window.editTestimonial = (id) => {
-  const t = currentTestimonials.find((x) => x._id === id);
-  if (t) openTestimonialModal(t);
-};
-
-window.deleteTestimonial = async (id) => {
-  if (!confirm('Are you sure you want to delete this field report?')) return;
-  try {
-    await fetch(`${API_BASE}/admin/testimonials/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
-    loadTestimonials();
-  } catch (err) {
-    alert('Failed to delete testimonial');
-  }
-};
-
 async function handleSaveTestimonial(e) {
   e.preventDefault();
-  const id = document.getElementById('test-id').value;
-  const body = {
-    name: document.getElementById('test-name').value,
-    role: document.getElementById('test-role').value,
-    org: document.getElementById('test-org').value,
-    quote: document.getElementById('test-quote').value,
-  };
-
-  const url = id ? `${API_BASE}/admin/testimonials/${id}` : `${API_BASE}/admin/testimonials`;
-  const method = id ? 'PUT' : 'POST';
-
-  try {
-    const res = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (res.ok) {
-      document.getElementById('testimonial-modal').classList.add('hidden');
-      loadTestimonials();
-    }
-  } catch (err) {
-    alert('Error saving testimonial');
-  }
+  document.getElementById('testimonial-modal').classList.add('hidden');
 }
 
 // --- MESSAGES INBOX ---
@@ -499,7 +486,7 @@ async function loadMessages() {
     document.getElementById('msg-badge').textContent = messages.length;
 
     const container = document.getElementById('messages-list');
-    if (messages.length === 0) {
+    if (!Array.isArray(messages) || messages.length === 0) {
       container.innerHTML = `<div class="item-desc">No transmissions received yet.</div>`;
       return;
     }
