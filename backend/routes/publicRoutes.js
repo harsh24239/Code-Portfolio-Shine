@@ -44,6 +44,7 @@ router.get('/portfolio', async (req, res) => {
 // POST contact form message
 router.post('/contact', async (req, res) => {
   try {
+    const { name, email, subject, message } = req.body;
     if (!name || !email || !message) {
       return res.status(400).json({ message: 'Name, email, and message are required.' });
     }
