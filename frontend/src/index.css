@@ -452,40 +452,74 @@ nav {
 .skills-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
-  background-color: transparent;
+  gap: 1px;
+  background-color: var(--border);
 }
 
 .skill-item {
   background-color: var(--surface);
-  border: 1px solid var(--border);
-  padding: 2rem 1.5rem;
+  padding: 2.5rem 2rem;
   position: relative;
   overflow: hidden;
-  transition: background-color var(--duration-base) ease, border-color var(--duration-base) ease;
+  transition: background-color var(--duration-base) ease;
 }
 
 .skill-item:hover {
   background-color: color-mix(in srgb, var(--accent) 6%, var(--surface));
-  border-color: var(--accent);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+  z-index: 2;
 }
 
-.skill-icon { width: 36px; height: 36px; margin-bottom: 1rem; color: var(--accent); }
+.skill-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--accent);
+  transition: width var(--duration-slow) ease;
+}
+
+.skill-item:hover::before { width: 100%; }
+
+.skill-icon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 1.25rem;
+  color: var(--accent);
+}
 
 .skill-name {
-  font-family: 'Fraunces', serif;
+  font-family: inherit;
   font-size: var(--text-xl);
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--text);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
-.skill-desc { font-size: var(--text-sm); color: var(--fg); line-height: 1.6; }
+.skill-desc {
+  font-size: var(--text-sm);
+  color: var(--fg);
+  line-height: 1.65;
+}
 
-.skill-rank { display: flex; gap: 3px; margin-top: 1rem; }
+.skill-rank {
+  display: flex;
+  gap: 4px;
+  margin-top: 1.25rem;
+}
 
-.skill-rank-pip { width: 20px; height: 3px; background-color: var(--muted); }
-.skill-rank-pip.filled { background-color: var(--accent); }
+.skill-rank-pip {
+  width: 20px;
+  height: 3px;
+  background-color: var(--muted);
+}
+
+.skill-rank-pip.filled {
+  background-color: var(--accent);
+}
 
 /* PROJECTS */
 #projects {
