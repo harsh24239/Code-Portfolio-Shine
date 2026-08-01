@@ -115,44 +115,44 @@ const DEFAULT_PROJECTS: Project[] = [
 const DEFAULT_SKILLS: Skill[] = [
   {
     _id: '1',
-    name: 'Frontend Mastery',
-    desc: 'React, Next.js, TypeScript, Tailwind CSS. Pixel-perfect UIs that load fast and feel alive.',
+    name: 'Languages & Core',
+    desc: 'Python, Java, C/C++, JavaScript, TypeScript, SQL',
     pips: 5,
     iconType: 'frontend',
   },
   {
     _id: '2',
-    name: 'Backend Engineering',
-    desc: 'Node.js, Python, Go, REST & GraphQL APIs. Scalable server architecture built to endure.',
+    name: 'Frontend Mastery',
+    desc: 'React.js, Vite, HTML5, CSS3, Vanilla CSS Design Systems',
     pips: 5,
     iconType: 'backend',
   },
   {
     _id: '3',
-    name: 'Database & Cloud',
-    desc: 'PostgreSQL, MongoDB, Redis, AWS, Docker, Kubernetes. Infrastructure that never sleeps.',
-    pips: 4,
+    name: 'Backend Systems',
+    desc: 'Node.js, Express.js, FastAPI, Java Swing & JDBC',
+    pips: 5,
     iconType: 'database',
   },
   {
     _id: '4',
-    name: 'DevOps & CI/CD',
-    desc: 'GitHub Actions, Jenkins, Terraform, Linux. Automated pipelines that deploy without hesitation.',
-    pips: 4,
+    name: 'Databases & Storage',
+    desc: 'MySQL (DBMS), ChromaDB (Vector DB), MongoDB, SQLite',
+    pips: 5,
     iconType: 'devops',
   },
   {
     _id: '5',
-    name: 'Security & Auth',
-    desc: 'OAuth2, JWT, penetration testing, OWASP hardening. Code that guards itself like a fortress.',
+    name: 'AI & Agentic Workflows',
+    desc: 'LangGraph, RAG Vector Retrieval, Gemini API, Multi-Agent Workflows',
     pips: 5,
     iconType: 'security',
   },
   {
     _id: '6',
-    name: 'AI & Automation',
-    desc: 'LLM integration, Python automation, web scraping, data pipelines. Machines that work while you sleep.',
-    pips: 4,
+    name: 'CS Core & Security',
+    desc: 'DSA (500+ Solved), BCrypt, JWT, RBAC Auth, JUnit Testing, Git/Linux',
+    pips: 5,
     iconType: 'ai',
   },
 ];
@@ -456,18 +456,25 @@ export default function App() {
                 <p>Every tool mastered through real-world battle. From frontend finesse to backend fortresses — this is the stack that ships production-grade code.</p>
               </div>
               <div className="skills-grid">
-                {skills.map((skill, index) => (
-                  <div className="skill-item" key={String(getItemId(skill) || index)}>
-                    {renderSkillIcon(skill.iconType, index)}
-                    <div className="skill-name">{skill.name}</div>
-                    <p className="skill-desc">{skill.desc}</p>
-                    <div className="skill-rank" aria-label={`Mastery level ${skill.pips} of 5`}>
-                      {Array.from({ length: 5 }, (_, i) => (
-                        <div key={i} className={`skill-rank-pip${i < skill.pips ? ' filled' : ''}`} />
-                      ))}
+                {skills.map((skill, index) => {
+                  const fallback = DEFAULT_SKILLS[index % DEFAULT_SKILLS.length];
+                  const title = skill.desc ? skill.name : fallback.name;
+                  const description = skill.desc ? skill.desc : skill.name;
+                  const pips = skill.pips || 5;
+
+                  return (
+                    <div className="skill-item" key={String(getItemId(skill) || index)}>
+                      {renderSkillIcon(skill.iconType, index)}
+                      <div className="skill-name">{title}</div>
+                      <p className="skill-desc">{description}</p>
+                      <div className="skill-rank" aria-label={`Mastery level ${pips} of 5`}>
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <div key={i} className={`skill-rank-pip${i < pips ? ' filled' : ''}`} />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -717,9 +724,25 @@ export default function App() {
 
                   <button
                     type="submit"
-                    className="btn-primary"
+                    className="btn-submit"
                     disabled={contactStatus === 'sending'}
-                    style={{ width: '100%', justifyContent: 'center' }}
+                    style={{
+                      width: '100%',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'color-mix(in srgb, var(--accent) 10%, var(--surface))',
+                      border: '1px solid var(--accent)',
+                      color: 'var(--accent)',
+                      fontFamily: 'inherit',
+                      fontSize: 'var(--text-sm)',
+                      fontWeight: 600,
+                      letterSpacing: '0.15em',
+                      padding: '0.875rem 1.5rem',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                      transition: 'all 200ms ease',
+                    }}
                   >
                     {contactStatus === 'sending' ? 'TRANSMITTING...' : 'TRANSMIT SIGNAL →'}
                   </button>
