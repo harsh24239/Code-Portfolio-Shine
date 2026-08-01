@@ -54,16 +54,10 @@ body {
   width: 100%;
 }
 
-h1, h2 {
+h1, h2, h3, h4 {
   font-family: 'Fraunces', system-ui, serif;
   line-height: 1.05;
   letter-spacing: 0.04em;
-}
-
-h3, h4 {
-  font-family: 'IBM Plex Mono', system-ui, sans-serif;
-  line-height: 1.1;
-  letter-spacing: 0.06em;
 }
 
 h1 { font-size: clamp(3rem, 9.5vw, 6.75rem); }
@@ -494,24 +488,23 @@ nav {
 }
 
 .skill-name {
-  font-family: inherit;
+  font-family: 'Fraunces', serif;
   font-size: var(--text-xl);
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   color: var(--text);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .skill-desc {
   font-size: var(--text-sm);
   color: var(--fg);
-  line-height: 1.65;
+  line-height: 1.6;
 }
 
 .skill-rank {
   display: flex;
-  gap: 4px;
-  margin-top: 1.25rem;
+  gap: 3px;
+  margin-top: 1rem;
 }
 
 .skill-rank-pip {
@@ -561,23 +554,21 @@ nav {
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
-  background-color: transparent;
+  gap: 1px;
+  background-color: var(--bg);
 }
 
 .project-card {
   background-color: var(--bg);
-  border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: background-color var(--duration-base) ease, border-color var(--duration-base) ease;
+  transition: background-color var(--duration-base) ease;
 }
 
 .project-card:hover {
   background-color: var(--surface);
-  border-color: var(--accent);
 }
 
 .project-card-upcoming {
