@@ -1,5 +1,5 @@
 @import url('https://use.typekit.net/kuv2rwe.css');
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
 
 :root {
   --bg: #0a0000;
@@ -60,6 +60,9 @@ body, p, span, a, button, li, blockquote, figcaption, label, input, textarea, se
 
 h1, h2 {
   font-family: 'Fraunces', system-ui, serif !important;
+  font-optical-sizing: auto;
+  font-variation-settings: 'opsz' 144, 'wght' 800;
+  font-weight: 800;
 }
 
 body {
@@ -92,6 +95,9 @@ h4 { font-size: var(--text-xl); }
 
 .hero-title-main {
   font-family: 'Fraunces', system-ui, serif !important;
+  font-optical-sizing: auto;
+  font-variation-settings: 'opsz' 144, 'wght' 800;
+  font-weight: 800;
   line-height: 0.95;
   letter-spacing: 0.04em;
   margin-bottom: 1.5rem;
@@ -112,6 +118,10 @@ h4 { font-size: var(--text-xl); }
 }
 
 .hero-title-nowrap {
+  font-family: 'Fraunces', system-ui, serif !important;
+  font-optical-sizing: auto;
+  font-variation-settings: 'opsz' 144, 'wght' 800;
+  font-weight: 800;
   white-space: nowrap;
   word-break: keep-all;
   overflow-wrap: normal;
