@@ -25,6 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
 });
 
+// Strict Security: Automatic Logout on Page Refresh / Tab Close / URL Copy
+window.addEventListener('beforeunload', () => {
+  sessionStorage.removeItem('shadow_admin_session');
+});
+
 function setupEventListeners() {
   loginForm.addEventListener('submit', handleLogin);
   btnLogout.addEventListener('click', handleLogout);
