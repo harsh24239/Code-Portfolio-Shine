@@ -1,3 +1,4 @@
+@import url('https://use.typekit.net/kuv2rwe.css');
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600;700&display=swap');
 
 :root {
@@ -13,24 +14,35 @@
   --link-on-strong: #F5F5F5;
   --link-hover-on-strong: #bfbfbf;
   --primary: #d40000;
-  --border: #5a4e4e;
+  --border: #8c8080;
   --text-on-accent: #1a1a1a;
-  --text-display-accent: #c20000;
+  --text-display-accent: #ff6060;
   --surface-strong: #ff6060;
   --hero-glow: #ff6060;
+  --chart-1: #ff6060;
+  --chart-2: #ff6060;
+  --tb-border: #ff6060;
+  --tb-pop-border: #ff6060;
+  --tb-swatch-border: #ff6060;
+  --tb-img-pop-border: #ff6060;
+  --tb-img-pop-input-border: #ff6060;
 
-  --text-xs:   0.75rem;
-  --text-sm:   0.8125rem;
-  --text-base: 1rem;
-  --text-lg:   1.125rem;
-  --text-xl:   1.25rem;
-  --text-2xl:  1.5rem;
-  --text-3xl:  1.875rem;
-  --text-4xl:  2.25rem;
+  --text-xs:       0.75rem;
+  --text-sm:       0.8125rem;
+  --text-base:     1rem;
+  --text-lg:       1.125rem;
+  --text-xl:       1.25rem;
+  --text-2xl:      1.5rem;
+  --text-3xl:      1.875rem;
+  --text-4xl:      2.25rem;
+  --text-display:  3.5rem;
   --duration-fast: 150ms;
   --duration-base: 250ms;
   --duration-slow: 400ms;
-  --nav-height: 64px;
+  --duration-xslow:600ms;
+  --nav-height:    64px;
+  --font-display:  'Fraunces', system-ui, serif;
+  --font-body:     'IBM Plex Mono', system-ui, sans-serif;
 
   color-scheme: dark;
 }
@@ -42,10 +54,17 @@ html {
   scroll-behavior: smooth;
 }
 
+body, p, span, a, button, li, blockquote, figcaption, label, input, textarea, select, h3, h4, h5, h6, code, pre {
+  font-family: 'IBM Plex Mono', system-ui, sans-serif !important;
+}
+
+h1, h2 {
+  font-family: 'Fraunces', system-ui, serif !important;
+}
+
 body {
   background-color: var(--bg);
   color: var(--text);
-  font-family: 'IBM Plex Mono', system-ui, sans-serif;
   font-size: var(--text-base);
   line-height: 1.65;
   letter-spacing: 0.01em;
@@ -54,21 +73,28 @@ body {
   width: 100%;
 }
 
+p + p { margin-top: 2em; }
+
 h1, h2, h3, h4 {
-  font-family: 'Fraunces', system-ui, serif;
   line-height: 1.05;
   letter-spacing: 0.04em;
 }
 
-h1 { font-size: clamp(3rem, 9.5vw, 6.75rem); }
-h2 { font-size: clamp(1.85rem, 5vw, 3.5rem); }
+h1 { font-size: clamp(3rem, 10vw, 7rem); }
+h2 { font-size: clamp(2rem, 5vw, 3.5rem); }
 h3 { font-size: var(--text-2xl); }
+h4 { font-size: var(--text-xl); }
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
 
 .hero-title-main {
-  font-family: 'Fraunces', system-ui, serif;
+  font-family: 'Fraunces', system-ui, serif !important;
   line-height: 0.95;
   letter-spacing: 0.04em;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .hero-title-block {
@@ -76,9 +102,10 @@ h3 { font-size: var(--text-2xl); }
 }
 
 .hero-title-accent {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'IBM Plex Mono', monospace !important;
   font-weight: 700;
-  color: var(--text-display-accent);
+  color: rgb(194, 0, 0) !important;
+  -webkit-text-fill-color: rgb(194, 0, 0) !important;
   margin: 0 !important;
   letter-spacing: 0.04em;
   line-height: 0.95;
@@ -308,12 +335,12 @@ nav {
 .hero h1 { color: var(--text); }
 
 .hero-sub {
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
   color: var(--fg);
-  max-width: 480px;
+  max-width: 440px;
   margin-top: 1.5rem;
-  line-height: 1.7;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+  line-height: 1.6;
+  letter-spacing: 0.01em;
 }
 
 .hero-actions {
@@ -328,7 +355,7 @@ nav {
   color: var(--text-on-accent);
   text-decoration: none;
   padding: 0.875rem 2rem;
-  font-family: 'IBM Plex Mono', sans-serif;
+  font-family: 'IBM Plex Mono', system-ui, sans-serif !important;
   font-size: var(--text-sm);
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -349,19 +376,20 @@ nav {
   color: var(--text);
   text-decoration: none;
   padding: 0.875rem 2rem;
-  font-family: 'IBM Plex Mono', sans-serif;
+  font-family: 'IBM Plex Mono', system-ui, sans-serif !important;
   font-size: var(--text-sm);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: border-color var(--duration-fast) ease, color var(--duration-fast) ease;
+  transition: border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) ease;
   min-height: 44px;
   display: inline-flex;
   align-items: center;
 }
 
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-ghost:active { transform: scale(0.97); }
 
 .hero-stats {
   display: flex;
@@ -373,10 +401,11 @@ nav {
 }
 
 .hero-stat-value {
-  font-family: 'Fraunces', serif;
+  font-family: 'Fraunces', system-ui, serif !important;
   font-size: var(--text-4xl);
   color: var(--text);
   letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
@@ -457,7 +486,7 @@ nav {
 
 .skill-item {
   background-color: var(--surface);
-  padding: 2.5rem 2rem;
+  padding: 2rem 1.5rem;
   position: relative;
   overflow: hidden;
   transition: background-color var(--duration-base) ease;
@@ -480,14 +509,14 @@ nav {
 .skill-item:hover::before { width: 100%; }
 
 .skill-icon {
-  width: 32px;
-  height: 32px;
-  margin-bottom: 1.25rem;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 1rem;
   color: var(--accent);
 }
 
 .skill-name {
-  font-family: 'Fraunces', serif;
+  font-family: 'IBM Plex Mono', system-ui, sans-serif !important;
   font-size: var(--text-xl);
   letter-spacing: 0.08em;
   color: var(--text);
@@ -593,7 +622,7 @@ nav {
 }
 
 .project-card-image-icon {
-  font-family: 'Fraunces', serif;
+  font-family: 'Fraunces', system-ui, serif !important;
   font-size: 4rem;
   color: color-mix(in srgb, var(--accent) 20%, transparent);
   letter-spacing: 0.2em;
@@ -616,7 +645,7 @@ nav {
 }
 
 .project-title {
-  font-family: 'Fraunces', serif;
+  font-family: 'IBM Plex Mono', system-ui, sans-serif !important;
   font-size: var(--text-2xl);
   letter-spacing: 0.06em;
   color: var(--text);
@@ -640,6 +669,7 @@ nav {
   letter-spacing: 0.15em;
   color: var(--muted);
   text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
 }
 
 .project-link {
@@ -696,8 +726,8 @@ nav {
 .philosophy-text-col h2 { color: var(--text); margin-bottom: 1.5rem; }
 
 .philosophy-quote {
-  font-family: 'Fraunces', serif;
-  font-size: clamp(1.2rem, 3vw, 2.25rem);
+  font-family: 'Fraunces', system-ui, serif !important;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
   letter-spacing: 0.06em;
   color: var(--text);
   line-height: 1.25;
@@ -711,7 +741,7 @@ nav {
 .tenets-list { list-style: none; display: flex; flex-direction: column; gap: 0; }
 
 .tenet-item {
-  padding: 1.5rem 1rem;
+  padding: 1.5rem 0;
   border-bottom: 1px solid var(--border);
   display: grid;
   grid-template-columns: auto 1fr;
@@ -741,16 +771,17 @@ nav {
 .tenet-item:first-child { border-top: 1px solid var(--border); }
 
 .tenet-marker {
-  font-family: 'Fraunces', serif;
+  font-family: 'Fraunces', system-ui, serif !important;
   font-size: var(--text-xl);
   color: var(--accent);
   letter-spacing: 0.1em;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
   min-width: 2.5rem;
 }
 
 .tenet-title {
-  font-family: 'Fraunces', serif;
+  font-family: 'IBM Plex Mono', system-ui, sans-serif !important;
   font-size: var(--text-xl);
   letter-spacing: 0.08em;
   color: var(--text);
@@ -789,11 +820,10 @@ nav {
 .contact-bg-kanji {
   position: absolute;
   right: -2rem; bottom: -3rem;
-  font-family: 'Fraunces', serif;
-  font-size: clamp(8rem, 18vw, 16rem);
+  font-family: 'Fraunces', system-ui, serif !important;
+  font-size: clamp(12rem, 30vw, 24rem);
   line-height: 1;
-  color: var(--accent);
-  opacity: 0.03;
+  color: color-mix(in srgb, var(--border) 60%, transparent);
   pointer-events: none;
   user-select: none;
   z-index: 1;
@@ -831,18 +861,19 @@ nav {
   border: 1px solid var(--border);
   text-decoration: none;
   color: var(--text);
-  transition: border-color var(--duration-fast) ease, background-color var(--duration-fast) ease;
+  transition: border-color var(--duration-fast) ease, background-color var(--duration-fast) ease, transform var(--duration-fast) ease;
   min-height: 44px;
 }
 
 .contact-channel:hover {
   border-color: var(--accent);
   background-color: color-mix(in srgb, var(--accent) 5%, var(--bg));
+  transform: translateX(4px);
 }
 
 .contact-channel-icon { width: 20px; height: 20px; color: var(--accent); flex-shrink: 0; }
 .contact-channel-label { font-size: var(--text-sm); letter-spacing: 0.1em; text-transform: uppercase; flex: 1; }
-.contact-channel-detail { font-size: var(--text-sm); color: var(--fg); font-family: monospace; word-break: break-all; }
+.contact-channel-detail { font-size: var(--text-sm); color: var(--fg); font-family: 'IBM Plex Mono', monospace !important; word-break: break-all; }
 
 .contact-right-stack { display: flex; flex-direction: column; gap: 1.5rem; }
 
@@ -880,8 +911,48 @@ nav {
   50% { opacity: 0.35; transform: scale(0.65); box-shadow: 0 0 2px var(--accent); }
 }
 
-.contact-avail-status { font-family: 'Fraunces', serif; font-size: var(--text-3xl); letter-spacing: 0.06em; color: var(--text); margin-bottom: 0.75rem; }
+.contact-avail-status { font-family: 'Fraunces', system-ui, serif !important; font-size: var(--text-3xl); letter-spacing: 0.06em; color: var(--text); margin-bottom: 0.75rem; }
 .contact-avail-detail { font-size: var(--text-sm); color: var(--fg); line-height: 1.65; }
+
+.contact-terms {
+  padding: 2rem;
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.contact-terms-title {
+  font-family: 'IBM Plex Mono', system-ui, sans-serif !important;
+  font-size: var(--text-xl);
+  letter-spacing: 0.08em;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.contact-terms-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.contact-terms-list li {
+  font-size: var(--text-sm);
+  color: var(--fg);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.contact-terms-list li::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background-color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 0.4em;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
 
 .contact-inputs-row {
   display: flex;
@@ -890,8 +961,10 @@ nav {
 
 /* FOOTER */
 footer.site-footer {
-  background-color: var(--bg);
-  color: var(--text);
+  background-color: var(--surface-strong, var(--bg));
+  color: var(--text-on-surface-strong, var(--text));
+  --link: #8c8080;
+  --link-hover: #d40000;
   padding: 3rem 0 2rem;
   border-top: 1px solid var(--border);
 }
@@ -906,10 +979,10 @@ footer.site-footer {
 .footer-brand { display: flex; flex-direction: column; gap: 1rem; }
 
 .footer-logo {
-  font-family: 'Fraunces', serif;
+  font-family: 'Fraunces', system-ui, serif !important;
   font-size: var(--text-2xl);
   letter-spacing: 0.1em;
-  color: var(--text);
+  color: var(--text-on-surface-strong, var(--text));
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -923,7 +996,7 @@ footer.site-footer {
 .footer-nav-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
 
 .footer-nav-list a {
-  color: var(--fg);
+  color: var(--link);
   text-decoration: none;
   font-size: var(--text-sm);
   letter-spacing: 0.05em;
@@ -932,7 +1005,7 @@ footer.site-footer {
   display: inline-block;
 }
 
-.footer-nav-list a:hover { color: var(--accent); }
+.footer-nav-list a:hover { color: var(--link-hover); }
 
 .footer-divider { border: none; border-top: 1px solid var(--border); margin-bottom: 1.5rem; }
 
@@ -945,7 +1018,7 @@ footer.site-footer {
 }
 
 .footer-legal { font-size: var(--text-xs); color: var(--muted); letter-spacing: 0.1em; }
-.footer-mark { font-family: 'Fraunces', serif; font-size: var(--text-lg); letter-spacing: 0.2em; color: var(--accent); }
+.footer-mark { font-family: 'Fraunces', system-ui, serif !important; font-size: var(--text-lg); letter-spacing: 0.2em; color: var(--accent); }
 
 /* ADVANCED COMPREHENSIVE RESPONSIVENESS BREAKPOINTS */
 @media (max-width: 990px) {
