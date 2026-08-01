@@ -740,11 +740,13 @@ nav {
   position: absolute;
   right: -2rem; bottom: -3rem;
   font-family: 'Fraunces', serif;
-  font-size: clamp(10rem, 25vw, 24rem);
+  font-size: clamp(8rem, 18vw, 16rem);
   line-height: 1;
-  color: color-mix(in srgb, var(--border) 60%, transparent);
+  color: var(--accent);
+  opacity: 0.03;
   pointer-events: none;
   user-select: none;
+  z-index: 1;
 }
 
 .contact-layout {
