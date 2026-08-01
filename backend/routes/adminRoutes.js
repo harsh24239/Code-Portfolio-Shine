@@ -12,7 +12,11 @@ import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
+import { sendPasswordResetOTP } from '../config/email.js';
+
+let memoryAdminUsername = process.env.ADMIN_USERNAME || 'admin';
 let memoryAdminPasswordHash = null;
+let activeOtpStore = { code: null, expiresAt: 0 };
 
 const getMemoryAdminPasswordHash = async () => {
   if (!memoryAdminPasswordHash) {
@@ -25,7 +29,7 @@ const getMemoryAdminPasswordHash = async () => {
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret_key_12345', {
-    expiresIn: '30d',
+    expiresIn: '12h',
   });
 };
 
@@ -35,14 +39,13 @@ router.post('/login', async (req, res) => {
 
   try {
     if (!isDbConnected) {
-      const defaultUser = process.env.ADMIN_USERNAME || 'admin';
       const hash = await getMemoryAdminPasswordHash();
       const isMatch = await bcrypt.compare(password, hash);
 
-      if (username === defaultUser && isMatch) {
+      if (username === memoryAdminUsername && isMatch) {
         return res.json({
           token: generateToken('mem_admin_1'),
-          username: defaultUser,
+          username: memoryAdminUsername,
         });
       } else {
         return res.status(401).json({ message: 'Invalid username or password' });
@@ -66,6 +69,38 @@ router.post('/login', async (req, res) => {
 // GET /api/admin/me
 router.get('/me', protect, async (req, res) => {
   res.json({ status: 'authenticated', user: req.user });
+});
+
+// PUT /api/admin/change-username
+router.put('/change-username', protect, async (req, res) => {
+  const { currentPassword, newUsername } = req.body;
+
+  if (!currentPassword || !newUsername || newUsername.trim().length < 3) {
+    return res.status(400).json({ message: 'Username must be at least 3 characters.' });
+  }
+
+  try {
+    if (!isDbConnected) {
+      const hash = await getMemoryAdminPasswordHash();
+      const isMatch = await bcrypt.compare(currentPassword, hash);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Current password incorrect.' });
+      }
+      memoryAdminUsername = newUsername.trim();
+      return res.json({ message: 'Username updated successfully!', username: memoryAdminUsername });
+    }
+
+    const admin = await Admin.findOne();
+    if (admin && (await admin.matchPassword(currentPassword))) {
+      admin.username = newUsername.trim();
+      await admin.save();
+      return res.json({ message: 'Username updated successfully!', username: admin.username });
+    } else {
+      return res.status(400).json({ message: 'Current password incorrect.' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // PUT /api/admin/change-password
@@ -96,6 +131,62 @@ router.put('/change-password', protect, async (req, res) => {
     } else {
       return res.status(400).json({ message: 'Current password incorrect.' });
     }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST /api/admin/request-password-reset (Send 6-digit OTP email)
+router.post('/request-password-reset', async (req, res) => {
+  try {
+    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+    activeOtpStore = {
+      code: otpCode,
+      expiresAt: Date.now() + 10 * 60 * 1000, // 10 mins
+    };
+
+    const emailSent = await sendPasswordResetOTP({ otpCode });
+    return res.json({
+      message: emailSent
+        ? 'Verification OTP sent to your registered email (kumarharsh1851@gmail.com).'
+        : `OTP Code [ ${otpCode} ] generated (check backend logs or email env settings).`,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST /api/admin/verify-reset-code (Verify OTP & Reset Password)
+router.post('/verify-reset-code', async (req, res) => {
+  const { otpCode, newPassword } = req.body;
+
+  if (!otpCode || !newPassword || newPassword.length < 6) {
+    return res.status(400).json({ message: 'OTP code and new password (min 6 chars) required.' });
+  }
+
+  if (!activeOtpStore.code || Date.now() > activeOtpStore.expiresAt) {
+    return res.status(400).json({ message: 'Verification OTP has expired or is invalid. Request a new OTP.' });
+  }
+
+  if (activeOtpStore.code !== otpCode.trim()) {
+    return res.status(400).json({ message: 'Invalid OTP code.' });
+  }
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const newHash = await bcrypt.hash(newPassword, salt);
+    memoryAdminPasswordHash = newHash;
+
+    if (isDbConnected) {
+      const admin = await Admin.findOne();
+      if (admin) {
+        admin.password = newPassword;
+        await admin.save();
+      }
+    }
+
+    activeOtpStore = { code: null, expiresAt: 0 };
+    res.json({ message: 'Password reset successfully! You can now log in.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

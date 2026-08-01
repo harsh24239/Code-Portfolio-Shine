@@ -1,5 +1,5 @@
 const API_BASE = '/api';
-let authToken = localStorage.getItem('shadow_admin_token') || '';
+let authToken = sessionStorage.getItem('shadow_admin_session') || '';
 
 // DOM Elements
 const loginOverlay = document.getElementById('login-overlay');
@@ -8,6 +8,8 @@ const loginForm = document.getElementById('login-form');
 const loginError = document.getElementById('login-error');
 const btnLogout = document.getElementById('btn-logout');
 const btnChangePassTrigger = document.getElementById('btn-change-pass-trigger');
+const btnChangeUsernameTrigger = document.getElementById('btn-change-username-trigger');
+const btnForgotPass = document.getElementById('btn-forgot-pass');
 
 // Tabs
 const tabBtns = document.querySelectorAll('.tab-btn');
@@ -27,6 +29,15 @@ function setupEventListeners() {
   loginForm.addEventListener('submit', handleLogin);
   btnLogout.addEventListener('click', handleLogout);
 
+  btnChangeUsernameTrigger?.addEventListener('click', () => {
+    document.getElementById('user-current-pass').value = '';
+    document.getElementById('user-new-name').value = '';
+    document.getElementById('username-msg').textContent = '';
+    document.getElementById('username-modal').classList.remove('hidden');
+  });
+
+  document.getElementById('username-form')?.addEventListener('submit', handleChangeUsername);
+
   btnChangePassTrigger?.addEventListener('click', () => {
     document.getElementById('pass-current').value = '';
     document.getElementById('pass-new').value = '';
@@ -35,6 +46,9 @@ function setupEventListeners() {
   });
 
   document.getElementById('password-form')?.addEventListener('submit', handleChangePassword);
+
+  btnForgotPass?.addEventListener('click', handleRequestOTP);
+  document.getElementById('otp-form')?.addEventListener('submit', handleVerifyOTP);
 
   tabBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -88,14 +102,110 @@ async function handleLogin(e) {
     const data = await res.json();
     if (res.ok && data.token) {
       authToken = data.token;
-      localStorage.setItem('shadow_admin_token', authToken);
+      sessionStorage.setItem('shadow_admin_session', authToken);
+      if (data.username) {
+        document.getElementById('user-display').textContent = `Logged in as ${data.username}`;
+      }
       showApp();
       loadAllData();
     } else {
-      loginError.textContent = data.message || 'Invalid login credentials.';
+      loginError.textContent = data.message || 'Invalid username or password';
     }
   } catch {
     loginError.textContent = 'Server connection failed or rate limit reached.';
+  }
+}
+
+async function handleChangeUsername(e) {
+  e.preventDefault();
+  const currentPassword = document.getElementById('user-current-pass').value;
+  const newUsername = document.getElementById('user-new-name').value;
+  const msgEl = document.getElementById('username-msg');
+
+  msgEl.className = 'error-text';
+  msgEl.textContent = 'Updating...';
+
+  try {
+    const res = await fetch(`${API_BASE}/admin/change-username`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ currentPassword, newUsername }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      msgEl.className = 'success-text';
+      msgEl.textContent = '✓ Username updated successfully!';
+      if (data.username) {
+        document.getElementById('user-display').textContent = `Logged in as ${data.username}`;
+      }
+      setTimeout(() => {
+        document.getElementById('username-modal').classList.add('hidden');
+      }, 1500);
+    } else {
+      msgEl.textContent = data.message || 'Failed to update username.';
+    }
+  } catch {
+    msgEl.textContent = 'Server error.';
+  }
+}
+
+async function handleRequestOTP() {
+  const loginErr = document.getElementById('login-error');
+  loginErr.className = 'success-text';
+  loginErr.textContent = 'Sending 6-digit OTP verification code to registered email...';
+
+  try {
+    const res = await fetch(`${API_BASE}/admin/request-password-reset`, { method: 'POST' });
+    const data = await res.json();
+
+    if (res.ok) {
+      document.getElementById('otp-code').value = '';
+      document.getElementById('otp-new-pass').value = '';
+      document.getElementById('otp-msg').textContent = data.message || '';
+      document.getElementById('otp-modal').classList.remove('hidden');
+      loginErr.textContent = '';
+    } else {
+      loginErr.className = 'error-text';
+      loginErr.textContent = data.message || 'Failed to send OTP code.';
+    }
+  } catch {
+    loginErr.className = 'error-text';
+    loginErr.textContent = 'Server connection failed.';
+  }
+}
+
+async function handleVerifyOTP(e) {
+  e.preventDefault();
+  const otpCode = document.getElementById('otp-code').value;
+  const newPassword = document.getElementById('otp-new-pass').value;
+  const msgEl = document.getElementById('otp-msg');
+
+  msgEl.className = 'error-text';
+  msgEl.textContent = 'Verifying code...';
+
+  try {
+    const res = await fetch(`${API_BASE}/admin/verify-reset-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ otpCode, newPassword }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      msgEl.className = 'success-text';
+      msgEl.textContent = '✓ Password reset successfully! Please log in now.';
+      setTimeout(() => {
+        document.getElementById('otp-modal').classList.add('hidden');
+      }, 2000);
+    } else {
+      msgEl.textContent = data.message || 'Invalid or expired OTP code.';
+    }
+  } catch {
+    msgEl.textContent = 'Server connection error.';
   }
 }
 
@@ -146,7 +256,7 @@ async function verifyAuth() {
       handleLogout();
     }
   } catch {
-    showLogin();
+    handleLogout();
   }
 }
 
@@ -162,7 +272,7 @@ function showApp() {
 
 function handleLogout() {
   authToken = '';
-  localStorage.removeItem('shadow_admin_token');
+  sessionStorage.removeItem('shadow_admin_session');
   showLogin();
 }
 
