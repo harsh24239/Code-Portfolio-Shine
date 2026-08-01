@@ -496,23 +496,23 @@ export default function App() {
                 <ProjectCard key={String(getItemId(p) || index)} project={p} />
               ))}
               
-              {/* Upcoming Mission Placeholder Card only when total projects < 3 */}
-              {projects.length < 3 && (
-                <div className="project-card project-card-upcoming">
+              {/* Upcoming Mission Placeholder Card when total projects < 4 to fill row 2 cleanly */}
+              {projects.length < 4 && (
+                <div className="project-card project-card-featured project-card-upcoming" style={{ gridColumn: 'span 2' }}>
                   <div className="project-card-image">
                     <div className="project-card-image-inner">
                       <span className="project-card-image-icon" style={{ opacity: 0.35 }}>✦</span>
                     </div>
                   </div>
                   <div className="project-card-body">
-                    <p className="project-tag" style={{ color: 'var(--muted)' }}>SHADOW LABS // UPCOMING</p>
-                    <h3 className="project-title" style={{ opacity: 0.85 }}>Project In Development</h3>
-                    <p className="project-desc" style={{ color: 'var(--muted)' }}>
-                      New AI &amp; Web development project currently brewing in the shadows. Check back soon for deployment.
+                    <p className="project-tag" style={{ color: 'var(--accent)' }}>SHADOW LABS // UPCOMING</p>
+                    <h3 className="project-title" style={{ opacity: 0.9 }}>Shadow Core // Project In Development</h3>
+                    <p className="project-desc" style={{ color: 'var(--fg)' }}>
+                      New AI &amp; Web development project currently brewing in the shadows of the lab. Check back soon for deployment.
                     </p>
                     <div className="project-footer">
                       <span className="project-year">2026</span>
-                      <a className="project-link" href="#contact" style={{ opacity: 0.7 }}>
+                      <a className="project-link" href="#contact" style={{ opacity: 0.85 }}>
                         Propose Idea →
                       </a>
                     </div>
@@ -644,16 +644,6 @@ export default function App() {
                   <div className="contact-avail-label" style={{ color: 'rgb(194, 0, 0)', letterSpacing: '0.2em' }}>• CURRENT STATUS</div>
                   <div className="contact-avail-status">{profile.status}</div>
                   <p className="contact-avail-detail">{profile.statusDetail}</p>
-                </div>
-
-                <div className="contact-availability" style={{ borderLeftColor: 'rgb(194, 0, 0)' }}>
-                  <div className="contact-avail-status" style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Engagement Protocol</div>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: 'var(--text-sm)', color: 'var(--fg)', fontFamily: 'monospace' }}>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{ color: 'rgb(194, 0, 0)' }}>◆</span> Initial briefing via direct contact only</li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{ color: 'rgb(194, 0, 0)' }}>◆</span> Scope &amp; requirements reviewed before engagement</li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{ color: 'rgb(194, 0, 0)' }}>◆</span> All code &amp; deliverables transferred at project completion</li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{ color: 'rgb(194, 0, 0)' }}>◆</span> Direct communication &amp; full developer discretion</li>
-                  </ul>
                 </div>
 
                 <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
