@@ -58,12 +58,27 @@ h1, h2, h3, h4 {
   font-family: 'Fraunces', system-ui, serif;
   line-height: 1.05;
   letter-spacing: 0.04em;
-  word-break: break-word;
 }
 
-h1 { font-size: clamp(2.25rem, 8.5vw, 6.5rem); }
+h1 { font-size: clamp(2.25rem, 8vw, 6.5rem); }
 h2 { font-size: clamp(1.85rem, 5vw, 3.5rem); }
 h3 { font-size: var(--text-2xl); }
+
+.hero-title-main {
+  font-family: 'Fraunces', system-ui, serif;
+  line-height: 1.02;
+  letter-spacing: 0.04em;
+}
+
+.hero-title-block {
+  display: block;
+}
+
+.hero-title-nowrap {
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
 
 .container {
   width: 100%;
@@ -442,6 +457,8 @@ nav {
 }
 
 .skill-item:hover { background-color: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+
+.skill-icon { width: 36px; height: 36px; margin-bottom: 1rem; color: var(--accent); }
 
 .skill-name {
   font-family: 'Fraunces', serif;
@@ -872,9 +889,9 @@ footer.site-footer {
 
 @media (max-width: 380px) {
   .container { padding-inline: 0.85rem; }
-  h1 { font-size: 2.1rem; }
-  h2 { font-size: 1.75rem; }
+  h1 { font-size: 1.95rem; }
+  h2 { font-size: 1.65rem; }
   .hero-stats { gap: 1rem; }
-  .hero-stat-value { font-size: 1.85rem; }
+  .hero-stat-value { font-size: 1.75rem; }
   .hero-stat-label { font-size: 0.65rem; }
 }

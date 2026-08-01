@@ -21,6 +21,7 @@ interface Skill {
   name: string;
   desc: string;
   pips: number;
+  iconType?: string;
 }
 
 interface FocusArea {
@@ -118,31 +119,37 @@ const DEFAULT_SKILLS: Skill[] = [
     name: 'Frontend Mastery',
     desc: 'React, Next.js, TypeScript, Tailwind CSS. Pixel-perfect UIs that load fast and feel alive.',
     pips: 5,
+    iconType: 'frontend',
   },
   {
     name: 'Backend Engineering',
     desc: 'Node.js, Express, Python, REST & GraphQL APIs. Scalable server architecture built to endure.',
     pips: 5,
+    iconType: 'backend',
   },
   {
     name: 'Database & Cloud',
     desc: 'PostgreSQL, MongoDB, Redis, AWS, Docker. Data infrastructure built for speed.',
     pips: 4,
+    iconType: 'database',
   },
   {
     name: 'DevOps & CI/CD',
     desc: 'GitHub Actions, Linux, Docker, Vercel, Render. Automated pipelines that deploy without friction.',
     pips: 4,
+    iconType: 'devops',
   },
   {
     name: 'Security & Auth',
     desc: 'OAuth2, JWT, bcrypt encryption, OWASP hardening. Code that guards itself like a fortress.',
     pips: 5,
+    iconType: 'security',
   },
   {
     name: 'AI & Automation',
     desc: 'LLM API integration, Python automation, web scraping, data pipelines. Smart systems built for scale.',
     pips: 4,
+    iconType: 'ai',
   },
 ];
 
@@ -175,6 +182,63 @@ const DEFAULT_FOCUS: FocusArea[] = [
     desc: 'Strong foundation in Operating Systems, Database Management Systems (DBMS), Computer Networks, and Object-Oriented Design.',
   },
 ];
+
+function renderSkillIcon(iconType?: string, index: number = 0) {
+  const type = iconType || ['frontend', 'backend', 'database', 'devops', 'security', 'ai'][index % 6];
+  
+  switch (type) {
+    case 'frontend':
+      return (
+        <svg className="skill-icon" aria-hidden="true" viewBox="0 0 36 36" fill="none">
+          <path d="M6 30 L18 6 L30 30" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          <line x1="10" y1="22" x2="26" y2="22" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="18" cy="13" r="2" fill="currentColor" />
+        </svg>
+      );
+    case 'backend':
+      return (
+        <svg className="skill-icon" aria-hidden="true" viewBox="0 0 36 36" fill="none">
+          <rect x="4" y="8" width="28" height="20" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          <polyline points="4,22 12,14 18,20 24,12 32,22" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          <circle cx="26" cy="15" r="2.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        </svg>
+      );
+    case 'database':
+      return (
+        <svg className="skill-icon" aria-hidden="true" viewBox="0 0 36 36" fill="none">
+          <polyline points="12,10 4,18 12,26" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          <polyline points="24,10 32,18 24,26" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          <line x1="20" y1="8" x2="16" y2="28" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      );
+    case 'devops':
+      return (
+        <svg className="skill-icon" aria-hidden="true" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="18" r="12" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          <circle cx="18" cy="18" r="6" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          <circle cx="18" cy="18" r="2" fill="currentColor" />
+          <line x1="18" y1="6" x2="18" y2="30" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+          <line x1="6" y1="18" x2="30" y2="18" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+        </svg>
+      );
+    case 'security':
+      return (
+        <svg className="skill-icon" aria-hidden="true" viewBox="0 0 36 36" fill="none">
+          <rect x="8" y="8" width="20" height="20" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          <path d="M13 18 L16 21 L23 14" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        </svg>
+      );
+    case 'ai':
+    default:
+      return (
+        <svg className="skill-icon" aria-hidden="true" viewBox="0 0 36 36" fill="none">
+          <ellipse cx="18" cy="10" rx="10" ry="4" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          <path d="M8 10 L8 18 Q8 22 18 22 Q28 22 28 18 L28 10" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          <path d="M8 18 L8 26 Q8 30 18 30 Q28 30 28 26 L28 18" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        </svg>
+      );
+  }
+}
 
 function ProjectCard({ project, featured }: { project: Project; featured?: boolean }) {
   return (
@@ -331,10 +395,10 @@ export default function App() {
           <div className="container">
             <div className="hero-text">
               <p className="hero-eyebrow">{profile.eyebrow}</p>
-              <h1>
-                {profile.title1}<br />
-                <span className="hero-title-accent">{profile.titleAccent}</span><br />
-                {profile.title2}
+              <h1 className="hero-title-main">
+                <span className="hero-title-block">{profile.title1}</span>
+                <span className="hero-title-accent hero-title-block">{profile.titleAccent}</span>
+                <span className="hero-title-nowrap hero-title-block">{profile.title2}</span>
               </h1>
               <p className="hero-sub">{profile.subtext}</p>
               <div className="hero-actions">
@@ -376,16 +440,12 @@ export default function App() {
                   THE<br />TECH<br />
                   <span style={{ color: 'rgb(194, 0, 0)' }}>ARSENAL</span>
                 </h2>
-                <p>Every tool mastered through real-world projects and problem solving. From frontend finesse to backend fortresses — this is the stack that ships production-grade code.</p>
+                <p>Every tool mastered through real-world battle. From frontend finesse to backend fortresses — this is the stack that ships production-grade code.</p>
               </div>
               <div className="skills-grid">
                 {skills.map((skill, index) => (
                   <div className="skill-item" key={skill.name + index}>
-                    <svg className="skill-icon" aria-hidden="true" viewBox="0 0 36 36" fill="none">
-                      <path d="M6 30 L18 6 L30 30" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                      <line x1="10" y1="22" x2="26" y2="22" stroke="currentColor" strokeWidth="1.5" />
-                      <circle cx="18" cy="13" r="2" fill="currentColor" />
-                    </svg>
+                    {renderSkillIcon(skill.iconType, index)}
                     <div className="skill-name">{skill.name}</div>
                     <p className="skill-desc">{skill.desc}</p>
                     <div className="skill-rank" aria-label={`Mastery level ${skill.pips} of 5`}>
