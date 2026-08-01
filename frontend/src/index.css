@@ -74,6 +74,15 @@ h3 { font-size: var(--text-2xl); }
   display: block;
 }
 
+.hero-title-accent {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  color: var(--text-display-accent);
+  margin-top: 0.75rem;
+  margin-bottom: 1.75rem;
+  letter-spacing: 0.08em;
+}
+
 .hero-title-nowrap {
   white-space: nowrap;
   word-break: keep-all;
@@ -295,11 +304,6 @@ nav {
 }
 
 .hero h1 { color: var(--text); margin-bottom: 0.25rem; }
-
-.hero-title-accent {
-  color: var(--text-display-accent);
-  display: block;
-}
 
 .hero-sub {
   font-size: var(--text-base);

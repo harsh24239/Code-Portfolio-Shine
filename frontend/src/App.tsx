@@ -5,7 +5,8 @@ import heroImg from '@assets/43aacf07-6d68-4564-9e49-16083d623024_1785459834010.
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
 interface Project {
-  id: string | number;
+  _id?: string | number;
+  id?: string | number;
   title: string;
   tag: string;
   description: string;
@@ -17,6 +18,7 @@ interface Project {
 }
 
 interface Skill {
+  _id?: string | number;
   id?: string | number;
   name: string;
   desc: string;
@@ -25,6 +27,7 @@ interface Skill {
 }
 
 interface FocusArea {
+  _id?: string | number;
   id?: string | number;
   tag: string;
   title: string;
@@ -69,7 +72,7 @@ const DEFAULT_PROFILE: ProfileData = {
 
 const DEFAULT_PROJECTS: Project[] = [
   {
-    id: 1,
+    _id: '1',
     title: 'ShadowBoard',
     tag: 'Full-Stack — SaaS',
     description: 'A real-time project management SaaS built with Next.js, Supabase, and WebSockets. 10K+ active users, 99.9% uptime, deployed on AWS with zero-downtime CI/CD pipeline.',
@@ -80,7 +83,7 @@ const DEFAULT_PROJECTS: Project[] = [
     sortOrder: 0,
   },
   {
-    id: 2,
+    _id: '2',
     title: 'KageUI',
     tag: 'React — TypeScript',
     description: 'Open-source component library with 40+ dark-themed UI components. 2.3K GitHub stars, full TypeScript support, Storybook docs.',
@@ -91,7 +94,7 @@ const DEFAULT_PROJECTS: Project[] = [
     sortOrder: 1,
   },
   {
-    id: 3,
+    _id: '3',
     title: 'NinjaBot',
     tag: 'Python — AI',
     description: 'LLM-powered code review bot that integrates with GitHub PRs. Catches bugs, suggests refactors, enforces style guides. 94% accuracy on test suite.',
@@ -102,7 +105,7 @@ const DEFAULT_PROJECTS: Project[] = [
     sortOrder: 2,
   },
   {
-    id: 4,
+    _id: '4',
     title: 'StealthAPI',
     tag: 'Go — Microservices',
     description: 'High-performance REST API gateway in Go handling 1M+ requests/day. Rate limiting, JWT auth, Redis caching, Kubernetes orchestration.',
@@ -116,36 +119,42 @@ const DEFAULT_PROJECTS: Project[] = [
 
 const DEFAULT_SKILLS: Skill[] = [
   {
+    _id: '1',
     name: 'Frontend Mastery',
     desc: 'React, Next.js, TypeScript, Tailwind CSS. Pixel-perfect UIs that load fast and feel alive.',
     pips: 5,
     iconType: 'frontend',
   },
   {
+    _id: '2',
     name: 'Backend Engineering',
     desc: 'Node.js, Express, Python, REST & GraphQL APIs. Scalable server architecture built to endure.',
     pips: 5,
     iconType: 'backend',
   },
   {
+    _id: '3',
     name: 'Database & Cloud',
     desc: 'PostgreSQL, MongoDB, Redis, AWS, Docker. Data infrastructure built for speed.',
     pips: 4,
     iconType: 'database',
   },
   {
+    _id: '4',
     name: 'DevOps & CI/CD',
     desc: 'GitHub Actions, Linux, Docker, Vercel, Render. Automated pipelines that deploy without friction.',
     pips: 4,
     iconType: 'devops',
   },
   {
+    _id: '5',
     name: 'Security & Auth',
     desc: 'OAuth2, JWT, bcrypt encryption, OWASP hardening. Code that guards itself like a fortress.',
     pips: 5,
     iconType: 'security',
   },
   {
+    _id: '6',
     name: 'AI & Automation',
     desc: 'LLM API integration, Python automation, web scraping, data pipelines. Smart systems built for scale.',
     pips: 4,
@@ -162,21 +171,25 @@ const DEFAULT_TENETS: Tenet[] = [
 
 const DEFAULT_FOCUS: FocusArea[] = [
   {
+    _id: '1',
     tag: 'SYSTEMS & BACKEND',
     title: 'Scalable Infrastructure',
     desc: 'Dedicated to building high-throughput backend services, RESTful APIs, database optimization, and microservices architecture.',
   },
   {
+    _id: '2',
     tag: 'FULL-STACK & UI',
     title: 'Pixel-Perfect Interfaces',
     desc: 'Crafting modern, responsive, and high-performance user interfaces with React, Next.js, and TypeScript.',
   },
   {
+    _id: '3',
     tag: 'DSA & CORE CS',
     title: 'Algorithmic Rigor',
     desc: 'Consistent problem solver focused on Data Structures, Algorithms, time/space complexity optimization, and software design principles.',
   },
   {
+    _id: '4',
     tag: 'ACADEMIC & RESEARCH',
     title: 'Computer Science Foundation',
     desc: 'Strong foundation in Operating Systems, Database Management Systems (DBMS), Computer Networks, and Object-Oriented Design.',
@@ -330,8 +343,10 @@ export default function App() {
     }
   };
 
+  const getItemId = (item: { _id?: string | number; id?: string | number }) => item._id ?? item.id;
   const featured = projects.find((p) => p.featured) ?? projects[0];
-  const rest = projects.filter((p) => p.id !== featured?.id);
+  const featuredId = featured ? getItemId(featured) : null;
+  const rest = projects.filter((p) => getItemId(p) !== featuredId);
 
   return (
     <>
@@ -447,7 +462,7 @@ export default function App() {
               </div>
               <div className="skills-grid">
                 {skills.map((skill, index) => (
-                  <div className="skill-item" key={skill.name + index}>
+                  <div className="skill-item" key={String(getItemId(skill) || index)}>
                     {renderSkillIcon(skill.iconType, index)}
                     <div className="skill-name">{skill.name}</div>
                     <p className="skill-desc">{skill.desc}</p>
@@ -475,8 +490,8 @@ export default function App() {
             </div>
             <div className="projects-grid">
               {featured && <ProjectCard project={featured} featured />}
-              {rest.map((p) => (
-                <ProjectCard key={p.id} project={p} />
+              {rest.map((p, index) => (
+                <ProjectCard key={String(getItemId(p) || index)} project={p} />
               ))}
             </div>
           </div>
@@ -521,7 +536,7 @@ export default function App() {
             <h2 className="testimonials-heading">OPERATIONAL FOCUS</h2>
             <div className="skills-grid" style={{ marginTop: '2.5rem' }}>
               {focusAreas.map((f, i) => (
-                <div className="skill-item" key={f.title + i} style={{ padding: '2.25rem 1.75rem' }}>
+                <div className="skill-item" key={String(getItemId(f) || i)} style={{ padding: '2.25rem 1.75rem' }}>
                   <div className="project-tag" style={{ marginBottom: '0.75rem' }}>{f.tag}</div>
                   <div className="skill-name" style={{ fontSize: '1.35rem', marginBottom: '0.75rem' }}>{f.title}</div>
                   <p className="skill-desc">{f.desc}</p>
