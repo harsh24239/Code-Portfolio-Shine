@@ -300,6 +300,8 @@ async function verifyAuth() {
 }
 
 function showLogin() {
+  const loginPass = document.getElementById('login-password');
+  if (loginPass) loginPass.value = '';
   loginOverlay.classList.remove('hidden');
   appContainer.classList.add('hidden');
 }
@@ -314,6 +316,10 @@ function handleLogout() {
   isLoggedOut = true;
   authToken = '';
   sessionStorage.removeItem('shadow_admin_session');
+  const loginUser = document.getElementById('login-username');
+  const loginPass = document.getElementById('login-password');
+  if (loginUser) loginUser.value = '';
+  if (loginPass) loginPass.value = '';
   showLogin();
 }
 
