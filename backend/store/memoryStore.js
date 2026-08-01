@@ -83,7 +83,7 @@ const loadInitialData = () => {
       return {
         profile: { ...defaultData.profile, ...(loaded.profile || {}) },
         projects: loaded.projects && loaded.projects.length > 0 ? loaded.projects : defaultData.projects,
-        skills: loaded.skills && loaded.skills.length > 0 ? loaded.skills : defaultData.skills,
+        skills: (loaded.skills && loaded.skills.length > 0 && loaded.skills[0].pips !== undefined) ? loaded.skills : defaultData.skills,
         focusAreas: loaded.focusAreas && loaded.focusAreas.length > 0 ? loaded.focusAreas : defaultData.focusAreas,
         messages: Array.isArray(loaded.messages) ? loaded.messages : [],
         testimonials: Array.isArray(loaded.testimonials) ? loaded.testimonials : [],
