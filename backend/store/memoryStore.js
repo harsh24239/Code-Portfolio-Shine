@@ -57,12 +57,12 @@ const defaultData = {
     },
   ],
   skills: [
-    { _id: '1', category: 'Languages', name: 'Python, Java, C/C++, JavaScript, TypeScript, SQL', level: 'Advanced' },
-    { _id: '2', category: 'Frontend', name: 'React.js, Vite, HTML5, CSS3, Vanilla CSS Design Systems', level: 'Advanced' },
-    { _id: '3', category: 'Backend', name: 'Node.js, Express.js, FastAPI, Java Swing & JDBC', level: 'Advanced' },
-    { _id: '4', category: 'Databases', name: 'MySQL (DBMS), ChromaDB (Vector DB), MongoDB, SQLite', level: 'Advanced' },
-    { _id: '5', category: 'AI & Automation', name: 'LangGraph, RAG Vector Retrieval, Gemini API, Multi-Agent Workflows', level: 'Proficient' },
-    { _id: '6', category: 'CS Core & Security', name: 'DSA (500+ Solved), BCrypt, JWT, RBAC Auth, JUnit Testing, Git/Linux', level: 'Advanced' },
+    { _id: '1', name: 'Frontend Mastery', desc: 'React, Next.js, TypeScript, Tailwind CSS. Pixel-perfect UIs that load fast and feel alive.', pips: 5, iconType: 'frontend' },
+    { _id: '2', name: 'Backend Engineering', desc: 'Node.js, Python, Go, REST & GraphQL APIs. Scalable server architecture built to endure.', pips: 5, iconType: 'backend' },
+    { _id: '3', name: 'Database & Cloud', desc: 'PostgreSQL, MongoDB, Redis, AWS, Docker, Kubernetes. Infrastructure that never sleeps.', pips: 4, iconType: 'database' },
+    { _id: '4', name: 'DevOps & CI/CD', desc: 'GitHub Actions, Jenkins, Terraform, Linux. Automated pipelines that deploy without hesitation.', pips: 4, iconType: 'devops' },
+    { _id: '5', name: 'Security & Auth', desc: 'OAuth2, JWT, penetration testing, OWASP hardening. Code that guards itself like a fortress.', pips: 5, iconType: 'security' },
+    { _id: '6', name: 'AI & Automation', desc: 'LLM integration, Python automation, web scraping, data pipelines. Machines that work while you sleep.', pips: 4, iconType: 'ai' },
   ],
   focusAreas: [
     { _id: '1', tag: 'DOMAIN 01', title: 'Web Application Development', desc: 'Designing and building scalable, responsive web apps using React, Node.js, Express, and modern database architectures.' },
