@@ -12,6 +12,8 @@ export const memoryStore = {
     statusDetail: 'Focused on Web Development & AI Applications. Actively building projects with React, Node.js, Express, FastAPI, and LangGraph.',
     email: 'kumarharsh1851@gmail.com',
     pgpKey: 'github.com/harsh24239',
+    linkedin: '',
+    twitter: '',
   },
   projects: [
     {

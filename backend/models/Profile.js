@@ -21,7 +21,9 @@ const profileSchema = new mongoose.Schema(
         'Available for engagements beginning September 2026. Priority given to long-duration contracts requiring sustained operational focus.',
     },
     email: { type: String, default: 'kumarharsh1851@gmail.com' },
-    pgpKey: { type: String, default: '0xA4B7C9E1' },
+    pgpKey: { type: String, default: 'github.com/harsh24239' },
+    linkedin: { type: String, default: '' },
+    twitter: { type: String, default: '' },
   },
   { timestamps: true }
 );
