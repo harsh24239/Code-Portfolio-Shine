@@ -53,11 +53,11 @@ interface ProfileData {
 }
 
 const DEFAULT_PROFILE: ProfileData = {
-  eyebrow: 'Full-Stack Developer & Code Architect',
+  eyebrow: 'FULL-STACK DEVELOPER & CODE ARCHITECT',
   title1: 'CODE',
   titleAccent: 'IN THE',
   title2: 'SHADOWS',
-  subtext: 'Full-stack engineer & open-source developer. I build scalable backend systems, craft pixel-perfect interfaces, and write clean, high-performance code.',
+  subtext: 'Full-stack engineer. Open-source contributor. I build scalable systems, craft pixel-perfect interfaces, and write code that runs silent and fast — like a shadow in the machine.',
   projectsShipped: '15+',
   yearsCoding: '3+',
   clientsServed: '500+',
@@ -394,7 +394,10 @@ export default function App() {
 
           <div className="container">
             <div className="hero-text">
-              <p className="hero-eyebrow">{profile.eyebrow}</p>
+              <p className="hero-eyebrow">
+                <span className="eyebrow-line" />
+                {profile.eyebrow}
+              </p>
               <h1 className="hero-title-main">
                 <span className="hero-title-block">{profile.title1}</span>
                 <span className="hero-title-accent hero-title-block">{profile.titleAccent}</span>

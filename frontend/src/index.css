@@ -221,7 +221,10 @@ nav {
 
 .hero-bg-image {
   position: absolute;
-  inset: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 48%;
   z-index: 0;
 }
 
@@ -240,27 +243,12 @@ nav {
   position: absolute;
   inset: 0;
   background: linear-gradient(
-    105deg,
+    90deg,
     var(--bg) 0%,
-    color-mix(in srgb, var(--bg) 75%, transparent) 45%,
-    color-mix(in srgb, var(--bg) 30%, transparent) 75%,
+    color-mix(in srgb, var(--bg) 80%, transparent) 30%,
     transparent 100%
   );
   z-index: 1;
-}
-
-.hero-bg-image::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    color-mix(in srgb, var(--hero-glow) 3%, transparent) 0px,
-    transparent 1px,
-    transparent 60px
-  );
-  z-index: 2;
-  pointer-events: none;
 }
 
 .hero-text {
@@ -269,8 +257,8 @@ nav {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: clamp(3rem, 8vh, 6rem) clamp(1rem, 5vw, 4rem);
-  max-width: 720px;
+  padding: clamp(3rem, 8vh, 6rem) 0;
+  max-width: 680px;
 }
 
 .hero-eyebrow {
@@ -285,8 +273,7 @@ nav {
   flex-wrap: wrap;
 }
 
-.hero-eyebrow::before {
-  content: '';
+.eyebrow-line {
   display: inline-block;
   width: 32px;
   height: 1px;
@@ -301,12 +288,11 @@ nav {
 }
 
 .hero-sub {
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   color: var(--fg);
-  max-width: 440px;
+  max-width: 480px;
   margin-top: 1.5rem;
-  line-height: 1.6;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  line-height: 1.7;
 }
 
 .hero-actions {
@@ -854,7 +840,17 @@ footer.site-footer {
 
 /* ADVANCED COMPREHENSIVE RESPONSIVENESS BREAKPOINTS */
 @media (max-width: 990px) {
-  .hero-text { max-width: 100%; }
+  .hero-bg-image { width: 100%; }
+  .hero-bg-image::before {
+    background: linear-gradient(
+      105deg,
+      var(--bg) 0%,
+      color-mix(in srgb, var(--bg) 80%, transparent) 45%,
+      color-mix(in srgb, var(--bg) 40%, transparent) 80%,
+      transparent 100%
+    );
+  }
+  .hero-text { max-width: 100%; padding: clamp(3rem, 8vh, 6rem) clamp(1rem, 5vw, 4rem); }
   .skills-layout { grid-template-columns: 1fr; }
   .skills-heading-col { position: static; margin-bottom: 2rem; }
   .philosophy-layout { grid-template-columns: 1fr; }

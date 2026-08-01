@@ -1,10 +1,10 @@
 export const memoryStore = {
   profile: {
-    eyebrow: 'Full-Stack Developer & Code Architect',
+    eyebrow: 'FULL-STACK DEVELOPER & CODE ARCHITECT',
     title1: 'CODE',
     titleAccent: 'IN THE',
     title2: 'SHADOWS',
-    subtext: 'Full-stack engineer & open-source developer. I build scalable backend systems, craft pixel-perfect interfaces, and write clean, high-performance code.',
+    subtext: 'Full-stack engineer. Open-source contributor. I build scalable systems, craft pixel-perfect interfaces, and write code that runs silent and fast — like a shadow in the machine.',
     projectsShipped: '15+',
     yearsCoding: '3+',
     clientsServed: '500+',
