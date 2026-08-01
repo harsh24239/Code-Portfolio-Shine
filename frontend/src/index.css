@@ -555,21 +555,23 @@ nav {
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  background-color: var(--border);
+  gap: 1.5rem;
+  background-color: transparent;
 }
 
 .project-card {
   background-color: var(--bg);
+  border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: background-color var(--duration-base) ease;
+  transition: background-color var(--duration-base) ease, border-color var(--duration-base) ease;
 }
 
 .project-card:hover {
   background-color: var(--surface);
+  border-color: var(--accent);
 }
 
 .project-card-upcoming {
@@ -713,13 +715,32 @@ nav {
 .tenets-list { list-style: none; display: flex; flex-direction: column; gap: 0; }
 
 .tenet-item {
-  padding: 1.5rem 0;
+  padding: 1.5rem 1rem;
   border-bottom: 1px solid var(--border);
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 1rem;
   align-items: start;
+  position: relative;
+  overflow: hidden;
+  transition: background-color var(--duration-base) ease;
 }
+
+.tenet-item:hover {
+  background-color: color-mix(in srgb, var(--accent) 6%, var(--surface));
+}
+
+.tenet-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--accent);
+  transition: width var(--duration-slow) ease;
+}
+
+.tenet-item:hover::before { width: 100%; }
 
 .tenet-item:first-child { border-top: 1px solid var(--border); }
 

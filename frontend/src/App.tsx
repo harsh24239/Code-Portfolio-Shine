@@ -496,8 +496,8 @@ export default function App() {
                 <ProjectCard key={String(getItemId(p) || index)} project={p} />
               ))}
               
-              {/* Upcoming Mission Placeholder Card when rest projects count is odd or total < 4 */}
-              {rest.length < 3 && (
+              {/* Upcoming Mission Placeholder Card only when total projects < 3 */}
+              {projects.length < 3 && (
                 <div className="project-card project-card-upcoming">
                   <div className="project-card-image">
                     <div className="project-card-image-inner">
