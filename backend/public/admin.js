@@ -441,9 +441,10 @@ async function handleSaveSkill(e) {
 let currentTestimonials = [];
 async function loadTestimonials() {
   try {
-    const res = await fetch(`${API_BASE}/portfolio`);
-    const data = await res.json();
-    currentTestimonials = data.focusAreas || [];
+    const res = await fetch(`${API_BASE}/admin/focus-areas`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
+    currentTestimonials = await res.json();
     renderTestimonials();
   } catch (err) {
     console.error('Failed to load focus areas', err);
@@ -461,19 +462,73 @@ function renderTestimonials() {
         <div class="item-title">${t.title}</div>
         <div class="item-desc">${t.desc}</div>
       </div>
+      <div class="item-actions">
+        <button class="btn-ghost-sm" onclick="editTestimonial('${t._id}')">EDIT</button>
+        <button class="btn-danger-sm" onclick="deleteTestimonial('${t._id}')">DELETE</button>
+      </div>
     </div>
   `
     )
     .join('');
 }
 
-function openTestimonialModal() {
+function openTestimonialModal(focusArea = null) {
+  document.getElementById('testimonial-modal-title').textContent = focusArea ? 'EDIT FOCUS AREA' : 'NEW FOCUS AREA';
+  document.getElementById('test-id').value = focusArea ? focusArea._id : '';
+  document.getElementById('test-role').value = focusArea ? focusArea.tag : '';
+  document.getElementById('test-name').value = focusArea ? focusArea.title : '';
+  document.getElementById('test-quote').value = focusArea ? focusArea.desc : '';
+
   document.getElementById('testimonial-modal').classList.remove('hidden');
 }
 
+window.editTestimonial = (id) => {
+  const t = currentTestimonials.find((x) => x._id === id);
+  if (t) openTestimonialModal(t);
+};
+
+window.deleteTestimonial = async (id) => {
+  if (!confirm('Are you sure you want to delete this focus domain?')) return;
+  try {
+    await fetch(`${API_BASE}/admin/focus-areas/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
+    loadTestimonials();
+  } catch (err) {
+    alert('Failed to delete focus area');
+  }
+};
+
 async function handleSaveTestimonial(e) {
   e.preventDefault();
-  document.getElementById('testimonial-modal').classList.add('hidden');
+  const id = document.getElementById('test-id').value;
+  const body = {
+    tag: document.getElementById('test-role').value,
+    title: document.getElementById('test-name').value,
+    desc: document.getElementById('test-quote').value,
+  };
+
+  const url = id ? `${API_BASE}/admin/focus-areas/${id}` : `${API_BASE}/admin/focus-areas`;
+  const method = id ? 'PUT' : 'POST';
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      document.getElementById('testimonial-modal').classList.add('hidden');
+      loadTestimonials();
+    }
+  } catch (err) {
+    alert('Error saving focus area');
+  }
 }
 
 // --- MESSAGES INBOX ---

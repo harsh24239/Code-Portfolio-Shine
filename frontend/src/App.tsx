@@ -56,16 +56,16 @@ interface ProfileData {
 }
 
 const DEFAULT_PROFILE: ProfileData = {
-  eyebrow: 'FULL-STACK DEVELOPER & CODE ARCHITECT',
+  eyebrow: 'WEB DEVELOPER & AI BUILDER',
   title1: 'CODE',
   titleAccent: 'IN THE',
   title2: 'SHADOWS',
-  subtext: 'Full-stack engineer. Open-source contributor. I build scalable systems, craft pixel-perfect interfaces, and write code that runs silent and fast — like a shadow in the machine.',
+  subtext: '3rd-Year Computer Science B.Tech student & Web Developer. I build clean web applications, integrate intelligent AI workflows, and solve complex DSA problems.',
   projectsShipped: '15+',
   yearsCoding: '3+',
   clientsServed: '500+',
-  status: 'Open to Opportunities',
-  statusDetail: 'Available for Full-Stack & Software Engineering roles. Focused on building high-performance web applications and backend systems.',
+  status: 'Available for Web Dev & Software Roles',
+  statusDetail: 'Focused on Web Development & AI Applications. Actively building projects with React, Node.js, Express, FastAPI, and LangGraph.',
   email: 'kumarharsh1851@gmail.com',
   pgpKey: 'github.com/harsh24239',
 };
@@ -73,45 +73,45 @@ const DEFAULT_PROFILE: ProfileData = {
 const DEFAULT_PROJECTS: Project[] = [
   {
     _id: '1',
-    title: 'ShadowBoard',
-    tag: 'Full-Stack — SaaS',
-    description: 'A real-time project management SaaS built with Next.js, Supabase, and WebSockets. 10K+ active users, 99.9% uptime, deployed on AWS with zero-downtime CI/CD pipeline.',
-    year: '2025',
-    link: '',
-    iconText: 'SB',
+    title: 'AI Placement Copilot',
+    tag: 'FastAPI — LangGraph — AI',
+    description: 'Agentic AI-powered placement preparation platform using LangGraph, FastAPI, React, and RAG vector retrieval with ChromaDB & Gemini embeddings.',
+    year: '2026 (Ongoing)',
+    link: 'https://github.com/harsh24239/ai-placement-copilot',
+    iconText: 'AI',
     featured: true,
     sortOrder: 0,
   },
   {
     _id: '2',
-    title: 'KageUI',
-    tag: 'React — TypeScript',
-    description: 'Open-source component library with 40+ dark-themed UI components. 2.3K GitHub stars, full TypeScript support, Storybook docs.',
-    year: '2025',
-    link: '',
-    iconText: 'KU',
+    title: 'VR Manual Milling Simulator',
+    tag: 'Unity / C# — VR Simulation',
+    description: 'VR manual milling trainer prototype — Blender + Unity/C# simulation with force-based haptic feedback. Research-aligned XR hardware/software project.',
+    year: '2026 (In Progress)',
+    link: 'https://github.com/harsh24239/vr-manual-milling-simulator',
+    iconText: 'VR',
     featured: false,
     sortOrder: 1,
   },
   {
     _id: '3',
-    title: 'NinjaBot',
-    tag: 'Python — AI',
-    description: 'LLM-powered code review bot that integrates with GitHub PRs. Catches bugs, suggests refactors, enforces style guides. 94% accuracy on test suite.',
-    year: '2024',
-    link: '',
-    iconText: 'NB',
+    title: 'SQVS – Qualification Verification',
+    tag: 'React — Node.js — MySQL — DBMS',
+    description: 'Full-stack credential verification web application developed as a Database Systems project. Features RBAC auth, analytics dashboards, audit logs, and RESTful Express APIs on a normalized MySQL schema.',
+    year: '2026',
+    link: 'https://github.com/harsh24239',
+    iconText: 'SQ',
     featured: false,
     sortOrder: 2,
   },
   {
     _id: '4',
-    title: 'StealthAPI',
-    tag: 'Go — Microservices',
-    description: 'High-performance REST API gateway in Go handling 1M+ requests/day. Rate limiting, JWT auth, Redis caching, Kubernetes orchestration.',
-    year: '2024',
-    link: '',
-    iconText: 'SA',
+    title: 'University ERP System',
+    tag: 'Java — Swing & JDBC — Systems',
+    description: 'Role-based desktop ERP application built in Java with a 4-layer architecture (UI, API, Service, DAO). Features BCrypt authentication, deadline-enforced grade management, and JUnit automated unit tests.',
+    year: '2025',
+    link: 'https://github.com/harsh24239',
+    iconText: 'UE',
     featured: false,
     sortOrder: 3,
   },
@@ -120,45 +120,45 @@ const DEFAULT_PROJECTS: Project[] = [
 const DEFAULT_SKILLS: Skill[] = [
   {
     _id: '1',
-    name: 'Frontend Mastery',
-    desc: 'React, Next.js, TypeScript, Tailwind CSS. Pixel-perfect UIs that load fast and feel alive.',
+    name: 'Web Development',
+    desc: 'HTML5, CSS3, JavaScript, React.js, Vite, Node.js, Express.js. Building responsive web UIs & REST APIs.',
     pips: 5,
     iconType: 'frontend',
   },
   {
     _id: '2',
-    name: 'Backend Engineering',
-    desc: 'Node.js, Express, Python, REST & GraphQL APIs. Scalable server architecture built to endure.',
+    name: 'AI & Automation',
+    desc: 'LangGraph, FastAPI, ChromaDB, RAG Vector Retrieval, Gemini API, Multi-Agent Workflows.',
+    pips: 5,
+    iconType: 'ai',
+  },
+  {
+    _id: '3',
+    name: 'Core Languages & DSA',
+    desc: 'Python, Java, C, SQL. Data Structures, Algorithms, Object-Oriented Programming (OOP).',
     pips: 5,
     iconType: 'backend',
   },
   {
-    _id: '3',
-    name: 'Database & Cloud',
-    desc: 'PostgreSQL, MongoDB, Redis, AWS, Docker. Data infrastructure built for speed.',
+    _id: '4',
+    name: 'Database Systems',
+    desc: 'MySQL, SQLite, SQLAlchemy, DBMS, Schema Normalization, Relational Modeling, JDBC.',
     pips: 4,
     iconType: 'database',
   },
   {
-    _id: '4',
-    name: 'DevOps & CI/CD',
-    desc: 'GitHub Actions, Linux, Docker, Vercel, Render. Automated pipelines that deploy without friction.',
-    pips: 4,
-    iconType: 'devops',
-  },
-  {
     _id: '5',
-    name: 'Security & Auth',
-    desc: 'OAuth2, JWT, bcrypt encryption, OWASP hardening. Code that guards itself like a fortress.',
-    pips: 5,
+    name: 'Security & Testing',
+    desc: 'RBAC Auth, BCrypt Password Hashing, JWT Tokens, JUnit Automated Unit Testing.',
+    pips: 4,
     iconType: 'security',
   },
   {
     _id: '6',
-    name: 'AI & Automation',
-    desc: 'LLM API integration, Python automation, web scraping, data pipelines. Smart systems built for scale.',
-    pips: 4,
-    iconType: 'ai',
+    name: 'Developer Tools & OS',
+    desc: 'Git, GitHub, Linux/Unix Shell, Postman, VS Code, IntelliJ IDEA, Operating Systems.',
+    pips: 5,
+    iconType: 'devops',
   },
 ];
 
@@ -172,32 +172,32 @@ const DEFAULT_TENETS: Tenet[] = [
 const DEFAULT_FOCUS: FocusArea[] = [
   {
     _id: '1',
-    tag: 'SYSTEMS & BACKEND',
-    title: 'Scalable Infrastructure',
-    desc: 'Dedicated to building high-throughput backend services, RESTful APIs, database optimization, and microservices architecture.',
+    tag: 'WEB DEVELOPMENT',
+    title: 'Responsive Web Applications',
+    desc: 'Building modern, clean, and responsive web interfaces using React.js, Vite, Node.js, Express.js, and RESTful APIs.',
   },
   {
     _id: '2',
-    tag: 'FULL-STACK & UI',
-    title: 'Pixel-Perfect Interfaces',
-    desc: 'Crafting modern, responsive, and high-performance user interfaces with React, Next.js, and TypeScript.',
+    tag: 'AI & AUTOMATION',
+    title: 'AI Workflows & RAG',
+    desc: 'Integrating autonomous multi-agent pipelines using LangGraph, ChromaDB vector retrieval, RAG, and FastAPI.',
   },
   {
     _id: '3',
-    tag: 'DSA & CORE CS',
-    title: 'Algorithmic Rigor',
-    desc: 'Consistent problem solver focused on Data Structures, Algorithms, time/space complexity optimization, and software design principles.',
+    tag: 'CORE CS & DSA',
+    title: 'Algorithmic Problem Solving',
+    desc: '3rd-Year Computer Science B.Tech student actively solving Data Structures and Algorithms problems in Python, Java, and C.',
   },
   {
     _id: '4',
-    tag: 'ACADEMIC & RESEARCH',
-    title: 'Computer Science Foundation',
-    desc: 'Strong foundation in Operating Systems, Database Management Systems (DBMS), Computer Networks, and Object-Oriented Design.',
+    tag: 'SOFTWARE CRAFT',
+    title: 'Clean Architecture & Security',
+    desc: 'Applying 4-layer system design, MVC architecture, BCrypt password security, role-based access control (RBAC), and automated unit testing.',
   },
 ];
 
 function renderSkillIcon(iconType?: string, index: number = 0) {
-  const type = iconType || ['frontend', 'backend', 'database', 'devops', 'security', 'ai'][index % 6];
+  const type = iconType || ['frontend', 'ai', 'backend', 'database', 'security', 'devops'][index % 6];
   
   switch (type) {
     case 'frontend':
@@ -458,7 +458,7 @@ export default function App() {
                   THE<br />TECH<br />
                   <span style={{ color: 'rgb(194, 0, 0)' }}>ARSENAL</span>
                 </h2>
-                <p>Every tool mastered through real-world battle. From frontend finesse to backend fortresses — this is the stack that ships production-grade code.</p>
+                <p>Every tool mastered through real-world practice. From frontend web interfaces to backend systems &amp; AI models.</p>
               </div>
               <div className="skills-grid">
                 {skills.map((skill, index) => (
@@ -493,6 +493,30 @@ export default function App() {
               {rest.map((p, index) => (
                 <ProjectCard key={String(getItemId(p) || index)} project={p} />
               ))}
+              
+              {/* Upcoming Mission Placeholder Card when rest projects count is odd or total < 4 */}
+              {rest.length < 3 && (
+                <div className="project-card project-card-upcoming">
+                  <div className="project-card-image">
+                    <div className="project-card-image-inner">
+                      <span className="project-card-image-icon" style={{ opacity: 0.35 }}>✦</span>
+                    </div>
+                  </div>
+                  <div className="project-card-body">
+                    <p className="project-tag" style={{ color: 'var(--muted)' }}>SHADOW LABS // UPCOMING</p>
+                    <h3 className="project-title" style={{ opacity: 0.85 }}>Project In Development</h3>
+                    <p className="project-desc" style={{ color: 'var(--muted)' }}>
+                      New AI &amp; Web development project currently brewing in the shadows. Check back soon for deployment.
+                    </p>
+                    <div className="project-footer">
+                      <span className="project-year">2026</span>
+                      <a className="project-link" href="#contact" style={{ opacity: 0.7 }}>
+                        Propose Idea →
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -552,135 +576,119 @@ export default function App() {
           <div className="container">
             <div className="contact-layout">
               <div>
-                <p className="contact-eyebrow">Contact</p>
-                <h2 className="contact-heading">OPEN A<br />CHANNEL</h2>
-                <p className="contact-intro">Direct contact for collaboration, engineering roles, and open-source inquiries. All communications are encrypted. Response within 24 hours.</p>
-                
-                {/* Contact Direct Links */}
+                <p className="contact-eyebrow">Initiate Contact</p>
+                <h2 className="contact-heading">TRANSMIT A<br />MESSAGE</h2>
+                <p className="contact-intro">Whether you have a web project, an AI concept, or an opportunity — transmit your signal directly below.</p>
                 <div className="contact-channels">
                   <a className="contact-channel" href={`mailto:${profile.email}`}>
-                    <svg className="contact-channel-icon" aria-hidden="true" viewBox="0 0 20 20" fill="none">
-                      <rect x="2" y="4" width="16" height="12" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                      <polyline points="2,5 10,11 18,5" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                    <svg className="contact-channel-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="M22 6L12 13L2 6" />
                     </svg>
-                    <span className="contact-channel-label">Email</span>
+                    <span className="contact-channel-label">Direct Email</span>
                     <span className="contact-channel-detail">{profile.email}</span>
                   </a>
-                  <a className="contact-channel" href="https://github.com/harsh24239" target="_blank" rel="noreferrer">
-                    <svg className="contact-channel-icon" aria-hidden="true" viewBox="0 0 20 20" fill="none">
-                      <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                      <path d="M6 14 Q10 6 14 14" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                      <circle cx="10" cy="8" r="1.5" fill="currentColor" />
+                  <a className="contact-channel" href={`https://${profile.pgpKey}`} target="_blank" rel="noreferrer">
+                    <svg className="contact-channel-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
                     </svg>
-                    <span className="contact-channel-label">GitHub Protocol</span>
-                    <span className="contact-channel-detail">harsh24239</span>
+                    <span className="contact-channel-label">GitHub Profile</span>
+                    <span className="contact-channel-detail">{profile.pgpKey}</span>
                   </a>
-                  <div className="contact-channel">
-                    <svg className="contact-channel-icon" aria-hidden="true" viewBox="0 0 20 20" fill="none">
-                      <rect x="4" y="8" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                      <path d="M7 8 L7 5 Q7 2 10 2 Q13 2 13 5 L13 8" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                      <circle cx="10" cy="13" r="1.5" fill="currentColor" />
-                    </svg>
-                    <span className="contact-channel-label">Identity Profile</span>
-                    <span className="contact-channel-detail">Harsh Kumar</span>
-                  </div>
                 </div>
               </div>
 
               <div className="contact-right-stack">
                 <div className="contact-availability">
-                  <div className="contact-avail-label">
-                    <span className="contact-avail-dot" aria-hidden="true" />
-                    Current Status
-                  </div>
+                  <div className="contact-avail-label">OPERATIONAL STATUS</div>
                   <div className="contact-avail-status">{profile.status}</div>
                   <p className="contact-avail-detail">{profile.statusDetail}</p>
                 </div>
 
-                {/* Direct Interactive Form */}
-                <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div className="contact-inputs-row">
                     <input
                       type="text"
-                      placeholder="YOUR NAME *"
+                      placeholder="YOUR NAME"
                       required
                       value={contactName}
                       onChange={(e) => setContactName(e.target.value)}
                       style={{
                         flex: 1,
-                        padding: '0.875rem 1rem',
                         backgroundColor: 'var(--bg)',
                         border: '1px solid var(--border)',
                         color: 'var(--text)',
-                        fontFamily: 'IBM Plex Mono, monospace',
-                        fontSize: '0.8125rem',
+                        padding: '0.875rem 1rem',
+                        fontFamily: 'inherit',
+                        fontSize: 'var(--text-sm)',
                       }}
                     />
                     <input
                       type="email"
-                      placeholder="YOUR EMAIL *"
+                      placeholder="YOUR EMAIL"
                       required
                       value={contactEmail}
                       onChange={(e) => setContactEmail(e.target.value)}
                       style={{
                         flex: 1,
-                        padding: '0.875rem 1rem',
                         backgroundColor: 'var(--bg)',
                         border: '1px solid var(--border)',
                         color: 'var(--text)',
-                        fontFamily: 'IBM Plex Mono, monospace',
-                        fontSize: '0.8125rem',
+                        padding: '0.875rem 1rem',
+                        fontFamily: 'inherit',
+                        fontSize: 'var(--text-sm)',
                       }}
                     />
                   </div>
                   <input
                     type="text"
-                    placeholder="SUBJECT / MISSION TYPE"
+                    placeholder="SUBJECT / INQUIRY"
                     value={contactSubject}
                     onChange={(e) => setContactSubject(e.target.value)}
                     style={{
-                      padding: '0.875rem 1rem',
                       backgroundColor: 'var(--bg)',
                       border: '1px solid var(--border)',
                       color: 'var(--text)',
-                      fontFamily: 'IBM Plex Mono, monospace',
-                      fontSize: '0.8125rem',
+                      padding: '0.875rem 1rem',
+                      fontFamily: 'inherit',
+                      fontSize: 'var(--text-sm)',
                     }}
                   />
                   <textarea
-                    placeholder="TRANSMISSION DETAILS / MESSAGE *"
-                    required
+                    placeholder="YOUR TRANSMISSION MESSAGE..."
                     rows={4}
+                    required
                     value={contactMessage}
                     onChange={(e) => setContactMessage(e.target.value)}
                     style={{
-                      padding: '0.875rem 1rem',
                       backgroundColor: 'var(--bg)',
                       border: '1px solid var(--border)',
                       color: 'var(--text)',
-                      fontFamily: 'IBM Plex Mono, monospace',
-                      fontSize: '0.8125rem',
+                      padding: '0.875rem 1rem',
+                      fontFamily: 'inherit',
+                      fontSize: 'var(--text-sm)',
                       resize: 'vertical',
                     }}
                   />
+
                   <button
                     type="submit"
                     className="btn-primary"
                     disabled={contactStatus === 'sending'}
-                    style={{ width: '100%', justifyContent: 'center', cursor: contactStatus === 'sending' ? 'wait' : 'pointer' }}
+                    style={{ width: '100%', justifyContent: 'center' }}
                   >
-                    {contactStatus === 'sending' ? 'TRANSMITTING...' : 'SEND ENCRYPTED MESSAGE →'}
+                    {contactStatus === 'sending' ? 'TRANSMITTING...' : 'TRANSMIT SIGNAL →'}
                   </button>
 
                   {contactStatus === 'success' && (
-                    <div style={{ color: '#4ade80', fontSize: '0.8125rem', textAlign: 'center', marginTop: '0.5rem' }}>
-                      ✓ Transmission received. Message logged in admin inbox.
-                    </div>
+                    <p style={{ color: '#40ff80', fontSize: 'var(--text-sm)', textAlign: 'center' }}>
+                      ✓ Signal transmitted successfully! Check your inbox soon.
+                    </p>
                   )}
                   {contactStatus === 'error' && (
-                    <div style={{ color: '#ff6060', fontSize: '0.8125rem', textAlign: 'center', marginTop: '0.5rem' }}>
-                      ✕ Transmission failed. Please try direct email: {profile.email}
-                    </div>
+                    <p style={{ color: '#ff6060', fontSize: 'var(--text-sm)', textAlign: 'center' }}>
+                      ⚠ Transmission failed. Please email directly to kumarharsh1851@gmail.com
+                    </p>
                   )}
                 </form>
               </div>
@@ -690,45 +698,35 @@ export default function App() {
       </main>
 
       {/* FOOTER */}
-      <footer className="site-footer" aria-label="Site footer">
+      <footer className="site-footer">
         <div className="container">
           <div className="footer-inner">
             <div className="footer-brand">
-              <a className="footer-logo" href="#">
-                <svg aria-hidden="true" width="22" height="22" viewBox="0 0 28 28" fill="none">
-                  <polygon points="14,2 26,10 26,18 14,26 2,18 2,10" fill="none" stroke="#c8001e" strokeWidth="1.5" />
-                  <line x1="14" y1="2" x2="14" y2="26" stroke="#c8001e" strokeWidth="1" />
-                  <line x1="2" y1="10" x2="26" y2="18" stroke="#c8001e" strokeWidth="1" />
-                  <line x1="26" y1="10" x2="2" y2="18" stroke="#c8001e" strokeWidth="1" />
-                  <circle cx="14" cy="14" r="2.5" fill="#c8001e" />
-                </svg>
-                HARSH
-              </a>
-              <p className="footer-tagline">A portfolio built for disciplines that require precision, efficiency, and exceptional software craft.</p>
+              <a className="footer-logo" href="#">HARSH.DEV</a>
+              <p className="footer-tagline">3rd-Year B.Tech student &amp; Web Developer crafting resilient applications and AI tools.</p>
             </div>
             <div>
-              <p className="footer-col-heading">Navigate</p>
+              <div className="footer-col-heading">Navigation</div>
               <ul className="footer-nav-list">
-                <li><a href="#skills">Disciplines</a></li>
-                <li><a href="#projects">Missions</a></li>
-                <li><a href="#philosophy">The Code</a></li>
+                <li><a href="#skills">Skills</a></li>
+                <li><a href="#projects">Projects</a></li>
                 <li><a href="#about">About</a></li>
                 <li><a href="#contact">Contact</a></li>
               </ul>
             </div>
             <div>
-              <p className="footer-col-heading">Protocol</p>
+              <div className="footer-col-heading">System Specs</div>
               <ul className="footer-nav-list">
-                <li><a href="#contact">Open a Channel</a></li>
-                <li><a href="https://github.com/harsh24239" target="_blank" rel="noreferrer">GitHub Profile</a></li>
-                <li><a href={`mailto:${profile.email}`}>Email Contact</a></li>
+                <li><span style={{ color: 'var(--fg)' }}>Tech: React + Node.js + FastAPI</span></li>
+                <li><span style={{ color: 'var(--fg)' }}>Status: Operational</span></li>
+                <li><span style={{ color: 'var(--fg)' }}>Location: India</span></li>
               </ul>
             </div>
           </div>
-          <hr className="footer-divider" aria-hidden="true" />
+          <hr className="footer-divider" />
           <div className="footer-bottom">
-            <p className="footer-legal">© 2026 Harsh Kumar. All rights reserved.</p>
-            <span className="footer-mark" aria-hidden="true">影</span>
+            <div className="footer-legal">© {new Date().getFullYear()} HARSH KUMAR. ALL RIGHTS RESERVED.</div>
+            <div className="footer-mark">影</div>
           </div>
         </div>
       </footer>

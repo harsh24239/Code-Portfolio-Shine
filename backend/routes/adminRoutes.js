@@ -222,6 +222,44 @@ router.delete('/skills/:id', protect, async (req, res) => {
   }
 });
 
+// --- FOCUS AREAS ---
+router.get('/focus-areas', protect, async (req, res) => {
+  if (!isDbConnected) return res.json(memoryStore.focusAreas);
+  res.json(memoryStore.focusAreas);
+});
+
+router.post('/focus-areas', protect, async (req, res) => {
+  try {
+    const newArea = { _id: String(Date.now()), ...req.body };
+    memoryStore.focusAreas.push(newArea);
+    return res.status(201).json(newArea);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.put('/focus-areas/:id', protect, async (req, res) => {
+  try {
+    const idx = memoryStore.focusAreas.findIndex((f) => f._id === req.params.id);
+    if (idx !== -1) {
+      memoryStore.focusAreas[idx] = { ...memoryStore.focusAreas[idx], ...req.body };
+      return res.json(memoryStore.focusAreas[idx]);
+    }
+    res.status(404).json({ message: 'Focus area not found' });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.delete('/focus-areas/:id', protect, async (req, res) => {
+  try {
+    memoryStore.focusAreas = memoryStore.focusAreas.filter((f) => f._id !== req.params.id);
+    return res.json({ message: 'Focus area deleted' });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 // --- MESSAGES INBOX ---
 router.get('/messages', protect, async (req, res) => {
   if (!isDbConnected) return res.json(memoryStore.messages);
@@ -243,3 +281,4 @@ router.delete('/messages/:id', protect, async (req, res) => {
 });
 
 export default router;
+
