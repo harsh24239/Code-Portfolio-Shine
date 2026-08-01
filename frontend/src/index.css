@@ -108,14 +108,12 @@ h4 { font-size: var(--text-xl); }
 }
 
 .hero-title-accent {
-  font-family: 'Fraunces', system-ui, serif !important;
-  font-optical-sizing: auto;
-  font-variation-settings: 'opsz' 144, 'wght' 800;
-  font-weight: 800;
+  font-family: 'IBM Plex Mono', monospace !important;
+  font-weight: 700 !important;
   color: rgb(194, 0, 0) !important;
   -webkit-text-fill-color: rgb(194, 0, 0) !important;
   margin: 0 !important;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   line-height: 0.95;
   display: block;
 }
