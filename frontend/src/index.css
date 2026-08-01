@@ -79,9 +79,8 @@ h3 { font-size: var(--text-2xl); }
   font-family: 'IBM Plex Mono', monospace;
   font-weight: 700;
   color: var(--text-display-accent);
-  margin-top: 0.2rem;
-  margin-bottom: 3.5rem;
-  letter-spacing: 0.06em;
+  margin: 0 !important;
+  letter-spacing: 0.04em;
   line-height: 0.95;
 }
 
