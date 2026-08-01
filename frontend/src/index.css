@@ -13,7 +13,7 @@
   --link-on-strong: #F5F5F5;
   --link-hover-on-strong: #bfbfbf;
   --primary: #d40000;
-  --border: #8c8080;
+  --border: #3d1414;
   --text-on-accent: #1a1a1a;
   --text-display-accent: #c20000;
   --surface-strong: #ff6060;
@@ -555,7 +555,7 @@ nav {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1px;
-  background-color: var(--bg);
+  background-color: var(--border);
 }
 
 .project-card {
@@ -565,6 +565,7 @@ nav {
   display: flex;
   flex-direction: column;
   transition: background-color var(--duration-base) ease;
+  border: none;
 }
 
 .project-card:hover {
