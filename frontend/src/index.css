@@ -61,8 +61,8 @@ body, p, span, a, button, li, blockquote, figcaption, label, input, textarea, se
 h1, h2 {
   font-family: 'Fraunces', system-ui, serif !important;
   font-optical-sizing: auto;
-  font-variation-settings: 'opsz' 144, 'wght' 800;
-  font-weight: 800;
+  font-variation-settings: 'opsz' 48, 'wght' 900;
+  font-weight: 900;
 }
 
 body {
@@ -96,8 +96,8 @@ h4 { font-size: var(--text-xl); }
 .hero-title-main {
   font-family: 'Fraunces', system-ui, serif !important;
   font-optical-sizing: auto;
-  font-variation-settings: 'opsz' 144, 'wght' 800;
-  font-weight: 800;
+  font-variation-settings: 'opsz' 48, 'wght' 900;
+  font-weight: 900;
   line-height: 0.95;
   letter-spacing: 0.04em;
   margin-bottom: 1.5rem;
@@ -110,8 +110,8 @@ h4 { font-size: var(--text-xl); }
 .hero-title-accent {
   font-family: 'Fraunces', system-ui, serif !important;
   font-optical-sizing: auto;
-  font-variation-settings: 'opsz' 144, 'wght' 800;
-  font-weight: 800;
+  font-variation-settings: 'opsz' 48, 'wght' 900;
+  font-weight: 900;
   color: rgb(194, 0, 0) !important;
   -webkit-text-fill-color: rgb(194, 0, 0) !important;
   margin: 0 0 0.4em 0 !important;
@@ -123,8 +123,8 @@ h4 { font-size: var(--text-xl); }
 .hero-title-nowrap {
   font-family: 'Fraunces', system-ui, serif !important;
   font-optical-sizing: auto;
-  font-variation-settings: 'opsz' 144, 'wght' 800;
-  font-weight: 800;
+  font-variation-settings: 'opsz' 48, 'wght' 900;
+  font-weight: 900;
   white-space: nowrap;
   word-break: keep-all;
   overflow-wrap: normal;
