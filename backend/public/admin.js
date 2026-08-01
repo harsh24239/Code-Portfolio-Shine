@@ -195,6 +195,7 @@ async function loadProfile() {
       document.getElementById('prof-email').value = p.email || '';
       document.getElementById('prof-pgpKey').value = p.pgpKey || '';
       document.getElementById('prof-linkedin').value = p.linkedin || '';
+      document.getElementById('prof-leetcode').value = p.leetcode || '';
       document.getElementById('prof-twitter').value = p.twitter || '';
     }
   } catch (err) {
@@ -221,6 +222,7 @@ async function handleSaveProfile(e) {
     email: document.getElementById('prof-email').value,
     pgpKey: document.getElementById('prof-pgpKey').value,
     linkedin: document.getElementById('prof-linkedin').value,
+    leetcode: document.getElementById('prof-leetcode').value,
     twitter: document.getElementById('prof-twitter').value,
   };
 

@@ -13,6 +13,7 @@ export const memoryStore = {
     email: 'kumarharsh1851@gmail.com',
     pgpKey: 'github.com/harsh24239',
     linkedin: '',
+    leetcode: '',
     twitter: '',
   },
   projects: [

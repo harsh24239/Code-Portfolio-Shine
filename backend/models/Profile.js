@@ -23,6 +23,7 @@ const profileSchema = new mongoose.Schema(
     email: { type: String, default: 'kumarharsh1851@gmail.com' },
     pgpKey: { type: String, default: 'github.com/harsh24239' },
     linkedin: { type: String, default: '' },
+    leetcode: { type: String, default: '' },
     twitter: { type: String, default: '' },
   },
   { timestamps: true }
