@@ -452,19 +452,23 @@ nav {
 .skills-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  background-color: var(--border);
+  gap: 1.25rem;
+  background-color: transparent;
 }
 
 .skill-item {
   background-color: var(--surface);
+  border: 1px solid var(--border);
   padding: 2rem 1.5rem;
   position: relative;
   overflow: hidden;
-  transition: background-color var(--duration-base) ease;
+  transition: background-color var(--duration-base) ease, border-color var(--duration-base) ease;
 }
 
-.skill-item:hover { background-color: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.skill-item:hover {
+  background-color: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  border-color: var(--accent);
+}
 
 .skill-icon { width: 36px; height: 36px; margin-bottom: 1rem; color: var(--accent); }
 
