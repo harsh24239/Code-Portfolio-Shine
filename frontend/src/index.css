@@ -106,8 +106,8 @@ h4 { font-size: var(--text-xl); }
 .hero-title-code {
   font-family: 'Fraunces', system-ui, serif !important;
   font-optical-sizing: auto;
-  font-variation-settings: 'opsz' 144, 'wght' 800;
-  font-weight: 800;
+  font-variation-settings: 'opsz' 48, 'wght' 900;
+  font-weight: 900;
   color: #f7e8e8 !important;
   -webkit-text-fill-color: #f7e8e8 !important;
   line-height: 0.95;
@@ -130,8 +130,8 @@ h4 { font-size: var(--text-xl); }
 .hero-title-nowrap {
   font-family: 'Fraunces', system-ui, serif !important;
   font-optical-sizing: auto;
-  font-variation-settings: 'opsz' 144, 'wght' 800;
-  font-weight: 800;
+  font-variation-settings: 'opsz' 48, 'wght' 900;
+  font-weight: 900;
   color: #f7e8e8 !important;
   -webkit-text-fill-color: #f7e8e8 !important;
   white-space: nowrap;
