@@ -10,17 +10,23 @@ export const sendContactEmailNotification = async ({ name, email, subject, messa
     return false;
   }
 
+  const cleanUser = emailUser.trim();
+  const cleanPass = emailPass.trim().replace(/\s+/g, '');
+
   try {
     const transporter = nodemailer.createTransport({
-      service: process.env.EMAIL_SERVICE || 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
       auth: {
-        user: emailUser,
-        pass: emailPass,
+        user: cleanUser,
+        pass: cleanPass,
       },
+      connectionTimeout: 10000,
     });
 
     const mailOptions = {
-      from: `"Portfolio Contact System" <${emailUser}>`,
+      from: `"Portfolio Contact System" <${cleanUser}>`,
       to: targetEmail,
       replyTo: email,
       subject: `📥 New Transmission: ${subject || 'Portfolio Contact'}`,
@@ -44,7 +50,7 @@ export const sendContactEmailNotification = async ({ name, email, subject, messa
     console.log(`✓ Email notification sent successfully to ${targetEmail}`);
     return true;
   } catch (error) {
-    console.warn(`⚠ Failed to send email notification: ${error.message}`);
+    console.warn(`⚠ Failed to send email notification (${cleanUser}): ${error.message}`);
     return false;
   }
 };
@@ -59,20 +65,23 @@ export const sendPasswordResetOTP = async ({ otpCode, actionName = 'Security Ver
     return false;
   }
 
+  const cleanUser = emailUser.trim();
+  const cleanPass = emailPass.trim().replace(/\s+/g, '');
+
   try {
     const transporter = nodemailer.createTransport({
-      service: process.env.EMAIL_SERVICE || 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
       auth: {
-        user: emailUser,
-        pass: emailPass,
+        user: cleanUser,
+        pass: cleanPass,
       },
-      connectionTimeout: 5000,
-      greetingTimeout: 5000,
-      socketTimeout: 5000,
+      connectionTimeout: 10000,
     });
 
     const mailOptions = {
-      from: `"Shadow HQ Security" <${emailUser}>`,
+      from: `"Shadow HQ Security" <${cleanUser}>`,
       to: targetEmail,
       subject: `🔒 Admin Security OTP (${actionName}): ${otpCode}`,
       html: `
@@ -94,7 +103,7 @@ export const sendPasswordResetOTP = async ({ otpCode, actionName = 'Security Ver
     console.log(`✓ OTP Email (${actionName}) sent to ${targetEmail}`);
     return true;
   } catch (error) {
-    console.warn(`⚠ Failed to send OTP email: ${error.message}`);
+    console.warn(`⚠ Failed to send OTP email (${cleanUser}): ${error.message}`);
     return false;
   }
 };
