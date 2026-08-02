@@ -109,10 +109,13 @@ router.post('/request-security-otp', async (req, res) => {
       expiresAt: Date.now() + 10 * 60 * 1000, // 10 mins
     };
 
-    const emailSent = await sendPasswordResetOTP({ otpCode, actionName });
+    // Dispatch email asynchronously without freezing UI
+    sendPasswordResetOTP({ otpCode, actionName }).catch((err) => {
+      console.warn('OTP Email send note:', err.message);
+    });
+
     return res.json({
       message: 'Verification OTP sent to your registered email (kumarharsh1851@gmail.com).',
-      emailSent,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -205,10 +208,13 @@ router.post('/request-password-reset', async (req, res) => {
       expiresAt: Date.now() + 10 * 60 * 1000, // 10 mins
     };
 
-    const emailSent = await sendPasswordResetOTP({ otpCode, actionName: 'Password Reset' });
+    // Dispatch email asynchronously without freezing UI
+    sendPasswordResetOTP({ otpCode, actionName: 'Password Reset' }).catch((err) => {
+      console.warn('OTP Email send note:', err.message);
+    });
+
     return res.json({
       message: 'Verification OTP sent to your registered email (kumarharsh1851@gmail.com).',
-      emailSent,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

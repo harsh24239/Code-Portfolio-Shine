@@ -66,6 +66,9 @@ export const sendPasswordResetOTP = async ({ otpCode, actionName = 'Security Ver
         user: emailUser,
         pass: emailPass,
       },
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 5000,
     });
 
     const mailOptions = {
