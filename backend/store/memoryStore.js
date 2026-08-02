@@ -57,12 +57,12 @@ const defaultData = {
     },
   ],
   skills: [
-    { _id: '1', name: 'Languages & Core', desc: 'Python, Java, C/C++, JavaScript, TypeScript, SQL', pips: 5, iconType: 'frontend' },
-    { _id: '2', name: 'Frontend Mastery', desc: 'React.js, Vite, HTML5, CSS3, Vanilla CSS Design Systems', pips: 5, iconType: 'backend' },
-    { _id: '3', name: 'Backend Systems', desc: 'Node.js, Express.js, FastAPI, Java Swing & JDBC', pips: 5, iconType: 'database' },
-    { _id: '4', name: 'Databases & Storage', desc: 'MySQL (DBMS), ChromaDB (Vector DB), MongoDB, SQLite', pips: 5, iconType: 'devops' },
-    { _id: '5', name: 'AI & Agentic Workflows', desc: 'LangGraph, RAG Vector Retrieval, Gemini API, Multi-Agent Workflows', pips: 5, iconType: 'security' },
-    { _id: '6', name: 'CS Core & Security', desc: 'DSA (500+ Solved), BCrypt, JWT, RBAC Auth, JUnit Testing, Git/Linux', pips: 5, iconType: 'ai' },
+    { _id: '1', name: 'Languages & Core', desc: 'Python, Java, C/C++, JavaScript, SQL', pips: 5, iconType: 'frontend' },
+    { _id: '2', name: 'Frontend Development', desc: 'React.js, Vite, HTML5, CSS3, Responsive Design Systems', pips: 5, iconType: 'backend' },
+    { _id: '3', name: 'Backend & APIs', desc: 'Node.js, Express.js, FastAPI, RESTful APIs, Java JDBC', pips: 5, iconType: 'database' },
+    { _id: '4', name: 'Databases & Storage', desc: 'MySQL (DBMS), ChromaDB (Vector DB), SQLite, Normalized Schemas', pips: 5, iconType: 'devops' },
+    { _id: '5', name: 'AI & Agentic Workflows', desc: 'LangGraph, RAG Vector Retrieval, Gemini API, Multi-Agent Pipelines', pips: 5, iconType: 'security' },
+    { _id: '6', name: 'CS Core & Security', desc: 'DSA (500+ Solved), OOP, BCrypt, JWT, RBAC Auth, JUnit Testing, Git/Linux', pips: 5, iconType: 'ai' },
   ],
   focusAreas: [
     { _id: '1', tag: 'DOMAIN 01', title: 'Web Application Development', desc: 'Designing and building scalable, responsive web apps using React, Node.js, Express, and modern database architectures.' },
