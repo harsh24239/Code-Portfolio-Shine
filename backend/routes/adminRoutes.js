@@ -122,16 +122,16 @@ router.post('/request-security-otp', async (req, res) => {
   }
 });
 
-// PUT /api/admin/change-username (Requires currentPassword + OTP)
+// PUT /api/admin/change-username (Requires currentPassword verification)
 router.put('/change-username', protect, async (req, res) => {
   const { currentPassword, newUsername, otpCode } = req.body;
 
   if (!currentPassword || !newUsername || newUsername.trim().length < 3) {
-    return res.status(400).json({ message: 'Username must be at least 3 characters.' });
+    return res.status(400).json({ message: 'Current password and new username (min 3 chars) required.' });
   }
 
-  if (!otpCode || !activeOtpStore.code || Date.now() > activeOtpStore.expiresAt || activeOtpStore.code !== otpCode.trim()) {
-    return res.status(400).json({ message: 'Invalid or expired 6-digit OTP code. Click "Send OTP" to receive a new code.' });
+  if (otpCode && activeOtpStore.code && Date.now() <= activeOtpStore.expiresAt && activeOtpStore.code !== otpCode.trim()) {
+    return res.status(400).json({ message: 'Invalid or expired 6-digit OTP code.' });
   }
 
   try {
@@ -160,16 +160,16 @@ router.put('/change-username', protect, async (req, res) => {
   }
 });
 
-// PUT /api/admin/change-password (Requires currentPassword + OTP)
+// PUT /api/admin/change-password (Requires currentPassword verification)
 router.put('/change-password', protect, async (req, res) => {
   const { currentPassword, newPassword, otpCode } = req.body;
 
   if (!currentPassword || !newPassword || newPassword.length < 6) {
-    return res.status(400).json({ message: 'New password must be at least 6 characters.' });
+    return res.status(400).json({ message: 'Current password and new password (min 6 chars) required.' });
   }
 
-  if (!otpCode || !activeOtpStore.code || Date.now() > activeOtpStore.expiresAt || activeOtpStore.code !== otpCode.trim()) {
-    return res.status(400).json({ message: 'Invalid or expired 6-digit OTP code. Click "Send OTP" to receive a new code.' });
+  if (otpCode && activeOtpStore.code && Date.now() <= activeOtpStore.expiresAt && activeOtpStore.code !== otpCode.trim()) {
+    return res.status(400).json({ message: 'Invalid or expired 6-digit OTP code.' });
   }
 
   try {
