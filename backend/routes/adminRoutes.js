@@ -111,9 +111,8 @@ router.post('/request-security-otp', async (req, res) => {
 
     const emailSent = await sendPasswordResetOTP({ otpCode, actionName });
     return res.json({
-      message: emailSent
-        ? `Verification OTP sent to registered email (kumarharsh1851@gmail.com).`
-        : `OTP Code [ ${otpCode} ] generated (check email settings).`,
+      message: 'Verification OTP sent to your registered email (kumarharsh1851@gmail.com).',
+      emailSent,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -208,9 +207,8 @@ router.post('/request-password-reset', async (req, res) => {
 
     const emailSent = await sendPasswordResetOTP({ otpCode, actionName: 'Password Reset' });
     return res.json({
-      message: emailSent
-        ? 'Verification OTP sent to your registered email (kumarharsh1851@gmail.com).'
-        : `OTP Code [ ${otpCode} ] generated (check email settings).`,
+      message: 'Verification OTP sent to your registered email (kumarharsh1851@gmail.com).',
+      emailSent,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
