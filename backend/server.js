@@ -102,16 +102,36 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Shadow Portfolio Backend Operational' });
 });
 
-// Seed Initial Data
+// Seed Initial Data to MongoDB Atlas
 const seedInitialData = async () => {
   try {
+    if (!isDbConnected) return;
+
     const adminCount = await Admin.countDocuments();
     if (adminCount === 0) {
       await Admin.create({
         username: process.env.ADMIN_USERNAME || 'admin',
         password: process.env.ADMIN_PASSWORD || 'admin123',
       });
-      console.log('✓ Default Admin created (Username: admin | Password: admin123)');
+      console.log('✓ Default Admin created in MongoDB Atlas');
+    }
+
+    const profileCount = await Profile.countDocuments();
+    if (profileCount === 0 && memoryStore.profile) {
+      await Profile.create(memoryStore.profile);
+      console.log('✓ Profile seeded to MongoDB Atlas');
+    }
+
+    const projectCount = await Project.countDocuments();
+    if (projectCount === 0 && memoryStore.projects && memoryStore.projects.length > 0) {
+      await Project.insertMany(memoryStore.projects);
+      console.log('✓ Projects seeded to MongoDB Atlas');
+    }
+
+    const skillCount = await Skill.countDocuments();
+    if (skillCount === 0 && memoryStore.skills && memoryStore.skills.length > 0) {
+      await Skill.insertMany(memoryStore.skills);
+      console.log('✓ Skills seeded to MongoDB Atlas');
     }
   } catch (error) {
     console.warn('⚠ Database seeding note:', error.message);
