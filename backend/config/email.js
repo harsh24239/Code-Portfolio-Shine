@@ -35,7 +35,7 @@ const createTransporter = (cleanUser, cleanPass) => {
 export const sendContactEmailNotification = async ({ name, email, subject, message }) => {
   const emailUser = process.env.EMAIL_USER;
   const emailPass = process.env.EMAIL_PASS;
-  const targetEmail = process.env.NOTIFY_EMAIL || 'kumarharsh1851@gmail.com';
+  const targetEmail = process.env.NOTIFY_EMAIL || process.env.EMAIL_USER;
 
   if (!emailUser || !emailPass) {
     console.log(`ℹ Email notification skipped (EMAIL_USER / EMAIL_PASS env vars not set). Message logged to Admin Inbox.`);
@@ -81,7 +81,7 @@ export const sendContactEmailNotification = async ({ name, email, subject, messa
 export const sendPasswordResetOTP = async ({ otpCode, actionName = 'Security Verification' }) => {
   const emailUser = process.env.EMAIL_USER;
   const emailPass = process.env.EMAIL_PASS;
-  const targetEmail = process.env.NOTIFY_EMAIL || 'kumarharsh1851@gmail.com';
+  const targetEmail = process.env.NOTIFY_EMAIL || process.env.EMAIL_USER;
 
   if (!emailUser || !emailPass) {
     console.log(`ℹ ${actionName} OTP [ ${otpCode} ] generated for Admin verification.`);
