@@ -4,6 +4,10 @@ import path from 'path';
 const DATA_FILE = path.join(process.cwd(), 'backend', 'store', 'user_data.json');
 
 const defaultData = {
+  adminCredentials: {
+    username: process.env.ADMIN_USERNAME || 'admin',
+    passwordHash: null,
+  },
   profile: {
     eyebrow: 'WEB DEVELOPER & AI BUILDER',
     title1: 'CODE',
@@ -81,6 +85,10 @@ const loadInitialData = () => {
       const loaded = JSON.parse(raw);
       console.log('✓ Persistent user data loaded successfully from user_data.json');
       return {
+        adminCredentials: loaded.adminCredentials || {
+          username: process.env.ADMIN_USERNAME || 'admin',
+          passwordHash: null,
+        },
         profile: { ...defaultData.profile, ...(loaded.profile || {}) },
         projects: loaded.projects && loaded.projects.length > 0 ? loaded.projects : defaultData.projects,
         skills: (loaded.skills && loaded.skills.length > 0 && loaded.skills[0].pips !== undefined) ? loaded.skills : defaultData.skills,

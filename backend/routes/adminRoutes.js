@@ -20,13 +20,18 @@ let activeOtpStore = { code: null, expiresAt: 0 };
 let failedLoginCount = 0;
 let lockoutExpiryTime = 0;
 
+const getMemoryAdminUsername = () => {
+  return memoryStore.adminCredentials?.username || process.env.ADMIN_USERNAME || 'admin';
+};
+
 const getMemoryAdminPasswordHash = async () => {
-  if (!memoryAdminPasswordHash) {
+  if (!memoryStore.adminCredentials?.passwordHash) {
     const salt = await bcrypt.genSalt(10);
     const defaultPass = process.env.ADMIN_PASSWORD || 'admin123';
-    memoryAdminPasswordHash = await bcrypt.hash(defaultPass, salt);
+    memoryStore.adminCredentials.passwordHash = await bcrypt.hash(defaultPass, salt);
+    persistMemoryStore();
   }
-  return memoryAdminPasswordHash;
+  return memoryStore.adminCredentials.passwordHash;
 };
 
 const generateToken = (id) => {
@@ -35,29 +40,29 @@ const generateToken = (id) => {
   });
 };
 
-// POST /api/admin/login (With 24-Hour Lockout after 3 Failed Attempts)
+// POST /api/admin/login (With 15-Minute Lockout after 5 Failed Attempts)
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
-  // Check 24-hour Lockout
+  // Check 15-minute Lockout
   if (Date.now() < lockoutExpiryTime) {
     const msRemaining = lockoutExpiryTime - Date.now();
-    const hoursLeft = Math.floor(msRemaining / (1000 * 60 * 60));
-    const minsLeft = Math.ceil((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
+    const minsLeft = Math.ceil(msRemaining / (1000 * 60));
     return res.status(429).json({
-      message: `SECURITY LOCKOUT ACTIVE: 3 failed password attempts reached. Account locked for 24 hours. Try again in ${hoursLeft}h ${minsLeft}m.`,
+      message: `SECURITY LOCKOUT ACTIVE: 5 failed password attempts reached. Account locked. Try again in ${minsLeft} minutes.`,
     });
   }
 
   try {
     let isValid = false;
     let authUserId = 'mem_admin_1';
-    let authUsername = memoryAdminUsername;
+    let currentMemUser = getMemoryAdminUsername();
+    let authUsername = currentMemUser;
 
     if (!isDbConnected) {
       const hash = await getMemoryAdminPasswordHash();
       const isMatch = await bcrypt.compare(password, hash);
-      if (username === memoryAdminUsername && isMatch) {
+      if (username === currentMemUser && isMatch) {
         isValid = true;
       }
     } else {
@@ -81,7 +86,7 @@ router.post('/login', async (req, res) => {
       if (failedLoginCount >= 5) {
         lockoutExpiryTime = Date.now() + 15 * 60 * 1000; // 15 Minutes Lockout
         return res.status(429).json({
-          message: 'SECURITY ALERT: 5 consecutive failed password attempts. Account is locked for 15 minutes. Use "FORGOT PASSWORD" to reset instantly.',
+          message: 'SECURITY ALERT: 5 consecutive failed password attempts. Account is locked for 15 minutes.',
         });
       }
       const attemptsLeft = 5 - failedLoginCount;
@@ -108,24 +113,31 @@ router.put('/change-username', protect, async (req, res) => {
   }
 
   try {
+    const hash = await getMemoryAdminPasswordHash();
+    let isMatch = false;
+
     if (!isDbConnected) {
-      const hash = await getMemoryAdminPasswordHash();
-      const isMatch = await bcrypt.compare(currentPassword, hash);
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Current password incorrect.' });
+      isMatch = await bcrypt.compare(currentPassword, hash);
+    } else {
+      const admin = await Admin.findOne();
+      if (admin) {
+        isMatch = await admin.matchPassword(currentPassword);
+        if (isMatch) {
+          admin.username = newUsername.trim();
+          await admin.save();
+        }
       }
-      memoryAdminUsername = newUsername.trim();
-      return res.json({ message: 'Username updated successfully!', username: memoryAdminUsername });
     }
 
-    const admin = await Admin.findOne();
-    if (admin && (await admin.matchPassword(currentPassword))) {
-      admin.username = newUsername.trim();
-      await admin.save();
-      return res.json({ message: 'Username updated successfully!', username: admin.username });
-    } else {
+    if (!isMatch) {
       return res.status(400).json({ message: 'Current password incorrect.' });
     }
+
+    // Always persist to memoryStore & user_data.json
+    memoryStore.adminCredentials.username = newUsername.trim();
+    persistMemoryStore();
+
+    return res.json({ message: 'Username updated successfully!', username: newUsername.trim() });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -140,25 +152,33 @@ router.put('/change-password', protect, async (req, res) => {
   }
 
   try {
+    const hash = await getMemoryAdminPasswordHash();
+    let isMatch = false;
+
     if (!isDbConnected) {
-      const hash = await getMemoryAdminPasswordHash();
-      const isMatch = await bcrypt.compare(currentPassword, hash);
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Current password incorrect.' });
+      isMatch = await bcrypt.compare(currentPassword, hash);
+    } else {
+      const admin = await Admin.findOne();
+      if (admin) {
+        isMatch = await admin.matchPassword(currentPassword);
+        if (isMatch) {
+          admin.password = newPassword;
+          await admin.save();
+        }
       }
-      const salt = await bcrypt.genSalt(10);
-      memoryAdminPasswordHash = await bcrypt.hash(newPassword, salt);
-      return res.json({ message: 'Password updated successfully!' });
     }
 
-    const admin = await Admin.findOne();
-    if (admin && (await admin.matchPassword(currentPassword))) {
-      admin.password = newPassword;
-      await admin.save();
-      return res.json({ message: 'Password updated successfully!' });
-    } else {
+    if (!isMatch) {
       return res.status(400).json({ message: 'Current password incorrect.' });
     }
+
+    // Hash and persist to memoryStore & user_data.json
+    const salt = await bcrypt.genSalt(10);
+    const newHash = await bcrypt.hash(newPassword, salt);
+    memoryStore.adminCredentials.passwordHash = newHash;
+    persistMemoryStore();
+
+    return res.json({ message: 'Password updated successfully!' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
