@@ -78,15 +78,15 @@ router.post('/login', async (req, res) => {
       });
     } else {
       failedLoginCount += 1;
-      if (failedLoginCount >= 3) {
-        lockoutExpiryTime = Date.now() + 24 * 60 * 60 * 1000; // 24 Hours Lockout
+      if (failedLoginCount >= 5) {
+        lockoutExpiryTime = Date.now() + 15 * 60 * 1000; // 15 Minutes Lockout
         return res.status(429).json({
-          message: 'SECURITY ALERT: 3 consecutive failed password attempts. Account is now LOCKED for 24 hours.',
+          message: 'SECURITY ALERT: 5 consecutive failed password attempts. Account is locked for 15 minutes. Use "FORGOT PASSWORD" to reset instantly.',
         });
       }
-      const attemptsLeft = 3 - failedLoginCount;
+      const attemptsLeft = 5 - failedLoginCount;
       return res.status(401).json({
-        message: `Invalid username or password. Warning: ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} remaining before 24-hour lockout.`,
+        message: `Invalid username or password. Warning: ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} remaining before 15-minute lockout.`,
       });
     }
   } catch (error) {
@@ -251,6 +251,8 @@ router.post('/verify-reset-code', async (req, res) => {
     }
 
     activeOtpStore = { code: null, expiresAt: 0 };
+    failedLoginCount = 0;
+    lockoutExpiryTime = 0;
     res.json({ message: 'Password reset successfully! You can now log in.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
