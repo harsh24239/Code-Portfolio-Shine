@@ -28,9 +28,6 @@
         </div>
         <div id="login-error" class="error-text"></div>
         <button type="submit" class="btn-primary">ACCESS HQ →</button>
-        <div style="margin-top: 1rem; text-align: center;">
-          <button type="button" id="btn-forgot-pass" class="btn-ghost-sm" style="font-size: 0.75rem;">FORGOT PASSWORD? (RESET VIA EMAIL OTP)</button>
-        </div>
       </form>
     </div>
   </div>
@@ -222,13 +219,6 @@
           <label>NEW USERNAME (MIN 3 CHARS)</label>
           <input type="text" id="user-new-name" required placeholder="admin">
         </div>
-        <div class="form-group">
-          <label>EMAIL OTP VERIFICATION CODE (OPTIONAL)</label>
-          <div style="display: flex; gap: 0.5rem;">
-            <input type="text" id="user-otp-code" placeholder="123456" maxlength="6" style="flex: 1;">
-            <button type="button" id="btn-send-user-otp" class="btn-ghost-sm" style="white-space: nowrap;">SEND OTP TO EMAIL</button>
-          </div>
-        </div>
         <div id="username-msg" class="error-text"></div>
         <div class="form-actions" style="margin-top: 1.5rem;">
           <button type="submit" class="btn-primary">UPDATE USERNAME</button>
@@ -253,40 +243,9 @@
           <label>NEW PASSWORD (MIN 6 CHARS)</label>
           <input type="password" id="pass-new" required placeholder="••••••••">
         </div>
-        <div class="form-group">
-          <label>EMAIL OTP VERIFICATION CODE (OPTIONAL)</label>
-          <div style="display: flex; gap: 0.5rem;">
-            <input type="text" id="pass-otp-code" placeholder="123456" maxlength="6" style="flex: 1;">
-            <button type="button" id="btn-send-pass-otp" class="btn-ghost-sm" style="white-space: nowrap;">SEND OTP TO EMAIL</button>
-          </div>
-        </div>
         <div id="pass-msg" class="error-text"></div>
         <div class="form-actions" style="margin-top: 1.5rem;">
           <button type="submit" class="btn-primary">UPDATE PASSWORD</button>
-          <button type="button" class="btn-ghost modal-close">CANCEL</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- EMAIL OTP PASSWORD RESET MODAL -->
-  <div id="otp-modal" class="modal-overlay hidden">
-    <div class="modal-card">
-      <div class="brand-badge">EMAIL VERIFICATION HARDENING</div>
-      <h3>VERIFY OTP &amp; RESET PASSWORD</h3>
-      <p id="otp-sub-text" class="modal-sub">Enter the 6-digit OTP code sent to your email (kumarharsh1851@gmail.com).</p>
-      <form id="otp-form">
-        <div class="form-group">
-          <label>6-DIGIT OTP VERIFICATION CODE</label>
-          <input type="text" id="otp-code" required placeholder="123456" maxlength="6">
-        </div>
-        <div class="form-group">
-          <label>NEW PASSWORD (MIN 6 CHARS)</label>
-          <input type="password" id="otp-new-pass" required placeholder="••••••••">
-        </div>
-        <div id="otp-msg" class="error-text"></div>
-        <div class="form-actions" style="margin-top: 1.5rem;">
-          <button type="submit" class="btn-primary">RESET PASSWORD NOW →</button>
           <button type="button" class="btn-ghost modal-close">CANCEL</button>
         </div>
       </form>

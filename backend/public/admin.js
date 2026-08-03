@@ -37,27 +37,20 @@ function setupEventListeners() {
   btnChangeUsernameTrigger?.addEventListener('click', () => {
     document.getElementById('user-current-pass').value = '';
     document.getElementById('user-new-name').value = '';
-    document.getElementById('user-otp-code').value = '';
     document.getElementById('username-msg').textContent = '';
     document.getElementById('username-modal').classList.remove('hidden');
   });
 
-  document.getElementById('btn-send-user-otp')?.addEventListener('click', () => requestSecurityOTP('Username Change', 'username-msg'));
   document.getElementById('username-form')?.addEventListener('submit', handleChangeUsername);
 
   btnChangePassTrigger?.addEventListener('click', () => {
     document.getElementById('pass-current').value = '';
     document.getElementById('pass-new').value = '';
-    document.getElementById('pass-otp-code').value = '';
     document.getElementById('pass-msg').textContent = '';
     document.getElementById('password-modal').classList.remove('hidden');
   });
 
-  document.getElementById('btn-send-pass-otp')?.addEventListener('click', () => requestSecurityOTP('Password Change', 'pass-msg'));
   document.getElementById('password-form')?.addEventListener('submit', handleChangePassword);
-
-  btnForgotPass?.addEventListener('click', handleRequestOTP);
-  document.getElementById('otp-form')?.addEventListener('submit', handleVerifyOTP);
 
   tabBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -91,31 +84,6 @@ function setupEventListeners() {
       e.target.closest('.modal-overlay').classList.add('hidden');
     });
   });
-}
-
-async function requestSecurityOTP(actionName, msgElementId) {
-  const msgEl = document.getElementById(msgElementId);
-  msgEl.className = 'success-text';
-  msgEl.textContent = `Sending 6-digit OTP to your registered email...`;
-
-  try {
-    const res = await fetch(`${API_BASE}/admin/request-security-otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ actionName }),
-    });
-
-    const data = await res.json();
-    if (res.ok) {
-      msgEl.textContent = `✓ ${data.message}`;
-    } else {
-      msgEl.className = 'error-text';
-      msgEl.textContent = data.message || 'Failed to send OTP code.';
-    }
-  } catch {
-    msgEl.className = 'error-text';
-    msgEl.textContent = 'Server connection error.';
-  }
 }
 
 // --- AUTHENTICATION ---
@@ -157,7 +125,6 @@ async function handleChangeUsername(e) {
   e.preventDefault();
   const currentPassword = document.getElementById('user-current-pass').value;
   const newUsername = document.getElementById('user-new-name').value;
-  const otpCode = document.getElementById('user-otp-code').value;
   const msgEl = document.getElementById('username-msg');
 
   msgEl.className = 'error-text';
@@ -170,7 +137,7 @@ async function handleChangeUsername(e) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${authToken}`,
       },
-      body: JSON.stringify({ currentPassword, newUsername, otpCode }),
+      body: JSON.stringify({ currentPassword, newUsername }),
     });
 
     const data = await res.json();
@@ -191,67 +158,10 @@ async function handleChangeUsername(e) {
   }
 }
 
-async function handleRequestOTP() {
-  const loginErr = document.getElementById('login-error');
-  loginErr.className = 'success-text';
-  loginErr.textContent = 'Sending 6-digit OTP verification code to registered email...';
-
-  try {
-    const res = await fetch(`${API_BASE}/admin/request-password-reset`, { method: 'POST' });
-    const data = await res.json();
-
-    if (res.ok) {
-      document.getElementById('otp-code').value = '';
-      document.getElementById('otp-new-pass').value = '';
-      document.getElementById('otp-msg').textContent = data.message || '';
-      document.getElementById('otp-modal').classList.remove('hidden');
-      loginErr.textContent = '';
-    } else {
-      loginErr.className = 'error-text';
-      loginErr.textContent = data.message || 'Failed to send OTP code.';
-    }
-  } catch {
-    loginErr.className = 'error-text';
-    loginErr.textContent = 'Server connection failed.';
-  }
-}
-
-async function handleVerifyOTP(e) {
-  e.preventDefault();
-  const otpCode = document.getElementById('otp-code').value;
-  const newPassword = document.getElementById('otp-new-pass').value;
-  const msgEl = document.getElementById('otp-msg');
-
-  msgEl.className = 'error-text';
-  msgEl.textContent = 'Verifying code...';
-
-  try {
-    const res = await fetch(`${API_BASE}/admin/verify-reset-code`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ otpCode, newPassword }),
-    });
-
-    const data = await res.json();
-    if (res.ok) {
-      msgEl.className = 'success-text';
-      msgEl.textContent = '✓ Password reset successfully! Please log in now.';
-      setTimeout(() => {
-        document.getElementById('otp-modal').classList.add('hidden');
-      }, 2000);
-    } else {
-      msgEl.textContent = data.message || 'Invalid or expired OTP code.';
-    }
-  } catch {
-    msgEl.textContent = 'Server connection error.';
-  }
-}
-
 async function handleChangePassword(e) {
   e.preventDefault();
   const currentPassword = document.getElementById('pass-current').value;
   const newPassword = document.getElementById('pass-new').value;
-  const otpCode = document.getElementById('pass-otp-code').value;
   const msgEl = document.getElementById('pass-msg');
 
   msgEl.className = 'error-text';
@@ -264,7 +174,7 @@ async function handleChangePassword(e) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${authToken}`,
       },
-      body: JSON.stringify({ currentPassword, newPassword, otpCode }),
+      body: JSON.stringify({ currentPassword, newPassword }),
     });
 
     const data = await res.json();

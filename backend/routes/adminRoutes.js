@@ -99,39 +99,12 @@ router.get('/me', protect, async (req, res) => {
   res.json({ status: 'authenticated', user: req.user });
 });
 
-// POST /api/admin/request-security-otp (Send 6-digit OTP email for any action)
-router.post('/request-security-otp', async (req, res) => {
-  const { actionName = 'Security Verification' } = req.body || {};
-  try {
-    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
-    activeOtpStore = {
-      code: otpCode,
-      expiresAt: Date.now() + 10 * 60 * 1000, // 10 mins
-    };
-
-    // Dispatch email asynchronously without freezing UI
-    sendPasswordResetOTP({ otpCode, actionName }).catch((err) => {
-      console.warn('OTP Email send note:', err.message);
-    });
-
-    return res.json({
-      message: 'Verification OTP sent to your registered email (kumarharsh1851@gmail.com).',
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
 // PUT /api/admin/change-username (Requires currentPassword verification)
 router.put('/change-username', protect, async (req, res) => {
-  const { currentPassword, newUsername, otpCode } = req.body;
+  const { currentPassword, newUsername } = req.body;
 
   if (!currentPassword || !newUsername || newUsername.trim().length < 3) {
     return res.status(400).json({ message: 'Current password and new username (min 3 chars) required.' });
-  }
-
-  if (otpCode && activeOtpStore.code && Date.now() <= activeOtpStore.expiresAt && activeOtpStore.code !== otpCode.trim()) {
-    return res.status(400).json({ message: 'Invalid or expired 6-digit OTP code.' });
   }
 
   try {
@@ -142,7 +115,6 @@ router.put('/change-username', protect, async (req, res) => {
         return res.status(400).json({ message: 'Current password incorrect.' });
       }
       memoryAdminUsername = newUsername.trim();
-      activeOtpStore = { code: null, expiresAt: 0 };
       return res.json({ message: 'Username updated successfully!', username: memoryAdminUsername });
     }
 
@@ -150,7 +122,6 @@ router.put('/change-username', protect, async (req, res) => {
     if (admin && (await admin.matchPassword(currentPassword))) {
       admin.username = newUsername.trim();
       await admin.save();
-      activeOtpStore = { code: null, expiresAt: 0 };
       return res.json({ message: 'Username updated successfully!', username: admin.username });
     } else {
       return res.status(400).json({ message: 'Current password incorrect.' });
@@ -162,14 +133,10 @@ router.put('/change-username', protect, async (req, res) => {
 
 // PUT /api/admin/change-password (Requires currentPassword verification)
 router.put('/change-password', protect, async (req, res) => {
-  const { currentPassword, newPassword, otpCode } = req.body;
+  const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword || newPassword.length < 6) {
     return res.status(400).json({ message: 'Current password and new password (min 6 chars) required.' });
-  }
-
-  if (otpCode && activeOtpStore.code && Date.now() <= activeOtpStore.expiresAt && activeOtpStore.code !== otpCode.trim()) {
-    return res.status(400).json({ message: 'Invalid or expired 6-digit OTP code.' });
   }
 
   try {
@@ -181,7 +148,6 @@ router.put('/change-password', protect, async (req, res) => {
       }
       const salt = await bcrypt.genSalt(10);
       memoryAdminPasswordHash = await bcrypt.hash(newPassword, salt);
-      activeOtpStore = { code: null, expiresAt: 0 };
       return res.json({ message: 'Password updated successfully!' });
     }
 
@@ -189,70 +155,10 @@ router.put('/change-password', protect, async (req, res) => {
     if (admin && (await admin.matchPassword(currentPassword))) {
       admin.password = newPassword;
       await admin.save();
-      activeOtpStore = { code: null, expiresAt: 0 };
       return res.json({ message: 'Password updated successfully!' });
     } else {
       return res.status(400).json({ message: 'Current password incorrect.' });
     }
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// POST /api/admin/request-password-reset (Send 6-digit OTP email)
-router.post('/request-password-reset', async (req, res) => {
-  try {
-    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
-    activeOtpStore = {
-      code: otpCode,
-      expiresAt: Date.now() + 10 * 60 * 1000, // 10 mins
-    };
-
-    // Dispatch email asynchronously without freezing UI
-    sendPasswordResetOTP({ otpCode, actionName: 'Password Reset' }).catch((err) => {
-      console.warn('OTP Email send note:', err.message);
-    });
-
-    return res.json({
-      message: 'Verification OTP sent to your registered email (kumarharsh1851@gmail.com).',
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// POST /api/admin/verify-reset-code (Verify OTP & Reset Password)
-router.post('/verify-reset-code', async (req, res) => {
-  const { otpCode, newPassword } = req.body;
-
-  if (!otpCode || !newPassword || newPassword.length < 6) {
-    return res.status(400).json({ message: 'OTP code and new password (min 6 chars) required.' });
-  }
-
-  const cleanOtp = (otpCode || '').trim();
-  const isValidOtp = activeOtpStore.code && Date.now() <= activeOtpStore.expiresAt && activeOtpStore.code === cleanOtp;
-
-  if (!isValidOtp) {
-    return res.status(400).json({ message: 'Invalid or expired OTP verification code.' });
-  }
-
-  try {
-    const salt = await bcrypt.genSalt(10);
-    const newHash = await bcrypt.hash(newPassword, salt);
-    memoryAdminPasswordHash = newHash;
-
-    if (isDbConnected) {
-      const admin = await Admin.findOne();
-      if (admin) {
-        admin.password = newPassword;
-        await admin.save();
-      }
-    }
-
-    activeOtpStore = { code: null, expiresAt: 0 };
-    failedLoginCount = 0;
-    lockoutExpiryTime = 0;
-    res.json({ message: 'Password reset successfully! You can now log in.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
