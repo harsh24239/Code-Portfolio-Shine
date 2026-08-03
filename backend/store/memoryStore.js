@@ -99,6 +99,10 @@ export const memoryStore = loadInitialData();
 
 export const persistMemoryStore = () => {
   try {
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     fs.writeFileSync(DATA_FILE, JSON.stringify(memoryStore, null, 2), 'utf-8');
     console.log('✓ Persistent user data saved to user_data.json');
   } catch (err) {

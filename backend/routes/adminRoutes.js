@@ -194,13 +194,14 @@ router.get('/projects', protect, async (req, res) => {
 
 router.post('/projects', protect, async (req, res) => {
   try {
-    if (!isDbConnected) {
-      const newProj = { _id: String(Date.now()), ...req.body };
-      memoryStore.projects.unshift(newProj);
-      return res.status(201).json(newProj);
+    const newProj = { _id: String(Date.now()), ...req.body };
+    memoryStore.projects.unshift(newProj);
+    persistMemoryStore();
+
+    if (isDbConnected) {
+      await Project.create(req.body);
     }
-    const project = await Project.create(req.body);
-    res.status(201).json(project);
+    res.status(201).json(newProj);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -208,15 +209,16 @@ router.post('/projects', protect, async (req, res) => {
 
 router.put('/projects/:id', protect, async (req, res) => {
   try {
-    if (!isDbConnected) {
-      const idx = memoryStore.projects.findIndex((p) => p._id === req.params.id);
-      if (idx !== -1) {
-        memoryStore.projects[idx] = { ...memoryStore.projects[idx], ...req.body };
-        return res.json(memoryStore.projects[idx]);
-      }
+    const idx = memoryStore.projects.findIndex((p) => p._id === req.params.id);
+    if (idx !== -1) {
+      memoryStore.projects[idx] = { ...memoryStore.projects[idx], ...req.body };
+      persistMemoryStore();
     }
-    const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(project);
+
+    if (isDbConnected) {
+      await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    }
+    res.json(memoryStore.projects[idx] || req.body);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -224,11 +226,12 @@ router.put('/projects/:id', protect, async (req, res) => {
 
 router.delete('/projects/:id', protect, async (req, res) => {
   try {
-    if (!isDbConnected) {
-      memoryStore.projects = memoryStore.projects.filter((p) => p._id !== req.params.id);
-      return res.json({ message: 'Project deleted' });
+    memoryStore.projects = memoryStore.projects.filter((p) => p._id !== req.params.id);
+    persistMemoryStore();
+
+    if (isDbConnected) {
+      await Project.findByIdAndDelete(req.params.id);
     }
-    await Project.findByIdAndDelete(req.params.id);
     res.json({ message: 'Project deleted' });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -244,13 +247,14 @@ router.get('/skills', protect, async (req, res) => {
 
 router.post('/skills', protect, async (req, res) => {
   try {
-    if (!isDbConnected) {
-      const newSkill = { _id: String(Date.now()), ...req.body };
-      memoryStore.skills.push(newSkill);
-      return res.status(201).json(newSkill);
+    const newSkill = { _id: String(Date.now()), ...req.body };
+    memoryStore.skills.push(newSkill);
+    persistMemoryStore();
+
+    if (isDbConnected) {
+      await Skill.create(req.body);
     }
-    const skill = await Skill.create(req.body);
-    res.status(201).json(skill);
+    res.status(201).json(newSkill);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -258,15 +262,16 @@ router.post('/skills', protect, async (req, res) => {
 
 router.put('/skills/:id', protect, async (req, res) => {
   try {
-    if (!isDbConnected) {
-      const idx = memoryStore.skills.findIndex((s) => s._id === req.params.id);
-      if (idx !== -1) {
-        memoryStore.skills[idx] = { ...memoryStore.skills[idx], ...req.body };
-        return res.json(memoryStore.skills[idx]);
-      }
+    const idx = memoryStore.skills.findIndex((s) => s._id === req.params.id);
+    if (idx !== -1) {
+      memoryStore.skills[idx] = { ...memoryStore.skills[idx], ...req.body };
+      persistMemoryStore();
     }
-    const skill = await Skill.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(skill);
+
+    if (isDbConnected) {
+      await Skill.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    }
+    res.json(memoryStore.skills[idx] || req.body);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -274,11 +279,12 @@ router.put('/skills/:id', protect, async (req, res) => {
 
 router.delete('/skills/:id', protect, async (req, res) => {
   try {
-    if (!isDbConnected) {
-      memoryStore.skills = memoryStore.skills.filter((s) => s._id !== req.params.id);
-      return res.json({ message: 'Skill deleted' });
+    memoryStore.skills = memoryStore.skills.filter((s) => s._id !== req.params.id);
+    persistMemoryStore();
+
+    if (isDbConnected) {
+      await Skill.findByIdAndDelete(req.params.id);
     }
-    await Skill.findByIdAndDelete(req.params.id);
     res.json({ message: 'Skill deleted' });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -295,6 +301,7 @@ router.post('/focus-areas', protect, async (req, res) => {
   try {
     const newArea = { _id: String(Date.now()), ...req.body };
     memoryStore.focusAreas.push(newArea);
+    persistMemoryStore();
     return res.status(201).json(newArea);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -306,6 +313,7 @@ router.put('/focus-areas/:id', protect, async (req, res) => {
     const idx = memoryStore.focusAreas.findIndex((f) => f._id === req.params.id);
     if (idx !== -1) {
       memoryStore.focusAreas[idx] = { ...memoryStore.focusAreas[idx], ...req.body };
+      persistMemoryStore();
       return res.json(memoryStore.focusAreas[idx]);
     }
     res.status(404).json({ message: 'Focus area not found' });
@@ -317,6 +325,7 @@ router.put('/focus-areas/:id', protect, async (req, res) => {
 router.delete('/focus-areas/:id', protect, async (req, res) => {
   try {
     memoryStore.focusAreas = memoryStore.focusAreas.filter((f) => f._id !== req.params.id);
+    persistMemoryStore();
     return res.json({ message: 'Focus area deleted' });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -332,11 +341,12 @@ router.get('/messages', protect, async (req, res) => {
 
 router.delete('/messages/:id', protect, async (req, res) => {
   try {
-    if (!isDbConnected) {
-      memoryStore.messages = memoryStore.messages.filter((m) => m._id !== req.params.id);
-      return res.json({ message: 'Message deleted' });
+    memoryStore.messages = memoryStore.messages.filter((m) => m._id !== req.params.id);
+    persistMemoryStore();
+
+    if (isDbConnected) {
+      await Message.findByIdAndDelete(req.params.id);
     }
-    await Message.findByIdAndDelete(req.params.id);
     res.json({ message: 'Message deleted' });
   } catch (error) {
     res.status(400).json({ message: error.message });
