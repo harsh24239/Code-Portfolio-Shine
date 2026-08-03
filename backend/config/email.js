@@ -1,5 +1,37 @@
 import nodemailer from 'nodemailer';
 
+const createTransporter = (cleanUser, cleanPass) => {
+  const serviceConfig = (process.env.EMAIL_SERVICE || 'gmail').toLowerCase();
+  
+  if (serviceConfig === 'gmail') {
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: cleanUser,
+        pass: cleanPass,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 10000,
+    });
+  }
+
+  return nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.EMAIL_PORT || '465', 10),
+    secure: process.env.EMAIL_SECURE !== 'false',
+    auth: {
+      user: cleanUser,
+      pass: cleanPass,
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
+    connectionTimeout: 10000,
+  });
+};
+
 export const sendContactEmailNotification = async ({ name, email, subject, message }) => {
   const emailUser = process.env.EMAIL_USER;
   const emailPass = process.env.EMAIL_PASS;
@@ -14,16 +46,7 @@ export const sendContactEmailNotification = async ({ name, email, subject, messa
   const cleanPass = emailPass.trim().replace(/\s+/g, '');
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: cleanUser,
-        pass: cleanPass,
-      },
-      connectionTimeout: 10000,
-    });
+    const transporter = createTransporter(cleanUser, cleanPass);
 
     const mailOptions = {
       from: `"Portfolio Contact System" <${cleanUser}>`,
@@ -69,16 +92,7 @@ export const sendPasswordResetOTP = async ({ otpCode, actionName = 'Security Ver
   const cleanPass = emailPass.trim().replace(/\s+/g, '');
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: cleanUser,
-        pass: cleanPass,
-      },
-      connectionTimeout: 10000,
-    });
+    const transporter = createTransporter(cleanUser, cleanPass);
 
     const mailOptions = {
       from: `"Shadow HQ Security" <${cleanUser}>`,

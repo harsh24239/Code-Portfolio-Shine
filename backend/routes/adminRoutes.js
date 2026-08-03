@@ -230,11 +230,10 @@ router.post('/verify-reset-code', async (req, res) => {
   }
 
   const cleanOtp = (otpCode || '').trim();
-  const isMasterCode = cleanOtp === '123456';
-  const isGeneratedOtp = activeOtpStore.code && Date.now() <= activeOtpStore.expiresAt && activeOtpStore.code === cleanOtp;
+  const isValidOtp = activeOtpStore.code && Date.now() <= activeOtpStore.expiresAt && activeOtpStore.code === cleanOtp;
 
-  if (!isMasterCode && !isGeneratedOtp) {
-    return res.status(400).json({ message: 'Invalid OTP verification code.' });
+  if (!isValidOtp) {
+    return res.status(400).json({ message: 'Invalid or expired OTP verification code.' });
   }
 
   try {
