@@ -43,6 +43,7 @@ export const DEFAULT_DATA = {
   },
   projects: [
     {
+      _id: 'default_proj_1',
       title: 'AI Placement Copilot',
       tag: 'FastAPI — LangGraph — AI',
       description:
@@ -54,6 +55,7 @@ export const DEFAULT_DATA = {
       sortOrder: 0,
     },
     {
+      _id: 'default_proj_2',
       title: 'SQVS – Student Qualification Verification System',
       tag: 'React — Node.js — MySQL — DBMS',
       description:
@@ -65,6 +67,7 @@ export const DEFAULT_DATA = {
       sortOrder: 1,
     },
     {
+      _id: 'default_proj_3',
       title: 'University ERP System',
       tag: 'Java — Swing & JDBC — Systems',
       description:
@@ -77,18 +80,18 @@ export const DEFAULT_DATA = {
     },
   ],
   skills: [
-    { name: 'Languages & Core', desc: 'Python, Java, C/C++, JavaScript, SQL', pips: 5, iconType: 'frontend' },
-    { name: 'Frontend Development', desc: 'React.js, Vite, HTML5, CSS3, Responsive Design Systems', pips: 5, iconType: 'backend' },
-    { name: 'Backend & APIs', desc: 'Node.js, Express.js, FastAPI, RESTful APIs, Java JDBC', pips: 5, iconType: 'database' },
-    { name: 'Databases & Storage', desc: 'MySQL (DBMS), ChromaDB (Vector DB), SQLite, Normalized Schemas', pips: 5, iconType: 'devops' },
-    { name: 'AI & Agentic Workflows', desc: 'LangGraph, RAG Vector Retrieval, Gemini API, Multi-Agent Pipelines', pips: 5, iconType: 'security' },
-    { name: 'CS Core & Security', desc: 'DSA (100+ Solved), OOP, BCrypt, JWT, RBAC Auth, JUnit Testing, Git/Linux', pips: 5, iconType: 'ai' },
+    { _id: 'default_skill_1', name: 'Languages & Core', desc: 'Python, Java, C/C++, JavaScript, SQL', pips: 5, iconType: 'frontend' },
+    { _id: 'default_skill_2', name: 'Frontend Development', desc: 'React.js, Vite, HTML5, CSS3, Responsive Design Systems', pips: 5, iconType: 'backend' },
+    { _id: 'default_skill_3', name: 'Backend & APIs', desc: 'Node.js, Express.js, FastAPI, RESTful APIs, Java JDBC', pips: 5, iconType: 'database' },
+    { _id: 'default_skill_4', name: 'Databases & Storage', desc: 'MySQL (DBMS), ChromaDB (Vector DB), SQLite, Normalized Schemas', pips: 5, iconType: 'devops' },
+    { _id: 'default_skill_5', name: 'AI & Agentic Workflows', desc: 'LangGraph, RAG Vector Retrieval, Gemini API, Multi-Agent Pipelines', pips: 5, iconType: 'security' },
+    { _id: 'default_skill_6', name: 'CS Core & Security', desc: 'DSA (100+ Solved), OOP, BCrypt, JWT, RBAC Auth, JUnit Testing, Git/Linux', pips: 5, iconType: 'ai' },
   ],
   focusAreas: [
-    { tag: 'DOMAIN 01', title: 'Web Application Development', desc: 'Designing and building scalable, responsive web apps using React, Node.js, Express, and modern database architectures.', sortOrder: 0 },
-    { tag: 'DOMAIN 02', title: 'Agentic AI & RAG Workflows', desc: 'Developing intelligent workflows, multi-agent systems with LangGraph, and retrieval-augmented generation pipelines.', sortOrder: 1 },
-    { tag: 'DOMAIN 03', title: 'Data Structures & Algorithms', desc: 'Strong foundation in computer science core principles, algorithmic problem solving, and software design patterns.', sortOrder: 2 },
-    { tag: 'DOMAIN 04', title: 'Software Craft & Security', desc: 'Applying 4-layer system design, BCrypt password security, role-based access control (RBAC), and automated unit testing.', sortOrder: 3 },
+    { _id: 'default_fa_1', tag: 'DOMAIN 01', title: 'Web Application Development', desc: 'Designing and building scalable, responsive web apps using React, Node.js, Express, and modern database architectures.', sortOrder: 0 },
+    { _id: 'default_fa_2', tag: 'DOMAIN 02', title: 'Agentic AI & RAG Workflows', desc: 'Developing intelligent workflows, multi-agent systems with LangGraph, and retrieval-augmented generation pipelines.', sortOrder: 1 },
+    { _id: 'default_fa_3', tag: 'DOMAIN 03', title: 'Data Structures & Algorithms', desc: 'Strong foundation in computer science core principles, algorithmic problem solving, and software design patterns.', sortOrder: 2 },
+    { _id: 'default_fa_4', tag: 'DOMAIN 04', title: 'Software Craft & Security', desc: 'Applying 4-layer system design, BCrypt password security, role-based access control (RBAC), and automated unit testing.', sortOrder: 3 },
   ],
   messages: [],
   testimonials: [],
