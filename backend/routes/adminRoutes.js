@@ -13,22 +13,18 @@ import { sendPasswordResetOTP } from '../config/email.js';
 
 const router = express.Router();
 
-let memoryAdminUsername = process.env.ADMIN_USERNAME || 'admin';
-let memoryAdminPasswordHash = null;
-let activeOtpStore = { code: null, expiresAt: 0 };
-
 let failedLoginCount = 0;
 let lockoutExpiryTime = 0;
 
-const getMemoryAdminUsername = () => {
-  return memoryStore.adminCredentials?.username || process.env.ADMIN_USERNAME || 'admin';
-};
+// Always read credentials from memoryStore (synced from MongoDB Atlas on startup)
+const getAdminUsername = () =>
+  memoryStore.adminCredentials?.username || process.env.ADMIN_USERNAME || 'admin';
 
-const getMemoryAdminPasswordHash = async () => {
+const getAdminPasswordHash = async () => {
   if (!memoryStore.adminCredentials?.passwordHash) {
-    const salt = await bcrypt.genSalt(10);
+    // Fallback: hash the env/default password and store it
     const defaultPass = process.env.ADMIN_PASSWORD || 'admin123';
-    memoryStore.adminCredentials.passwordHash = await bcrypt.hash(defaultPass, salt);
+    memoryStore.adminCredentials.passwordHash = bcrypt.hashSync(defaultPass, 10);
     persistMemoryStore();
   }
   return memoryStore.adminCredentials.passwordHash;
@@ -56,13 +52,14 @@ router.post('/login', async (req, res) => {
   try {
     let isValid = false;
     let authUserId = 'mem_admin_1';
-    let currentMemUser = getMemoryAdminUsername();
-    let authUsername = currentMemUser;
+    const currentUser = getAdminUsername();
+    let authUsername = currentUser;
 
     if (!isDbConnected) {
-      const hash = await getMemoryAdminPasswordHash();
+      // Use memoryStore credentials (synced from MongoDB Atlas on startup)
+      const hash = await getAdminPasswordHash();
       const isMatch = await bcrypt.compare(password, hash);
-      if (username === currentMemUser && isMatch) {
+      if (username === currentUser && isMatch) {
         isValid = true;
       }
     } else {
@@ -71,6 +68,9 @@ router.post('/login', async (req, res) => {
         isValid = true;
         authUserId = admin._id;
         authUsername = admin.username;
+        // Keep memoryStore in sync
+        memoryStore.adminCredentials.username = admin.username;
+        memoryStore.adminCredentials.passwordHash = admin.password;
       }
     }
 
@@ -113,31 +113,29 @@ router.put('/change-username', protect, async (req, res) => {
   }
 
   try {
-    const hash = await getMemoryAdminPasswordHash();
-    let isMatch = false;
-
-    if (!isDbConnected) {
-      isMatch = await bcrypt.compare(currentPassword, hash);
-    } else {
-      const admin = await Admin.findOne();
-      if (admin) {
-        isMatch = await admin.matchPassword(currentPassword);
-        if (isMatch) {
-          admin.username = newUsername.trim();
-          await admin.save();
-        }
-      }
-    }
+    const hash = await getAdminPasswordHash();
+    const isMatch = await bcrypt.compare(currentPassword, hash);
 
     if (!isMatch) {
       return res.status(400).json({ message: 'Current password incorrect.' });
     }
 
-    // Always persist to memoryStore & user_data.json
-    memoryStore.adminCredentials.username = newUsername.trim();
+    const trimmedName = newUsername.trim();
+
+    // Persist to memoryStore & disk first (always works)
+    memoryStore.adminCredentials.username = trimmedName;
     persistMemoryStore();
 
-    return res.json({ message: 'Username updated successfully!', username: newUsername.trim() });
+    // Also persist to MongoDB if connected
+    if (isDbConnected) {
+      const admin = await Admin.findOne();
+      if (admin) {
+        admin.username = trimmedName;
+        await admin.save();
+      }
+    }
+
+    return res.json({ message: 'Username updated successfully!', username: trimmedName });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -152,31 +150,29 @@ router.put('/change-password', protect, async (req, res) => {
   }
 
   try {
-    const hash = await getMemoryAdminPasswordHash();
-    let isMatch = false;
-
-    if (!isDbConnected) {
-      isMatch = await bcrypt.compare(currentPassword, hash);
-    } else {
-      const admin = await Admin.findOne();
-      if (admin) {
-        isMatch = await admin.matchPassword(currentPassword);
-        if (isMatch) {
-          admin.password = newPassword;
-          await admin.save();
-        }
-      }
-    }
+    const hash = await getAdminPasswordHash();
+    const isMatch = await bcrypt.compare(currentPassword, hash);
 
     if (!isMatch) {
       return res.status(400).json({ message: 'Current password incorrect.' });
     }
 
-    // Hash and persist to memoryStore & user_data.json
-    const salt = await bcrypt.genSalt(10);
-    const newHash = await bcrypt.hash(newPassword, salt);
+    // Hash new password once
+    const newHash = await bcrypt.hash(newPassword, await bcrypt.genSalt(10));
+
+    // Persist to memoryStore & disk first (always works)
     memoryStore.adminCredentials.passwordHash = newHash;
     persistMemoryStore();
+
+    // Also persist to MongoDB if connected — store already-hashed value,
+    // pre-save hook in Admin.js skips re-hash when value starts with '$2'
+    if (isDbConnected) {
+      const admin = await Admin.findOne();
+      if (admin) {
+        admin.password = newHash; // already hashed — hook will not re-hash
+        await admin.save();
+      }
+    }
 
     return res.json({ message: 'Password updated successfully!' });
   } catch (error) {

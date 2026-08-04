@@ -5,6 +5,7 @@ const skillSchema = new mongoose.Schema(
     name: { type: String, required: true },
     desc: { type: String, required: true },
     pips: { type: Number, default: 5, min: 1, max: 5 },
+    iconType: { type: String, default: 'frontend' },
     category: { type: String, default: 'General' },
   },
   { timestamps: true }

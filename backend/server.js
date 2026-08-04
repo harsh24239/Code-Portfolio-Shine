@@ -6,7 +6,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { connectDB } from './config/db.js';
+import { connectDB, isDbConnected } from './config/db.js';
+import { memoryStore, persistMemoryStore } from './store/memoryStore.js';
 import publicRoutes from './routes/publicRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 
@@ -102,39 +103,52 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Shadow Portfolio Backend Operational' });
 });
 
-// Seed & Sync Initial Data with MongoDB Atlas
-const seedInitialData = async () => {
+// ─── Startup Sync: Pull latest data from MongoDB Atlas into memoryStore ───────
+// This runs every time Render restarts, so your changes always survive reboots.
+const syncFromDatabase = async () => {
   try {
-    if (!isDbConnected) return;
+    if (!isDbConnected) {
+      console.log('ℹ No DB connection — using in-memory/disk data only.');
+      return;
+    }
 
-    // Admin
+    let didChange = false;
+
+    // ── Admin Credentials ──────────────────────────────────────────────────────
     const dbAdmin = await Admin.findOne();
     if (dbAdmin) {
+      // Store the raw bcrypt hash directly (no re-hashing)
       memoryStore.adminCredentials.username = dbAdmin.username;
-      memoryStore.adminCredentials.passwordHash = dbAdmin.password;
-      console.log(`✓ Admin credentials (${dbAdmin.username}) synced from MongoDB Atlas to memoryStore`);
+      memoryStore.adminCredentials.passwordHash = dbAdmin.password; // already hashed
+      console.log(`✓ Admin (${dbAdmin.username}) synced from MongoDB Atlas`);
+      didChange = true;
     } else {
+      // Seed admin from memoryStore
       await Admin.create({
-        username: memoryStore.adminCredentials.username || process.env.ADMIN_USERNAME || 'admin',
-        password: process.env.ADMIN_PASSWORD || 'admin123',
+        username: memoryStore.adminCredentials.username,
+        password: memoryStore.adminCredentials.passwordHash, // already hashed — pre-save hook skips re-hash
       });
-      console.log('✓ Default Admin created in MongoDB Atlas');
+      console.log('✓ Admin seeded to MongoDB Atlas from memoryStore');
     }
 
-    // Profile
-    const dbProfile = await Profile.findOne().sort({ createdAt: -1 });
+    // ── Profile ────────────────────────────────────────────────────────────────
+    const dbProfile = await Profile.findOne().sort({ updatedAt: -1 });
     if (dbProfile) {
-      const obj = dbProfile.toObject();
-      delete obj._id;
-      delete obj.__v;
-      Object.assign(memoryStore.profile, obj);
-      console.log('✓ Profile synced from MongoDB Atlas to memoryStore');
-    } else if (memoryStore.profile) {
+      const profileObj = dbProfile.toObject();
+      // Remove Mongoose meta fields before merging
+      delete profileObj._id;
+      delete profileObj.__v;
+      delete profileObj.createdAt;
+      delete profileObj.updatedAt;
+      Object.assign(memoryStore.profile, profileObj);
+      console.log('✓ Profile synced from MongoDB Atlas');
+      didChange = true;
+    } else {
       await Profile.create(memoryStore.profile);
-      console.log('✓ Profile seeded to MongoDB Atlas');
+      console.log('✓ Profile seeded to MongoDB Atlas from memoryStore');
     }
 
-    // Projects
+    // ── Projects ───────────────────────────────────────────────────────────────
     const dbProjects = await Project.find().sort({ sortOrder: 1, createdAt: -1 });
     if (dbProjects && dbProjects.length > 0) {
       memoryStore.projects = dbProjects.map((p) => {
@@ -142,13 +156,14 @@ const seedInitialData = async () => {
         obj._id = String(obj._id);
         return obj;
       });
-      console.log(`✓ ${dbProjects.length} Projects synced from MongoDB Atlas to memoryStore`);
+      console.log(`✓ ${dbProjects.length} Projects synced from MongoDB Atlas`);
+      didChange = true;
     } else if (memoryStore.projects && memoryStore.projects.length > 0) {
       await Project.insertMany(memoryStore.projects);
-      console.log('✓ Projects seeded to MongoDB Atlas');
+      console.log('✓ Projects seeded to MongoDB Atlas from memoryStore');
     }
 
-    // Skills
+    // ── Skills ─────────────────────────────────────────────────────────────────
     const dbSkills = await Skill.find().sort({ createdAt: 1 });
     if (dbSkills && dbSkills.length > 0) {
       memoryStore.skills = dbSkills.map((s) => {
@@ -156,16 +171,20 @@ const seedInitialData = async () => {
         obj._id = String(obj._id);
         return obj;
       });
-      console.log(`✓ ${dbSkills.length} Skills synced from MongoDB Atlas to memoryStore`);
+      console.log(`✓ ${dbSkills.length} Skills synced from MongoDB Atlas`);
+      didChange = true;
     } else if (memoryStore.skills && memoryStore.skills.length > 0) {
       await Skill.insertMany(memoryStore.skills);
-      console.log('✓ Skills seeded to MongoDB Atlas');
+      console.log('✓ Skills seeded to MongoDB Atlas from memoryStore');
     }
 
-    // Persist synced data locally
-    persistMemoryStore();
+    // Persist the freshly synced data to disk
+    if (didChange) {
+      persistMemoryStore();
+      console.log('✓ Synced data persisted to disk');
+    }
   } catch (error) {
-    console.warn('⚠ Database seeding/sync note:', error.message);
+    console.error('⚠ Startup DB sync error:', error.message);
   }
 };
 
@@ -175,5 +194,5 @@ app.listen(PORT, async () => {
   console.log(`🚀 Server listening on http://localhost:${PORT}`);
   console.log(`🔒 Admin Panel available at http://localhost:${PORT}/admin`);
   await connectDB();
-  await seedInitialData();
+  await syncFromDatabase();
 });
