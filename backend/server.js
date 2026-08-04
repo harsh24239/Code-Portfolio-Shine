@@ -108,10 +108,14 @@ const seedInitialData = async () => {
     if (!isDbConnected) return;
 
     // Admin
-    const adminCount = await Admin.countDocuments();
-    if (adminCount === 0) {
+    const dbAdmin = await Admin.findOne();
+    if (dbAdmin) {
+      memoryStore.adminCredentials.username = dbAdmin.username;
+      memoryStore.adminCredentials.passwordHash = dbAdmin.password;
+      console.log(`✓ Admin credentials (${dbAdmin.username}) synced from MongoDB Atlas to memoryStore`);
+    } else {
       await Admin.create({
-        username: process.env.ADMIN_USERNAME || 'admin',
+        username: memoryStore.adminCredentials.username || process.env.ADMIN_USERNAME || 'admin',
         password: process.env.ADMIN_PASSWORD || 'admin123',
       });
       console.log('✓ Default Admin created in MongoDB Atlas');

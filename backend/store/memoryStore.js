@@ -1,12 +1,16 @@
 import fs from 'fs';
 import path from 'path';
+import bcrypt from 'bcryptjs';
 
 const DATA_FILE = path.join(process.cwd(), 'backend', 'store', 'user_data.json');
+
+const initialAdminPass = process.env.ADMIN_PASSWORD || 'admin123';
+const initialAdminHash = bcrypt.hashSync(initialAdminPass, 10);
 
 const defaultData = {
   adminCredentials: {
     username: process.env.ADMIN_USERNAME || 'admin',
-    passwordHash: null,
+    passwordHash: initialAdminHash,
   },
   profile: {
     eyebrow: 'WEB DEVELOPER & AI BUILDER',
@@ -85,9 +89,9 @@ const loadInitialData = () => {
       const loaded = JSON.parse(raw);
       console.log('✓ Persistent user data loaded successfully from user_data.json');
       return {
-        adminCredentials: loaded.adminCredentials || {
+        adminCredentials: loaded.adminCredentials && loaded.adminCredentials.passwordHash ? loaded.adminCredentials : {
           username: process.env.ADMIN_USERNAME || 'admin',
-          passwordHash: null,
+          passwordHash: initialAdminHash,
         },
         profile: { ...defaultData.profile, ...(loaded.profile || {}) },
         projects: loaded.projects && loaded.projects.length > 0 ? loaded.projects : defaultData.projects,
