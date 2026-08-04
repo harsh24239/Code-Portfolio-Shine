@@ -364,18 +364,27 @@ function openProjectModal(project = null) {
 }
 
 window.editProject = (id) => {
-  const p = currentProjects.find((x) => x._id === id);
-  if (p) openProjectModal(p);
+  const p = currentProjects.find((x) => String(x._id) === String(id));
+  if (p) {
+    openProjectModal(p);
+  } else {
+    console.error('Project not found for id:', id, 'Available:', currentProjects.map(x => x._id));
+    alert('Could not find project to edit. Please refresh and try again.');
+  }
 };
 
 window.deleteProject = async (id) => {
   if (!confirm('Are you sure you want to delete this project?')) return;
   try {
-    await fetch(`${API_BASE}/admin/projects/${id}`, {
+    const res = await fetch(`${API_BASE}/admin/projects/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${authToken}` },
     });
-    loadProjects();
+    if (res.ok) {
+      loadProjects();
+    } else {
+      alert('Failed to delete project');
+    }
   } catch (err) {
     alert('Failed to delete project');
   }
@@ -462,8 +471,13 @@ function openSkillModal(skill = null) {
 }
 
 window.editSkill = (id) => {
-  const s = currentSkills.find((x) => x._id === id);
-  if (s) openSkillModal(s);
+  const s = currentSkills.find((x) => String(x._id) === String(id));
+  if (s) {
+    openSkillModal(s);
+  } else {
+    console.error('Skill not found for id:', id, 'Available:', currentSkills.map(x => x._id));
+    alert('Could not find skill to edit. Please refresh and try again.');
+  }
 };
 
 window.deleteSkill = async (id) => {
@@ -556,8 +570,13 @@ function openTestimonialModal(focusArea = null) {
 }
 
 window.editTestimonial = (id) => {
-  const t = currentTestimonials.find((x) => x._id === id);
-  if (t) openTestimonialModal(t);
+  const t = currentTestimonials.find((x) => String(x._id) === String(id));
+  if (t) {
+    openTestimonialModal(t);
+  } else {
+    console.error('Focus area not found for id:', id, 'Available:', currentTestimonials.map(x => x._id));
+    alert('Could not find focus area to edit. Please refresh and try again.');
+  }
 };
 
 window.deleteTestimonial = async (id) => {
