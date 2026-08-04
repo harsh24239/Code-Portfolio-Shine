@@ -7,7 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { connectDB, isDbConnected } from './config/db.js';
-import { memoryStore, persistMemoryStore } from './store/memoryStore.js';
+import { memoryStore, DEFAULT_DATA } from './store/memoryStore.js';
 import publicRoutes from './routes/publicRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 
@@ -15,6 +15,7 @@ import { Admin } from './models/Admin.js';
 import { Profile } from './models/Profile.js';
 import { Project } from './models/Project.js';
 import { Skill } from './models/Skill.js';
+import { FocusArea } from './models/FocusArea.js';
 
 dotenv.config();
 
@@ -23,44 +24,30 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Security Middleware (Helmet HTTP Headers)
-app.use(
-  helmet({
-    contentSecurityPolicy: false, // Allow inline styles & fonts for admin panel SPA
-  })
-);
+// Security Middleware
+app.use(helmet({ contentSecurityPolicy: false }));
 
-// Strict Anti-Caching & Session Protection Headers
-app.use('/admin', (req, res, next) => {
+// Anti-caching headers for admin routes
+app.use(['/admin', '/api/admin'], (req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
-  res.setHeader('Surrogate-Control', 'no-store');
   next();
 });
 
-app.use('/api/admin', (req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.setHeader('Surrogate-Control', 'no-store');
-  next();
-});
-
-// Rate Limiting Security
+// Rate Limiting
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login requests per 15 minutes
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   message: { message: 'Too many login attempts. Please try again after 15 minutes.' },
 });
-
 const contactLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // Limit each IP to 10 contact transmissions per hour
+  windowMs: 60 * 60 * 1000,
+  max: 10,
   message: { message: 'Transmission limit reached. Please try again later.' },
 });
 
-// CORS Security
+// CORS
 const allowedOrigins = process.env.ALLOWED_ORIGIN
   ? process.env.ALLOWED_ORIGIN.split(',')
   : ['*'];
@@ -81,118 +68,124 @@ app.use(
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-
-// Serve Admin Dashboard Static Files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Apply Rate Limiters
 app.use('/api/admin/login', loginLimiter);
 app.use('/api/contact', contactLimiter);
 
-// API Routes
 app.use('/api', publicRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Admin Route SPA fallback
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Shadow Portfolio Backend Operational' });
+  res.json({
+    status: 'OK',
+    db: isDbConnected ? 'MongoDB Atlas' : 'in-memory only',
+    message: 'Shadow Portfolio Backend Operational',
+  });
 });
 
-// ─── Startup Sync: Pull latest data from MongoDB Atlas into memoryStore ───────
-// This runs every time Render restarts, so your changes always survive reboots.
-const syncFromDatabase = async () => {
+// ─────────────────────────────────────────────────────────────────────────────
+//  STARTUP SYNC — MongoDB Atlas → memoryStore
+//
+//  Runs once on every server start/restart.
+//  If MongoDB is connected, pulls the LATEST saved data into the in-memory
+//  cache so the app immediately reflects whatever the user last changed.
+//  If no data exists yet in MongoDB, seeds it from DEFAULT_DATA defaults.
+// ─────────────────────────────────────────────────────────────────────────────
+const syncFromMongoDB = async () => {
+  if (!isDbConnected) {
+    console.log('ℹ  DB not connected — serving default in-memory data.');
+    return;
+  }
+
   try {
-    if (!isDbConnected) {
-      console.log('ℹ No DB connection — using in-memory/disk data only.');
-      return;
-    }
-
-    let didChange = false;
-
-    // ── Admin Credentials ──────────────────────────────────────────────────────
-    const dbAdmin = await Admin.findOne();
-    if (dbAdmin) {
-      // Store the raw bcrypt hash directly (no re-hashing)
-      memoryStore.adminCredentials.username = dbAdmin.username;
-      memoryStore.adminCredentials.passwordHash = dbAdmin.password; // already hashed
-      console.log(`✓ Admin (${dbAdmin.username}) synced from MongoDB Atlas`);
-      didChange = true;
+    // ── Admin ────────────────────────────────────────────────────────────────
+    let admin = await Admin.findOne();
+    if (admin) {
+      memoryStore.adminCredentials.username = admin.username;
+      memoryStore.adminCredentials.passwordHash = admin.password; // raw bcrypt hash
+      console.log(`✓ Admin (${admin.username}) loaded from MongoDB`);
     } else {
-      // Seed admin from memoryStore
-      await Admin.create({
-        username: memoryStore.adminCredentials.username,
-        password: memoryStore.adminCredentials.passwordHash, // already hashed — pre-save hook skips re-hash
+      // First boot: seed from defaults
+      const created = await Admin.create({
+        username: DEFAULT_DATA.adminCredentials.username,
+        password: DEFAULT_DATA.adminCredentials.passwordHash, // pre-hashed, hook skips re-hash
       });
-      console.log('✓ Admin seeded to MongoDB Atlas from memoryStore');
+      memoryStore.adminCredentials.username = created.username;
+      memoryStore.adminCredentials.passwordHash = created.password;
+      console.log('✓ Admin seeded to MongoDB (first boot)');
     }
 
-    // ── Profile ────────────────────────────────────────────────────────────────
-    const dbProfile = await Profile.findOne().sort({ updatedAt: -1 });
-    if (dbProfile) {
-      const profileObj = dbProfile.toObject();
-      // Remove Mongoose meta fields before merging
-      delete profileObj._id;
-      delete profileObj.__v;
-      delete profileObj.createdAt;
-      delete profileObj.updatedAt;
-      Object.assign(memoryStore.profile, profileObj);
-      console.log('✓ Profile synced from MongoDB Atlas');
-      didChange = true;
+    // ── Profile ──────────────────────────────────────────────────────────────
+    let profile = await Profile.findOne();
+    if (profile) {
+      const p = profile.toObject();
+      delete p._id; delete p.__v; delete p.createdAt; delete p.updatedAt;
+      Object.assign(memoryStore.profile, p);
+      console.log('✓ Profile loaded from MongoDB');
     } else {
-      await Profile.create(memoryStore.profile);
-      console.log('✓ Profile seeded to MongoDB Atlas from memoryStore');
+      await Profile.create(DEFAULT_DATA.profile);
+      console.log('✓ Profile seeded to MongoDB (first boot)');
     }
 
-    // ── Projects ───────────────────────────────────────────────────────────────
-    const dbProjects = await Project.find().sort({ sortOrder: 1, createdAt: -1 });
-    if (dbProjects && dbProjects.length > 0) {
-      memoryStore.projects = dbProjects.map((p) => {
-        const obj = p.toObject();
-        obj._id = String(obj._id);
-        return obj;
-      });
-      console.log(`✓ ${dbProjects.length} Projects synced from MongoDB Atlas`);
-      didChange = true;
-    } else if (memoryStore.projects && memoryStore.projects.length > 0) {
-      await Project.insertMany(memoryStore.projects);
-      console.log('✓ Projects seeded to MongoDB Atlas from memoryStore');
+    // ── Projects ─────────────────────────────────────────────────────────────
+    const dbProjects = await Project.find().sort({ sortOrder: 1, createdAt: 1 });
+    if (dbProjects.length > 0) {
+      memoryStore.projects = dbProjects.map(toPlainObj);
+      console.log(`✓ ${dbProjects.length} Projects loaded from MongoDB`);
+    } else {
+      const inserted = await Project.insertMany(DEFAULT_DATA.projects);
+      memoryStore.projects = inserted.map(toPlainObj);
+      console.log('✓ Projects seeded to MongoDB (first boot)');
     }
 
-    // ── Skills ─────────────────────────────────────────────────────────────────
+    // ── Skills ───────────────────────────────────────────────────────────────
     const dbSkills = await Skill.find().sort({ createdAt: 1 });
-    if (dbSkills && dbSkills.length > 0) {
-      memoryStore.skills = dbSkills.map((s) => {
-        const obj = s.toObject();
-        obj._id = String(obj._id);
-        return obj;
-      });
-      console.log(`✓ ${dbSkills.length} Skills synced from MongoDB Atlas`);
-      didChange = true;
-    } else if (memoryStore.skills && memoryStore.skills.length > 0) {
-      await Skill.insertMany(memoryStore.skills);
-      console.log('✓ Skills seeded to MongoDB Atlas from memoryStore');
+    if (dbSkills.length > 0) {
+      memoryStore.skills = dbSkills.map(toPlainObj);
+      console.log(`✓ ${dbSkills.length} Skills loaded from MongoDB`);
+    } else {
+      const inserted = await Skill.insertMany(DEFAULT_DATA.skills);
+      memoryStore.skills = inserted.map(toPlainObj);
+      console.log('✓ Skills seeded to MongoDB (first boot)');
     }
 
-    // Persist the freshly synced data to disk
-    if (didChange) {
-      persistMemoryStore();
-      console.log('✓ Synced data persisted to disk');
+    // ── Focus Areas ──────────────────────────────────────────────────────────
+    const dbFocusAreas = await FocusArea.find().sort({ sortOrder: 1, createdAt: 1 });
+    if (dbFocusAreas.length > 0) {
+      memoryStore.focusAreas = dbFocusAreas.map(toPlainObj);
+      console.log(`✓ ${dbFocusAreas.length} Focus Areas loaded from MongoDB`);
+    } else {
+      const inserted = await FocusArea.insertMany(DEFAULT_DATA.focusAreas);
+      memoryStore.focusAreas = inserted.map(toPlainObj);
+      console.log('✓ Focus Areas seeded to MongoDB (first boot)');
     }
-  } catch (error) {
-    console.error('⚠ Startup DB sync error:', error.message);
+
+    console.log('✓ Startup sync complete — all data ready from MongoDB Atlas');
+  } catch (err) {
+    console.error('✗ Startup sync error:', err.message);
+    console.log('  Serving default in-memory data as fallback.');
   }
 };
 
+/** Convert a Mongoose doc to a plain JS object with _id as string */
+const toPlainObj = (doc) => {
+  const obj = doc.toObject ? doc.toObject() : { ...doc };
+  obj._id = String(obj._id);
+  delete obj.__v;
+  return obj;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5050;
 
 app.listen(PORT, async () => {
-  console.log(`🚀 Server listening on http://localhost:${PORT}`);
-  console.log(`🔒 Admin Panel available at http://localhost:${PORT}/admin`);
+  console.log(`\n🚀 Server listening on http://localhost:${PORT}`);
+  console.log(`🔒 Admin Panel: http://localhost:${PORT}/admin\n`);
   await connectDB();
-  await syncFromDatabase();
+  await syncFromMongoDB();
 });

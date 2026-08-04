@@ -2,109 +2,109 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { isDbConnected } from '../config/db.js';
-import { memoryStore, persistMemoryStore } from '../store/memoryStore.js';
+import { memoryStore } from '../store/memoryStore.js';
 import { Admin } from '../models/Admin.js';
 import { Profile } from '../models/Profile.js';
 import { Project } from '../models/Project.js';
 import { Skill } from '../models/Skill.js';
+import { FocusArea } from '../models/FocusArea.js';
 import { Message } from '../models/Message.js';
 import { protect } from '../middleware/auth.js';
-import { sendPasswordResetOTP } from '../config/email.js';
 
 const router = express.Router();
 
 let failedLoginCount = 0;
 let lockoutExpiryTime = 0;
 
-// Always read credentials from memoryStore (synced from MongoDB Atlas on startup)
+// ─── Credential Helpers ───────────────────────────────────────────────────────
+// Always read from memoryStore (synced from MongoDB on startup)
 const getAdminUsername = () =>
   memoryStore.adminCredentials?.username || process.env.ADMIN_USERNAME || 'admin';
 
-const getAdminPasswordHash = async () => {
+const getAdminPasswordHash = () => {
   if (!memoryStore.adminCredentials?.passwordHash) {
-    // Fallback: hash the env/default password and store it
-    const defaultPass = process.env.ADMIN_PASSWORD || 'admin123';
-    memoryStore.adminCredentials.passwordHash = bcrypt.hashSync(defaultPass, 10);
-    persistMemoryStore();
+    // Safety fallback — should never happen after startup sync
+    memoryStore.adminCredentials.passwordHash = bcrypt.hashSync(
+      process.env.ADMIN_PASSWORD || 'admin123',
+      10
+    );
   }
   return memoryStore.adminCredentials.passwordHash;
 };
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret_key_12345', {
-    expiresIn: '12h',
-  });
+const generateToken = (id) =>
+  jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret_key_12345', { expiresIn: '12h' });
+
+/** Convert Mongoose doc to plain object with string _id */
+const toPlain = (doc) => {
+  const obj = doc.toObject ? doc.toObject() : { ...doc };
+  obj._id = String(obj._id);
+  delete obj.__v;
+  return obj;
 };
 
-// POST /api/admin/login (With 15-Minute Lockout after 5 Failed Attempts)
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
-  // Check 15-minute Lockout
   if (Date.now() < lockoutExpiryTime) {
-    const msRemaining = lockoutExpiryTime - Date.now();
-    const minsLeft = Math.ceil(msRemaining / (1000 * 60));
+    const minsLeft = Math.ceil((lockoutExpiryTime - Date.now()) / 60000);
     return res.status(429).json({
-      message: `SECURITY LOCKOUT ACTIVE: 5 failed password attempts reached. Account locked. Try again in ${minsLeft} minutes.`,
+      message: `SECURITY LOCKOUT: Account locked. Try again in ${minsLeft} minute(s).`,
     });
   }
 
   try {
     let isValid = false;
     let authUserId = 'mem_admin_1';
-    const currentUser = getAdminUsername();
-    let authUsername = currentUser;
+    let authUsername = getAdminUsername();
 
-    if (!isDbConnected) {
-      // Use memoryStore credentials (synced from MongoDB Atlas on startup)
-      const hash = await getAdminPasswordHash();
-      const isMatch = await bcrypt.compare(password, hash);
-      if (username === currentUser && isMatch) {
-        isValid = true;
-      }
-    } else {
+    if (isDbConnected) {
+      // Authenticate against MongoDB
       const admin = await Admin.findOne({ username });
       if (admin && (await admin.matchPassword(password))) {
         isValid = true;
         authUserId = admin._id;
         authUsername = admin.username;
-        // Keep memoryStore in sync
+        // Keep memoryStore in sync on every successful login
         memoryStore.adminCredentials.username = admin.username;
         memoryStore.adminCredentials.passwordHash = admin.password;
+      }
+    } else {
+      // Fall back to in-memory credentials
+      const hash = getAdminPasswordHash();
+      if (username === authUsername && (await bcrypt.compare(password, hash))) {
+        isValid = true;
       }
     }
 
     if (isValid) {
       failedLoginCount = 0;
       lockoutExpiryTime = 0;
-      return res.json({
-        token: generateToken(authUserId),
-        username: authUsername,
-      });
-    } else {
-      failedLoginCount += 1;
-      if (failedLoginCount >= 5) {
-        lockoutExpiryTime = Date.now() + 15 * 60 * 1000; // 15 Minutes Lockout
-        return res.status(429).json({
-          message: 'SECURITY ALERT: 5 consecutive failed password attempts. Account is locked for 15 minutes.',
-        });
-      }
-      const attemptsLeft = 5 - failedLoginCount;
-      return res.status(401).json({
-        message: `Invalid username or password. Warning: ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} remaining before 15-minute lockout.`,
+      return res.json({ token: generateToken(authUserId), username: authUsername });
+    }
+
+    failedLoginCount += 1;
+    if (failedLoginCount >= 5) {
+      lockoutExpiryTime = Date.now() + 15 * 60 * 1000;
+      return res.status(429).json({
+        message: 'SECURITY ALERT: 5 failed attempts. Account locked for 15 minutes.',
       });
     }
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(401).json({
+      message: `Invalid credentials. ${5 - failedLoginCount} attempt(s) remaining before lockout.`,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
-// GET /api/admin/me
-router.get('/me', protect, async (req, res) => {
+// ─── ME ───────────────────────────────────────────────────────────────────────
+router.get('/me', protect, (req, res) => {
   res.json({ status: 'authenticated', user: req.user });
 });
 
-// PUT /api/admin/change-username (Requires currentPassword verification)
+// ─── CHANGE USERNAME ──────────────────────────────────────────────────────────
 router.put('/change-username', protect, async (req, res) => {
   const { currentPassword, newUsername } = req.body;
 
@@ -113,35 +113,34 @@ router.put('/change-username', protect, async (req, res) => {
   }
 
   try {
-    const hash = await getAdminPasswordHash();
+    // Verify current password
+    const hash = getAdminPasswordHash();
     const isMatch = await bcrypt.compare(currentPassword, hash);
-
     if (!isMatch) {
       return res.status(400).json({ message: 'Current password incorrect.' });
     }
 
-    const trimmedName = newUsername.trim();
+    const trimmed = newUsername.trim();
 
-    // Persist to memoryStore & disk first (always works)
-    memoryStore.adminCredentials.username = trimmedName;
-    persistMemoryStore();
-
-    // Also persist to MongoDB if connected
+    // 1. Save to MongoDB (permanent)
     if (isDbConnected) {
       const admin = await Admin.findOne();
       if (admin) {
-        admin.username = trimmedName;
+        admin.username = trimmed;
         await admin.save();
       }
     }
 
-    return res.json({ message: 'Username updated successfully!', username: trimmedName });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    // 2. Update in-memory cache
+    memoryStore.adminCredentials.username = trimmed;
+
+    return res.json({ message: 'Username updated successfully!', username: trimmed });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
-// PUT /api/admin/change-password (Requires currentPassword verification)
+// ─── CHANGE PASSWORD ──────────────────────────────────────────────────────────
 router.put('/change-password', protect, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
@@ -150,224 +149,276 @@ router.put('/change-password', protect, async (req, res) => {
   }
 
   try {
-    const hash = await getAdminPasswordHash();
+    // Verify current password
+    const hash = getAdminPasswordHash();
     const isMatch = await bcrypt.compare(currentPassword, hash);
-
     if (!isMatch) {
       return res.status(400).json({ message: 'Current password incorrect.' });
     }
 
-    // Hash new password once
-    const newHash = await bcrypt.hash(newPassword, await bcrypt.genSalt(10));
+    // Hash new password ONCE
+    const newHash = await bcrypt.hash(newPassword, 10);
 
-    // Persist to memoryStore & disk first (always works)
-    memoryStore.adminCredentials.passwordHash = newHash;
-    persistMemoryStore();
-
-    // Also persist to MongoDB if connected — store already-hashed value,
-    // pre-save hook in Admin.js skips re-hash when value starts with '$2'
+    // 1. Save to MongoDB (permanent) — store pre-hashed value, Admin pre-save hook skips re-hash
     if (isDbConnected) {
       const admin = await Admin.findOne();
       if (admin) {
-        admin.password = newHash; // already hashed — hook will not re-hash
+        admin.password = newHash; // already hashed — hook skips because starts with '$2'
         await admin.save();
       }
     }
 
+    // 2. Update in-memory cache
+    memoryStore.adminCredentials.passwordHash = newHash;
+
     return res.json({ message: 'Password updated successfully!' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
-// --- PROFILE ---
+// ─── PROFILE ──────────────────────────────────────────────────────────────────
 router.put('/profile', protect, async (req, res) => {
   try {
-    Object.assign(memoryStore.profile, req.body);
-    persistMemoryStore();
-
+    // 1. Save to MongoDB (permanent)
     if (isDbConnected) {
       let profile = await Profile.findOne();
       if (profile) {
         Object.assign(profile, req.body);
         await profile.save();
       } else {
-        await Profile.create(req.body);
+        profile = await Profile.create(req.body);
       }
     }
+
+    // 2. Update in-memory cache
+    Object.assign(memoryStore.profile, req.body);
+
     res.json(memoryStore.profile);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
-// --- PROJECTS ---
+// ─── PROJECTS ─────────────────────────────────────────────────────────────────
 router.get('/projects', protect, async (req, res) => {
-  if (!isDbConnected) return res.json(memoryStore.projects);
-  const projects = await Project.find().sort({ sortOrder: 1, createdAt: -1 });
-  res.json(projects.length > 0 ? projects : memoryStore.projects);
+  if (isDbConnected) {
+    const projects = await Project.find().sort({ sortOrder: 1, createdAt: 1 });
+    if (projects.length > 0) {
+      memoryStore.projects = projects.map(toPlain);
+      return res.json(memoryStore.projects);
+    }
+  }
+  res.json(memoryStore.projects);
 });
 
 router.post('/projects', protect, async (req, res) => {
   try {
-    const newProj = { _id: String(Date.now()), ...req.body };
-    memoryStore.projects.unshift(newProj);
-    persistMemoryStore();
+    let saved;
 
+    // 1. Save to MongoDB (permanent)
     if (isDbConnected) {
-      await Project.create(req.body);
+      const doc = await Project.create(req.body);
+      saved = toPlain(doc);
+    } else {
+      saved = { _id: String(Date.now()), ...req.body };
     }
-    res.status(201).json(newProj);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+
+    // 2. Update in-memory cache
+    memoryStore.projects.unshift(saved);
+
+    res.status(201).json(saved);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 
 router.put('/projects/:id', protect, async (req, res) => {
   try {
+    let updated;
+
+    // 1. Save to MongoDB (permanent)
+    if (isDbConnected) {
+      const doc = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      if (doc) updated = toPlain(doc);
+    }
+
+    // 2. Update in-memory cache
     const idx = memoryStore.projects.findIndex((p) => p._id === req.params.id);
     if (idx !== -1) {
       memoryStore.projects[idx] = { ...memoryStore.projects[idx], ...req.body };
-      persistMemoryStore();
+      if (!updated) updated = memoryStore.projects[idx];
     }
 
-    if (isDbConnected) {
-      await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    }
-    res.json(memoryStore.projects[idx] || req.body);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.json(updated || req.body);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 
 router.delete('/projects/:id', protect, async (req, res) => {
   try {
-    memoryStore.projects = memoryStore.projects.filter((p) => p._id !== req.params.id);
-    persistMemoryStore();
-
+    // 1. Delete from MongoDB (permanent)
     if (isDbConnected) {
       await Project.findByIdAndDelete(req.params.id);
     }
+
+    // 2. Update in-memory cache
+    memoryStore.projects = memoryStore.projects.filter((p) => p._id !== req.params.id);
+
     res.json({ message: 'Project deleted' });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 
-// --- SKILLS ---
+// ─── SKILLS ───────────────────────────────────────────────────────────────────
 router.get('/skills', protect, async (req, res) => {
-  if (!isDbConnected) return res.json(memoryStore.skills);
-  const skills = await Skill.find().sort({ createdAt: 1 });
-  res.json(skills.length > 0 ? skills : memoryStore.skills);
+  if (isDbConnected) {
+    const skills = await Skill.find().sort({ createdAt: 1 });
+    if (skills.length > 0) {
+      memoryStore.skills = skills.map(toPlain);
+      return res.json(memoryStore.skills);
+    }
+  }
+  res.json(memoryStore.skills);
 });
 
 router.post('/skills', protect, async (req, res) => {
   try {
-    const newSkill = { _id: String(Date.now()), ...req.body };
-    memoryStore.skills.push(newSkill);
-    persistMemoryStore();
+    let saved;
 
     if (isDbConnected) {
-      await Skill.create(req.body);
+      const doc = await Skill.create(req.body);
+      saved = toPlain(doc);
+    } else {
+      saved = { _id: String(Date.now()), ...req.body };
     }
-    res.status(201).json(newSkill);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+
+    memoryStore.skills.push(saved);
+
+    res.status(201).json(saved);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 
 router.put('/skills/:id', protect, async (req, res) => {
   try {
+    let updated;
+
+    if (isDbConnected) {
+      const doc = await Skill.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      if (doc) updated = toPlain(doc);
+    }
+
     const idx = memoryStore.skills.findIndex((s) => s._id === req.params.id);
     if (idx !== -1) {
       memoryStore.skills[idx] = { ...memoryStore.skills[idx], ...req.body };
-      persistMemoryStore();
+      if (!updated) updated = memoryStore.skills[idx];
     }
 
-    if (isDbConnected) {
-      await Skill.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    }
-    res.json(memoryStore.skills[idx] || req.body);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.json(updated || req.body);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 
 router.delete('/skills/:id', protect, async (req, res) => {
   try {
-    memoryStore.skills = memoryStore.skills.filter((s) => s._id !== req.params.id);
-    persistMemoryStore();
-
     if (isDbConnected) {
       await Skill.findByIdAndDelete(req.params.id);
     }
+    memoryStore.skills = memoryStore.skills.filter((s) => s._id !== req.params.id);
     res.json({ message: 'Skill deleted' });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 
-// --- FOCUS AREAS ---
+// ─── FOCUS AREAS ──────────────────────────────────────────────────────────────
 router.get('/focus-areas', protect, async (req, res) => {
-  if (!isDbConnected) return res.json(memoryStore.focusAreas);
+  if (isDbConnected) {
+    const areas = await FocusArea.find().sort({ sortOrder: 1, createdAt: 1 });
+    if (areas.length > 0) {
+      memoryStore.focusAreas = areas.map(toPlain);
+      return res.json(memoryStore.focusAreas);
+    }
+  }
   res.json(memoryStore.focusAreas);
 });
 
 router.post('/focus-areas', protect, async (req, res) => {
   try {
-    const newArea = { _id: String(Date.now()), ...req.body };
-    memoryStore.focusAreas.push(newArea);
-    persistMemoryStore();
-    return res.status(201).json(newArea);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+    let saved;
+
+    if (isDbConnected) {
+      const doc = await FocusArea.create({ ...req.body, sortOrder: memoryStore.focusAreas.length });
+      saved = toPlain(doc);
+    } else {
+      saved = { _id: String(Date.now()), ...req.body };
+    }
+
+    memoryStore.focusAreas.push(saved);
+
+    res.status(201).json(saved);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 
 router.put('/focus-areas/:id', protect, async (req, res) => {
   try {
+    let updated;
+
+    if (isDbConnected) {
+      const doc = await FocusArea.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      if (doc) updated = toPlain(doc);
+    }
+
     const idx = memoryStore.focusAreas.findIndex((f) => f._id === req.params.id);
     if (idx !== -1) {
       memoryStore.focusAreas[idx] = { ...memoryStore.focusAreas[idx], ...req.body };
-      persistMemoryStore();
-      return res.json(memoryStore.focusAreas[idx]);
+      if (!updated) updated = memoryStore.focusAreas[idx];
     }
-    res.status(404).json({ message: 'Focus area not found' });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+
+    res.json(updated || req.body);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 
 router.delete('/focus-areas/:id', protect, async (req, res) => {
   try {
+    if (isDbConnected) {
+      await FocusArea.findByIdAndDelete(req.params.id);
+    }
     memoryStore.focusAreas = memoryStore.focusAreas.filter((f) => f._id !== req.params.id);
-    persistMemoryStore();
-    return res.json({ message: 'Focus area deleted' });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.json({ message: 'Focus area deleted' });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 
-// --- MESSAGES INBOX ---
+// ─── MESSAGES ─────────────────────────────────────────────────────────────────
 router.get('/messages', protect, async (req, res) => {
-  if (!isDbConnected) return res.json(memoryStore.messages);
-  const messages = await Message.find().sort({ createdAt: -1 });
-  res.json(messages);
+  if (isDbConnected) {
+    const messages = await Message.find().sort({ createdAt: -1 });
+    return res.json(messages);
+  }
+  res.json(memoryStore.messages);
 });
 
 router.delete('/messages/:id', protect, async (req, res) => {
   try {
-    memoryStore.messages = memoryStore.messages.filter((m) => m._id !== req.params.id);
-    persistMemoryStore();
-
     if (isDbConnected) {
       await Message.findByIdAndDelete(req.params.id);
     }
+    memoryStore.messages = memoryStore.messages.filter((m) => m._id !== req.params.id);
     res.json({ message: 'Message deleted' });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 
 export default router;
-

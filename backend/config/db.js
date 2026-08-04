@@ -4,20 +4,22 @@ export let isDbConnected = false;
 
 export const connectDB = async () => {
   if (!process.env.MONGO_URI) {
-    console.log('ℹ No MONGO_URI provided in environment. Running with resilient in-memory store.');
+    console.log('⚠  No MONGO_URI set. Data will NOT persist across Render restarts.');
+    console.log('   Add MONGO_URI to Render environment variables to enable persistence.');
     isDbConnected = false;
     return;
   }
 
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 2500,
+      serverSelectionTimeoutMS: 10000, // 10s — longer for Render cold starts
+      connectTimeoutMS: 10000,
     });
     isDbConnected = true;
-    console.log(`✓ MongoDB Atlas Connected: ${conn.connection.host}`);
+    console.log(`✓ MongoDB Atlas connected: ${conn.connection.host}`);
   } catch (error) {
     isDbConnected = false;
-    console.warn(`⚠ MongoDB Connection Warning: ${error.message}`);
-    console.log(`Running backend with resilient in-memory store until MONGO_URI is connected.`);
+    console.error(`✗ MongoDB connection failed: ${error.message}`);
+    console.log('  Running with in-memory defaults — data will reset on restart.');
   }
 };

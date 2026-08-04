@@ -1,28 +1,40 @@
-import fs from 'fs';
-import path from 'path';
+/**
+ * memoryStore.js — Pure in-memory cache of MongoDB Atlas data.
+ *
+ * WHY NO FILE I/O:
+ * Render free tier uses an ephemeral disk. Any file written at runtime
+ * (user_data.json) is wiped the moment the container restarts or goes to
+ * sleep. Saving to disk therefore gives a false sense of persistence.
+ *
+ * The ONLY reliable persistence layer on Render is MongoDB Atlas.
+ * This module holds a live in-memory copy of the latest MongoDB data.
+ * server.js populates it on startup. Every write route updates it instantly.
+ */
+
 import bcrypt from 'bcryptjs';
 
-const DATA_FILE = path.join(process.cwd(), 'backend', 'store', 'user_data.json');
-
 const initialAdminPass = process.env.ADMIN_PASSWORD || 'admin123';
-const initialAdminHash = bcrypt.hashSync(initialAdminPass, 10);
 
-const defaultData = {
+// Default data — used ONLY when MongoDB has no documents yet (first-ever boot).
+// After that, all data comes from MongoDB Atlas.
+export const DEFAULT_DATA = {
   adminCredentials: {
     username: process.env.ADMIN_USERNAME || 'admin',
-    passwordHash: initialAdminHash,
+    passwordHash: bcrypt.hashSync(initialAdminPass, 10),
   },
   profile: {
     eyebrow: 'WEB DEVELOPER & AI BUILDER',
     title1: 'CODE',
     titleAccent: 'IN THE',
     title2: 'SHADOWS',
-    subtext: '3rd-Year Computer Science B.Tech student & Web Developer. I build clean web applications, integrate intelligent AI workflows, and solve complex DSA problems.',
+    subtext:
+      '3rd-Year Computer Science B.Tech student & Web Developer. I build clean web applications, integrate intelligent AI workflows, and solve complex DSA problems.',
     projectsShipped: '6+',
     yearsCoding: '3+',
     clientsServed: '100+',
     status: 'Available for Web Dev & Software Roles',
-    statusDetail: 'Focused on Web Development & AI Applications. Actively building projects with React, Node.js, Express, FastAPI, and LangGraph.',
+    statusDetail:
+      'Focused on Web Development & AI Applications. Actively building projects with React, Node.js, Express, FastAPI, and LangGraph.',
     email: 'kumarharsh1851@gmail.com',
     pgpKey: 'github.com/harsh24239',
     linkedin: '',
@@ -31,10 +43,10 @@ const defaultData = {
   },
   projects: [
     {
-      _id: '1',
       title: 'AI Placement Copilot',
       tag: 'FastAPI — LangGraph — AI',
-      description: 'Agentic AI-powered placement preparation platform using LangGraph, FastAPI, React, and RAG vector retrieval with ChromaDB & Gemini embeddings.',
+      description:
+        'Agentic AI-powered placement preparation platform using LangGraph, FastAPI, React, and RAG vector retrieval with ChromaDB & Gemini embeddings.',
       year: '2026 (Ongoing)',
       link: 'https://github.com/harsh24239/ai-placement-copilot',
       iconText: 'AI',
@@ -42,10 +54,10 @@ const defaultData = {
       sortOrder: 0,
     },
     {
-      _id: '2',
       title: 'SQVS – Student Qualification Verification System',
       tag: 'React — Node.js — MySQL — DBMS',
-      description: 'Full-stack credential verification web application developed as a Database Systems project under Prof. Vikram Goyal. Features RBAC auth, analytics dashboards, audit logs, and RESTful Express APIs on a normalized MySQL schema.',
+      description:
+        'Full-stack credential verification web application developed as a Database Systems project under Prof. Vikram Goyal. Features RBAC auth, analytics dashboards, audit logs, and RESTful Express APIs on a normalized MySQL schema.',
       year: '2026',
       link: 'https://github.com/harsh24239',
       iconText: 'SQ',
@@ -53,10 +65,10 @@ const defaultData = {
       sortOrder: 1,
     },
     {
-      _id: '3',
       title: 'University ERP System',
       tag: 'Java — Swing & JDBC — Systems',
-      description: 'Role-based desktop ERP application built in Java with a 4-layer architecture (UI, API, Service, DAO) under Prof. Sambuddho Chakravarty. Features BCrypt authentication, grade management, and JUnit unit tests.',
+      description:
+        'Role-based desktop ERP application built in Java with a 4-layer architecture (UI, API, Service, DAO) under Prof. Sambuddho Chakravarty. Features BCrypt authentication, grade management, and JUnit unit tests.',
       year: '2025',
       link: 'https://github.com/harsh24239',
       iconText: 'UE',
@@ -65,59 +77,35 @@ const defaultData = {
     },
   ],
   skills: [
-    { _id: '1', name: 'Languages & Core', desc: 'Python, Java, C/C++, JavaScript, SQL', pips: 5, iconType: 'frontend' },
-    { _id: '2', name: 'Frontend Development', desc: 'React.js, Vite, HTML5, CSS3, Responsive Design Systems', pips: 5, iconType: 'backend' },
-    { _id: '3', name: 'Backend & APIs', desc: 'Node.js, Express.js, FastAPI, RESTful APIs, Java JDBC', pips: 5, iconType: 'database' },
-    { _id: '4', name: 'Databases & Storage', desc: 'MySQL (DBMS), ChromaDB (Vector DB), SQLite, Normalized Schemas', pips: 5, iconType: 'devops' },
-    { _id: '5', name: 'AI & Agentic Workflows', desc: 'LangGraph, RAG Vector Retrieval, Gemini API, Multi-Agent Pipelines', pips: 5, iconType: 'security' },
-    { _id: '6', name: 'CS Core & Security', desc: 'DSA (100+ Solved), OOP, BCrypt, JWT, RBAC Auth, JUnit Testing, Git/Linux', pips: 5, iconType: 'ai' },
+    { name: 'Languages & Core', desc: 'Python, Java, C/C++, JavaScript, SQL', pips: 5, iconType: 'frontend' },
+    { name: 'Frontend Development', desc: 'React.js, Vite, HTML5, CSS3, Responsive Design Systems', pips: 5, iconType: 'backend' },
+    { name: 'Backend & APIs', desc: 'Node.js, Express.js, FastAPI, RESTful APIs, Java JDBC', pips: 5, iconType: 'database' },
+    { name: 'Databases & Storage', desc: 'MySQL (DBMS), ChromaDB (Vector DB), SQLite, Normalized Schemas', pips: 5, iconType: 'devops' },
+    { name: 'AI & Agentic Workflows', desc: 'LangGraph, RAG Vector Retrieval, Gemini API, Multi-Agent Pipelines', pips: 5, iconType: 'security' },
+    { name: 'CS Core & Security', desc: 'DSA (100+ Solved), OOP, BCrypt, JWT, RBAC Auth, JUnit Testing, Git/Linux', pips: 5, iconType: 'ai' },
   ],
   focusAreas: [
-    { _id: '1', tag: 'DOMAIN 01', title: 'Web Application Development', desc: 'Designing and building scalable, responsive web apps using React, Node.js, Express, and modern database architectures.' },
-    { _id: '2', tag: 'DOMAIN 02', title: 'Agentic AI & RAG Workflows', desc: 'Developing intelligent workflows, multi-agent systems with LangGraph, and retrieval-augmented generation pipelines.' },
-    { _id: '3', tag: 'DOMAIN 03', title: 'Data Structures & Algorithms', desc: 'Strong foundation in computer science core principles, algorithmic problem solving, and software design patterns.' },
-    { _id: '4', tag: 'DOMAIN 04', title: 'Software Craft & Security', desc: 'Applying 4-layer system design, BCrypt password security, role-based access control (RBAC), and automated unit testing.' },
+    { tag: 'DOMAIN 01', title: 'Web Application Development', desc: 'Designing and building scalable, responsive web apps using React, Node.js, Express, and modern database architectures.', sortOrder: 0 },
+    { tag: 'DOMAIN 02', title: 'Agentic AI & RAG Workflows', desc: 'Developing intelligent workflows, multi-agent systems with LangGraph, and retrieval-augmented generation pipelines.', sortOrder: 1 },
+    { tag: 'DOMAIN 03', title: 'Data Structures & Algorithms', desc: 'Strong foundation in computer science core principles, algorithmic problem solving, and software design patterns.', sortOrder: 2 },
+    { tag: 'DOMAIN 04', title: 'Software Craft & Security', desc: 'Applying 4-layer system design, BCrypt password security, role-based access control (RBAC), and automated unit testing.', sortOrder: 3 },
   ],
   messages: [],
   testimonials: [],
 };
 
-const loadInitialData = () => {
-  try {
-    if (fs.existsSync(DATA_FILE)) {
-      const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-      const loaded = JSON.parse(raw);
-      console.log('✓ Persistent user data loaded successfully from user_data.json');
-      return {
-        adminCredentials: loaded.adminCredentials && loaded.adminCredentials.passwordHash ? loaded.adminCredentials : {
-          username: process.env.ADMIN_USERNAME || 'admin',
-          passwordHash: initialAdminHash,
-        },
-        profile: { ...defaultData.profile, ...(loaded.profile || {}) },
-        projects: loaded.projects && loaded.projects.length > 0 ? loaded.projects : defaultData.projects,
-        skills: (loaded.skills && loaded.skills.length > 0 && loaded.skills[0].pips !== undefined) ? loaded.skills : defaultData.skills,
-        focusAreas: loaded.focusAreas && loaded.focusAreas.length > 0 ? loaded.focusAreas : defaultData.focusAreas,
-        messages: Array.isArray(loaded.messages) ? loaded.messages : [],
-        testimonials: Array.isArray(loaded.testimonials) ? loaded.testimonials : [],
-      };
-    }
-  } catch (err) {
-    console.warn('⚠ Could not read user_data.json file, using defaults:', err.message);
-  }
-  return defaultData;
+// Live in-memory cache — always reflects the latest state from MongoDB.
+// Do NOT read from or write to this directly in routes; use the helper below.
+export const memoryStore = {
+  adminCredentials: { ...DEFAULT_DATA.adminCredentials },
+  profile: { ...DEFAULT_DATA.profile },
+  projects: [...DEFAULT_DATA.projects],
+  skills: [...DEFAULT_DATA.skills],
+  focusAreas: [...DEFAULT_DATA.focusAreas],
+  messages: [],
+  testimonials: [],
 };
 
-export const memoryStore = loadInitialData();
-
-export const persistMemoryStore = () => {
-  try {
-    const dir = path.dirname(DATA_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(DATA_FILE, JSON.stringify(memoryStore, null, 2), 'utf-8');
-    console.log('✓ Persistent user data saved to user_data.json');
-  } catch (err) {
-    console.error('⚠ Failed to persist memoryStore:', err.message);
-  }
-};
+// No-op kept for backward compatibility with any call sites that still import it.
+// File-based persistence is intentionally removed — Render ephemeral disk is unreliable.
+export const persistMemoryStore = () => {};
