@@ -12,8 +12,8 @@ const profileSchema = new mongoose.Schema(
         'Full-stack engineer. Open-source contributor. I build scalable systems, craft pixel-perfect interfaces, and write code that runs silent and fast — like a shadow in the machine.',
     },
     projectsShipped: { type: String, default: '6+' },
-    yearsCoding: { type: String, default: '9+' },
-    clientsServed: { type: String, default: '31+' },
+    yearsCoding: { type: String, default: '3+' },
+    clientsServed: { type: String, default: '100+' },
     status: { type: String, default: 'Taking Missions' },
     statusDetail: {
       type: String,

@@ -66,7 +66,7 @@ const DEFAULT_PROFILE: ProfileData = {
   subtext: '3rd-Year Computer Science B.Tech student & Web Developer. I build clean web applications, integrate intelligent AI workflows, and solve complex DSA problems.',
   projectsShipped: '6+',
   yearsCoding: '3+',
-  clientsServed: '500+',
+  clientsServed: '100+',
   status: 'Available for Web Dev & Software Roles',
   statusDetail: 'Focused on Web Development & AI Applications. Actively building projects with React, Node.js, Express, FastAPI, and LangGraph.',
   email: 'kumarharsh1851@gmail.com',
@@ -151,7 +151,7 @@ const DEFAULT_SKILLS: Skill[] = [
   {
     _id: '6',
     name: 'CS Core & Security',
-    desc: 'DSA (500+ Solved), OOP, BCrypt, JWT, RBAC Auth, JUnit Testing, Git/Linux',
+    desc: 'DSA (100+ Solved), OOP, BCrypt, JWT, RBAC Auth, JUnit Testing, Git/Linux',
     pips: 5,
     iconType: 'ai',
   },

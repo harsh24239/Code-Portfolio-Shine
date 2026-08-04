@@ -102,11 +102,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Shadow Portfolio Backend Operational' });
 });
 
-// Seed Initial Data to MongoDB Atlas
+// Seed & Sync Initial Data with MongoDB Atlas
 const seedInitialData = async () => {
   try {
     if (!isDbConnected) return;
 
+    // Admin
     const adminCount = await Admin.countDocuments();
     if (adminCount === 0) {
       await Admin.create({
@@ -116,25 +117,51 @@ const seedInitialData = async () => {
       console.log('✓ Default Admin created in MongoDB Atlas');
     }
 
-    const profileCount = await Profile.countDocuments();
-    if (profileCount === 0 && memoryStore.profile) {
+    // Profile
+    const dbProfile = await Profile.findOne().sort({ createdAt: -1 });
+    if (dbProfile) {
+      const obj = dbProfile.toObject();
+      delete obj._id;
+      delete obj.__v;
+      Object.assign(memoryStore.profile, obj);
+      console.log('✓ Profile synced from MongoDB Atlas to memoryStore');
+    } else if (memoryStore.profile) {
       await Profile.create(memoryStore.profile);
       console.log('✓ Profile seeded to MongoDB Atlas');
     }
 
-    const projectCount = await Project.countDocuments();
-    if (projectCount === 0 && memoryStore.projects && memoryStore.projects.length > 0) {
+    // Projects
+    const dbProjects = await Project.find().sort({ sortOrder: 1, createdAt: -1 });
+    if (dbProjects && dbProjects.length > 0) {
+      memoryStore.projects = dbProjects.map((p) => {
+        const obj = p.toObject();
+        obj._id = String(obj._id);
+        return obj;
+      });
+      console.log(`✓ ${dbProjects.length} Projects synced from MongoDB Atlas to memoryStore`);
+    } else if (memoryStore.projects && memoryStore.projects.length > 0) {
       await Project.insertMany(memoryStore.projects);
       console.log('✓ Projects seeded to MongoDB Atlas');
     }
 
-    const skillCount = await Skill.countDocuments();
-    if (skillCount === 0 && memoryStore.skills && memoryStore.skills.length > 0) {
+    // Skills
+    const dbSkills = await Skill.find().sort({ createdAt: 1 });
+    if (dbSkills && dbSkills.length > 0) {
+      memoryStore.skills = dbSkills.map((s) => {
+        const obj = s.toObject();
+        obj._id = String(obj._id);
+        return obj;
+      });
+      console.log(`✓ ${dbSkills.length} Skills synced from MongoDB Atlas to memoryStore`);
+    } else if (memoryStore.skills && memoryStore.skills.length > 0) {
       await Skill.insertMany(memoryStore.skills);
       console.log('✓ Skills seeded to MongoDB Atlas');
     }
+
+    // Persist synced data locally
+    persistMemoryStore();
   } catch (error) {
-    console.warn('⚠ Database seeding note:', error.message);
+    console.warn('⚠ Database seeding/sync note:', error.message);
   }
 };
 
