@@ -349,17 +349,27 @@ export default function App() {
 
   return (
     <>
-      {/* Live data loading indicator — visible only while fetching from backend */}
+      {/* Live data loading indicator — matches portfolio dark theme */}
       {dataLoading && (
         <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-          background: 'rgba(220,38,38,0.92)', color: '#fff',
-          fontSize: '0.7rem', letterSpacing: '0.12em', fontFamily: 'monospace',
-          padding: '6px 16px', textAlign: 'center',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9999,
+          background: '#1f0505',
+          borderTop: '1px solid #d40000',
+          color: '#8c8080',
+          fontSize: '0.65rem', letterSpacing: '0.15em',
+          fontFamily: '"IBM Plex Mono", monospace',
+          padding: '8px 24px',
+          display: 'flex', alignItems: 'center', gap: '10px',
         }}>
-          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#fff', animation: 'pulse 1s infinite' }} />
-          SYNCING LIVE DATA FROM SERVER...
+          <span style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: '#d40000',
+            boxShadow: '0 0 6px #d40000',
+            flexShrink: 0,
+            animation: 'pulse 1.2s ease-in-out infinite',
+          }} />
+          <span style={{ color: '#d40000' }}>LIVE</span>
+          <span>SYNCING DATA FROM SERVER</span>
         </div>
       )}
       {/* NAV */}
