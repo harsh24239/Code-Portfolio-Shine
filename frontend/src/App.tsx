@@ -293,7 +293,10 @@ export default function App() {
   const [contactMessage, setContactMessage] = useState('');
   const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
+  const [dataLoading, setDataLoading] = useState(true);
+
   useEffect(() => {
+    setDataLoading(true);
     fetch(`${API_BASE}/api/portfolio`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -303,7 +306,8 @@ export default function App() {
         if (Array.isArray(data.skills) && data.skills.length > 0) setSkills(data.skills);
         if (Array.isArray(data.focusAreas) && data.focusAreas.length > 0) setFocusAreas(data.focusAreas);
       })
-      .catch(() => {/* Keep fallbacks */});
+      .catch(() => {/* Keep fallbacks */})
+      .finally(() => setDataLoading(false));
   }, []);
 
   const handleContactSubmit = async (e: FormEvent) => {
@@ -345,6 +349,19 @@ export default function App() {
 
   return (
     <>
+      {/* Live data loading indicator — visible only while fetching from backend */}
+      {dataLoading && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+          background: 'rgba(220,38,38,0.92)', color: '#fff',
+          fontSize: '0.7rem', letterSpacing: '0.12em', fontFamily: 'monospace',
+          padding: '6px 16px', textAlign: 'center',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+        }}>
+          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#fff', animation: 'pulse 1s infinite' }} />
+          SYNCING LIVE DATA FROM SERVER...
+        </div>
+      )}
       {/* NAV */}
       <nav aria-label="Primary navigation">
         <div className="container">
