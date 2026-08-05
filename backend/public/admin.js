@@ -406,6 +406,12 @@ async function handleSaveProject(e) {
   const url = id ? `${API_BASE}/admin/projects/${id}` : `${API_BASE}/admin/projects`;
   const method = id ? 'PUT' : 'POST';
 
+  // Show saving indicator
+  const saveBtn = e.target.querySelector('button[type="submit"]');
+  const origText = saveBtn.textContent;
+  saveBtn.textContent = 'SAVING...';
+  saveBtn.disabled = true;
+
   try {
     const res = await fetch(url, {
       method,
@@ -419,9 +425,15 @@ async function handleSaveProject(e) {
     if (res.ok) {
       document.getElementById('project-modal').classList.add('hidden');
       loadProjects();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(`Failed to save project: ${data.message || res.statusText || 'Server error'}`);
     }
   } catch (err) {
-    alert('Error saving project');
+    alert(`Error saving project: ${err.message}`);
+  } finally {
+    saveBtn.textContent = origText;
+    saveBtn.disabled = false;
   }
 }
 
@@ -505,6 +517,11 @@ async function handleSaveSkill(e) {
   const url = id ? `${API_BASE}/admin/skills/${id}` : `${API_BASE}/admin/skills`;
   const method = id ? 'PUT' : 'POST';
 
+  const saveBtn = e.target.querySelector('button[type="submit"]');
+  const origText = saveBtn.textContent;
+  saveBtn.textContent = 'SAVING...';
+  saveBtn.disabled = true;
+
   try {
     const res = await fetch(url, {
       method,
@@ -518,9 +535,15 @@ async function handleSaveSkill(e) {
     if (res.ok) {
       document.getElementById('skill-modal').classList.add('hidden');
       loadSkills();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(`Failed to save skill: ${data.message || res.statusText || 'Server error'}`);
     }
   } catch (err) {
-    alert('Error saving skill');
+    alert(`Error saving skill: ${err.message}`);
+  } finally {
+    saveBtn.textContent = origText;
+    saveBtn.disabled = false;
   }
 }
 
@@ -604,6 +627,11 @@ async function handleSaveTestimonial(e) {
   const url = id ? `${API_BASE}/admin/focus-areas/${id}` : `${API_BASE}/admin/focus-areas`;
   const method = id ? 'PUT' : 'POST';
 
+  const saveBtn = e.target.querySelector('button[type="submit"]');
+  const origText = saveBtn.textContent;
+  saveBtn.textContent = 'SAVING...';
+  saveBtn.disabled = true;
+
   try {
     const res = await fetch(url, {
       method,
@@ -617,9 +645,15 @@ async function handleSaveTestimonial(e) {
     if (res.ok) {
       document.getElementById('testimonial-modal').classList.add('hidden');
       loadTestimonials();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(`Failed to save focus area: ${data.message || res.statusText || 'Server error'}`);
     }
   } catch (err) {
-    alert('Error saving focus area');
+    alert(`Error saving focus area: ${err.message}`);
+  } finally {
+    saveBtn.textContent = origText;
+    saveBtn.disabled = false;
   }
 }
 

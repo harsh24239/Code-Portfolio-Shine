@@ -237,14 +237,24 @@ router.put('/projects/:id', protect, async (req, res) => {
   try {
     let updated;
 
-    // 1. Save to MongoDB (permanent)
+    // Try MongoDB first — may fail if id is a non-ObjectId default string
     if (isDbConnected) {
-      const doc = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      if (doc) updated = toPlain(doc);
+      try {
+        const doc = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (doc) updated = toPlain(doc);
+        else {
+          // Not found in MongoDB — create it fresh
+          const created = await Project.create(req.body);
+          updated = toPlain(created);
+        }
+      } catch (dbErr) {
+        // CastError = invalid ObjectId (default id) — ignore and fall through to memoryStore
+        if (dbErr.name !== 'CastError') throw dbErr;
+      }
     }
 
-    // 2. Update in-memory cache
-    const idx = memoryStore.projects.findIndex((p) => p._id === req.params.id);
+    // Always update in-memory cache
+    const idx = memoryStore.projects.findIndex((p) => String(p._id) === req.params.id);
     if (idx !== -1) {
       memoryStore.projects[idx] = { ...memoryStore.projects[idx], ...req.body };
       if (!updated) updated = memoryStore.projects[idx];
@@ -258,14 +268,14 @@ router.put('/projects/:id', protect, async (req, res) => {
 
 router.delete('/projects/:id', protect, async (req, res) => {
   try {
-    // 1. Delete from MongoDB (permanent)
     if (isDbConnected) {
-      await Project.findByIdAndDelete(req.params.id);
+      try {
+        await Project.findByIdAndDelete(req.params.id);
+      } catch (dbErr) {
+        if (dbErr.name !== 'CastError') throw dbErr;
+      }
     }
-
-    // 2. Update in-memory cache
-    memoryStore.projects = memoryStore.projects.filter((p) => p._id !== req.params.id);
-
+    memoryStore.projects = memoryStore.projects.filter((p) => String(p._id) !== req.params.id);
     res.json({ message: 'Project deleted' });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -308,11 +318,19 @@ router.put('/skills/:id', protect, async (req, res) => {
     let updated;
 
     if (isDbConnected) {
-      const doc = await Skill.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      if (doc) updated = toPlain(doc);
+      try {
+        const doc = await Skill.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (doc) updated = toPlain(doc);
+        else {
+          const created = await Skill.create(req.body);
+          updated = toPlain(created);
+        }
+      } catch (dbErr) {
+        if (dbErr.name !== 'CastError') throw dbErr;
+      }
     }
 
-    const idx = memoryStore.skills.findIndex((s) => s._id === req.params.id);
+    const idx = memoryStore.skills.findIndex((s) => String(s._id) === req.params.id);
     if (idx !== -1) {
       memoryStore.skills[idx] = { ...memoryStore.skills[idx], ...req.body };
       if (!updated) updated = memoryStore.skills[idx];
@@ -327,9 +345,13 @@ router.put('/skills/:id', protect, async (req, res) => {
 router.delete('/skills/:id', protect, async (req, res) => {
   try {
     if (isDbConnected) {
-      await Skill.findByIdAndDelete(req.params.id);
+      try {
+        await Skill.findByIdAndDelete(req.params.id);
+      } catch (dbErr) {
+        if (dbErr.name !== 'CastError') throw dbErr;
+      }
     }
-    memoryStore.skills = memoryStore.skills.filter((s) => s._id !== req.params.id);
+    memoryStore.skills = memoryStore.skills.filter((s) => String(s._id) !== req.params.id);
     res.json({ message: 'Skill deleted' });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -372,11 +394,19 @@ router.put('/focus-areas/:id', protect, async (req, res) => {
     let updated;
 
     if (isDbConnected) {
-      const doc = await FocusArea.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      if (doc) updated = toPlain(doc);
+      try {
+        const doc = await FocusArea.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (doc) updated = toPlain(doc);
+        else {
+          const created = await FocusArea.create(req.body);
+          updated = toPlain(created);
+        }
+      } catch (dbErr) {
+        if (dbErr.name !== 'CastError') throw dbErr;
+      }
     }
 
-    const idx = memoryStore.focusAreas.findIndex((f) => f._id === req.params.id);
+    const idx = memoryStore.focusAreas.findIndex((f) => String(f._id) === req.params.id);
     if (idx !== -1) {
       memoryStore.focusAreas[idx] = { ...memoryStore.focusAreas[idx], ...req.body };
       if (!updated) updated = memoryStore.focusAreas[idx];
@@ -391,9 +421,13 @@ router.put('/focus-areas/:id', protect, async (req, res) => {
 router.delete('/focus-areas/:id', protect, async (req, res) => {
   try {
     if (isDbConnected) {
-      await FocusArea.findByIdAndDelete(req.params.id);
+      try {
+        await FocusArea.findByIdAndDelete(req.params.id);
+      } catch (dbErr) {
+        if (dbErr.name !== 'CastError') throw dbErr;
+      }
     }
-    memoryStore.focusAreas = memoryStore.focusAreas.filter((f) => f._id !== req.params.id);
+    memoryStore.focusAreas = memoryStore.focusAreas.filter((f) => String(f._id) !== req.params.id);
     res.json({ message: 'Focus area deleted' });
   } catch (err) {
     res.status(400).json({ message: err.message });
