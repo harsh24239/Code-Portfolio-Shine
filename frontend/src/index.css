@@ -27,8 +27,8 @@
   --tb-img-pop-border: #ff6060;
   --tb-img-pop-input-border: #ff6060;
 
-  --text-xs:       0.78rem;
-  --text-sm:       0.9rem;
+  --text-xs:       0.75rem;
+  --text-sm:       0.8125rem;
   --text-base:     1rem;
   --text-lg:       1.125rem;
   --text-xl:       1.25rem;
@@ -55,7 +55,7 @@ html {
 }
 
 body, p, span, a, button, li, blockquote, figcaption, label, input, textarea, select, h3, h4, h5, h6, code, pre {
-  font-family: var(--font-body) !important;
+  font-family: 'IBM Plex Mono', system-ui, sans-serif !important;
 }
 
 h1, h2 {
@@ -70,13 +70,13 @@ body {
   color: var(--text);
   font-size: var(--text-base);
   line-height: 1.65;
-  letter-spacing: 0;
-  word-spacing: normal;
+  letter-spacing: 0.01em;
+  word-spacing: 0.16em;
   overflow-x: hidden;
   width: 100%;
 }
 
-p + p { margin-top: 1.25em; }
+p + p { margin-top: 2em; }
 
 h1, h2, h3, h4 {
   line-height: 1.05;

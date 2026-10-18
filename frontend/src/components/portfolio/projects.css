@@ -17,14 +17,14 @@
 
 .projects-header-aside p {
   color: #baa2a2;
-  font-size: 1rem;
-  line-height: 1.65;
+  font-size: 0.8rem;
+  line-height: 1.75;
 }
 
 #projects .projects-header-meta {
   color: #d17d7d;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
 }
 
 #projects .projects-header-meta span {
@@ -156,7 +156,7 @@
   top: 20px;
   z-index: 3;
   color: #bf7e7e;
-  font-size: 12px;
+  font-size: 9px;
   line-height: 1;
 }
 
@@ -213,8 +213,8 @@
   align-items: center;
   gap: clamp(0.35rem, 1.2vw, 0.8rem);
   color: #e2a0a0;
-  font-size: clamp(0.78rem, 0.95vw, 0.9rem);
-  letter-spacing: 0.1em;
+  font-size: clamp(0.48rem, 0.8vw, 0.62rem);
+  letter-spacing: 0.16em;
 }
 
 .signal-ai-flow span {
@@ -288,10 +288,10 @@
 
 .project-signal-systems { inset: 17% 18%; }
 .signal-stack { position: relative; z-index: 1; display: grid; gap: 8px; width: min(72%, 220px); animation: signal-stack-breathe 7s ease-in-out infinite; }
-.signal-stack span { padding: 0.75rem 1rem; border: 1px solid #d76b6b66; background: #1b0505e6; color: #e2a0a0; font-size: 0.78rem; letter-spacing: 0.1em; text-align: center; box-shadow: 12px 0 0 #6c111128; }
+.signal-stack span { padding: 0.75rem 1rem; border: 1px solid #d76b6b66; background: #1b0505e6; color: #e2a0a0; font-size: 0.58rem; letter-spacing: 0.2em; text-align: center; box-shadow: 12px 0 0 #6c111128; }
 .signal-stack span:nth-child(2) { translate: 18px 0; }.signal-stack span:nth-child(3) { translate: 36px 0; }
 .signal-stack-line { position: absolute; width: 1px; height: 34%; background: #d76b6b66; rotate: 38deg; }.signal-stack-line-one { left: 30%; top: 32%; }.signal-stack-line-two { right: 20%; bottom: 20%; rotate: -38deg; }
-.signal-stack-caption { position: absolute; right: 0; bottom: 4%; color: #9b6262; font-size: 0.75rem; letter-spacing: 0.1em; writing-mode: vertical-rl; }
+.signal-stack-caption { position: absolute; right: 0; bottom: 4%; color: #9b6262; font-size: 0.5rem; letter-spacing: 0.16em; writing-mode: vertical-rl; }
 
 #projects .project-card-body {
   display: flex;
@@ -316,7 +316,7 @@
 #projects .project-tag {
   margin-bottom: 14px;
   color: #d17d7d;
-  font-size: 12px;
+  font-size: 9px;
   font-weight: 400;
   letter-spacing: 0.11em;
   line-height: 1.8;
@@ -327,7 +327,7 @@
   padding: 4px 7px;
   border: 1px solid #d28b8b33;
   color: #9d7878;
-  font-size: 12px;
+  font-size: 8px;
   letter-spacing: 0.1em;
   line-height: 1;
   text-transform: uppercase;
@@ -336,11 +336,11 @@
 #projects .project-title {
   margin: 0 0 16px;
   color: var(--text);
-  font-family: 'IBM Plex Mono', system-ui, sans-serif !important;
+  font-family: 'IBM Plex Mono', monospace !important;
   font-size: clamp(21px, 2vw, 28px);
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  line-height: 1.12;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 1.28;
   overflow-wrap: anywhere;
 }
 
@@ -355,13 +355,8 @@
   max-width: 650px;
   margin: 0;
   color: #baa2a2;
-  font-size: 15px;
-  line-height: 1.65;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.85;
 }
 
 .project-proof {
@@ -373,7 +368,7 @@
   padding-left: 10px;
   border-left: 1px solid #d55555;
   color: #e0b1b1;
-  font-size: 12px;
+  font-size: 9px;
   letter-spacing: 0.11em;
   line-height: 1.5;
   text-transform: uppercase;
@@ -393,7 +388,7 @@
 
 #projects .project-year {
   color: #9d7878;
-  font-size: 12px;
+  font-size: 8px;
   letter-spacing: 0.08em;
   line-height: 1.8;
 }
@@ -404,7 +399,7 @@
   gap: 13px;
   min-height: 28px;
   color: #e0b1b1;
-  font-size: 12px;
+  font-size: 9px;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -447,7 +442,7 @@
 @media (max-width: 640px) {
   #projects .projects-header { margin-bottom: 28px; }
   .projects-header-aside { max-width: none; gap: 0.8rem; }
-  .projects-header-aside p { font-size: 0.92rem; }
+  .projects-header-aside p { font-size: 0.75rem; }
   #projects .projects-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; }
   #projects .project-card-featured { grid-column: auto; }
   #projects .project-card-image,
@@ -456,11 +451,11 @@
   #projects .project-card-body { padding: 23px 21px 16px; }
   #projects .project-card-featured .project-title { font-size: 29px; }
   #projects .project-title { font-size: 23px; line-height: 1.3; }
-  #projects .project-desc { font-size: 14px; line-height: 1.65; }
+  #projects .project-desc { font-size: 12px; line-height: 1.85; }
   #projects .project-footer { margin-top: 23px; padding-top: 14px; }
   .project-signal { inset: 18% 9%; }
   .project-signal-data { inset: 18% 12%; }
-  .signal-ai-flow { gap: 0.28rem; font-size: 0.78rem; }
+  .signal-ai-flow { gap: 0.28rem; font-size: 0.44rem; }
   .signal-ai-flow span { padding: 0.55rem 0.3rem; }
 }
 
@@ -474,14 +469,10 @@
   #projects .project-card,
   #projects .project-card-image::after,
   #projects .project-cover-corner,
-  #projects .project-link > span,
-  #projects .project-signal { transition: none; }
+  #projects .project-link > span { transition: none; }
   .signal-orbit-one,
   .signal-orbit-two,
   .signal-stack { animation: none; }
   #projects .project-card:has(.project-card-link:hover),
-  #projects .project-card:has(.project-card-link:focus-visible) {
-    transform: none;
-    translate: none;
-  }
+  #projects .project-card:has(.project-card-link:focus-visible) { transform: none; }
 }
