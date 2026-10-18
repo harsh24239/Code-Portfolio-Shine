@@ -47,14 +47,18 @@
           <span class="brand-title">SHADOW HQ // ADMIN</span>
         </div>
         <div class="user-group">
-          <span id="user-display">Logged in as Admin</span>
-          <span class="header-link-status"><i></i> CONTROL LINK LIVE</span>
-          <button id="btn-refresh-dashboard" class="btn-ghost-sm">REFRESH PLANE</button>
-          <button id="btn-security-trigger" class="btn-ghost-sm">SECURITY CENTER</button>
-          <button id="btn-mfa-trigger" class="btn-ghost-sm">SECURITY / MFA</button>
-          <button id="btn-change-username-trigger" class="btn-ghost-sm">SECURITY / USERNAME</button>
-          <button id="btn-change-pass-trigger" class="btn-ghost-sm">SECURITY / PASSWORD</button>
-          <button id="btn-logout" class="btn-ghost-sm">LOGOUT</button>
+          <div class="identity-cluster">
+            <span id="user-display">Logged in as Admin</span>
+            <span class="header-link-status"><i></i> CONTROL LINK LIVE</span>
+          </div>
+          <div class="header-actions" aria-label="Admin commands">
+            <button id="btn-refresh-dashboard" class="btn-ghost-sm">REFRESH PLANE</button>
+            <button id="btn-security-trigger" class="btn-ghost-sm">SECURITY CENTER</button>
+            <button id="btn-mfa-trigger" class="btn-ghost-sm">MFA</button>
+            <button id="btn-change-username-trigger" class="btn-ghost-sm">USERNAME</button>
+            <button id="btn-change-pass-trigger" class="btn-ghost-sm">PASSWORD</button>
+            <button id="btn-logout" class="btn-ghost-sm btn-logout">LOGOUT</button>
+          </div>
         </div>
       </div>
     </header>
