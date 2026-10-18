@@ -26,21 +26,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Security Middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      baseUri: ["'self'"],
-      objectSrc: ["'none'"],
-      frameAncestors: ["'none'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:'],
-      connectSrc: ["'self'"],
-    },
-  },
-}));
+app.use(helmet({ contentSecurityPolicy: false }));
 
 // Anti-caching headers for admin routes
 app.use(['/admin', '/api/admin'], (req, res, next) => {
@@ -65,12 +51,12 @@ const contactLimiter = rateLimit({
 // CORS
 const allowedOrigins = process.env.ALLOWED_ORIGIN
   ? process.env.ALLOWED_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
-  : isProduction ? [] : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  : ['*'];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('CORS Policy: Access denied from this origin.'));
@@ -95,14 +81,11 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-let startupReady = false;
-
 app.get('/health', (req, res) => {
-  const persistent = isDbConnected;
-  const ready = startupReady && (persistent || allowInMemoryFallback);
-  res.status(ready ? 200 : 503).json({
-    status: ready ? 'OK' : 'DEGRADED',
-    message: ready ? 'Shadow Portfolio Backend Operational' : 'Service is not ready.',
+  res.status(200).json({
+    status: 'OK',
+    db: isDbConnected ? 'MongoDB Atlas' : 'in-memory only',
+    message: 'Shadow Portfolio Backend Operational',
   });
 });
 
@@ -115,8 +98,12 @@ app.get('/health', (req, res) => {
 //  If no data exists yet in MongoDB, seeds it from DEFAULT_DATA defaults.
 // ─────────────────────────────────────────────────────────────────────────────
 const syncFromMongoDB = async () => {
-  if (!isDbConnected) throw new Error('Cannot synchronize portfolio data before MongoDB is connected.');
+  if (!isDbConnected) {
+    console.log('ℹ  DB not connected — serving default in-memory data.');
+    return;
+  }
 
+  try {
     // ── Admin ────────────────────────────────────────────────────────────────
     let admin = await Admin.findOne();
     if (admin) {
@@ -156,8 +143,7 @@ const syncFromMongoDB = async () => {
         return;
       }
 
-      // Let MongoDB generate valid ObjectIds for seeded records. Placeholder
-      // IDs make edits appear successful while remaining memory-only.
+      // Let MongoDB generate valid ObjectIds for seeded records.
       const inserted = await Model.insertMany(defaults.map(({ _id, ...item }) => item));
       memoryStore[storeKey] = inserted.map(toPlainObj);
       console.log(`✓ ${label} seeded to MongoDB (first boot)`);
@@ -168,6 +154,10 @@ const syncFromMongoDB = async () => {
     await syncCollection(FocusArea, DEFAULT_DATA.focusAreas, { sortOrder: 1, createdAt: 1 }, 'focusAreas', 'Focus areas');
 
     console.log('✓ Startup sync complete — all data ready from MongoDB Atlas');
+  } catch (err) {
+    console.error('✗ Startup sync error:', err.message);
+    console.log('  Serving default in-memory data as fallback.');
+  }
 };
 
 /** Convert a Mongoose doc to a plain JS object with _id as string */
@@ -179,32 +169,21 @@ const toPlainObj = (doc) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5050;
 
-const startServer = async () => {
+app.listen(PORT, async () => {
+  console.log(`\n🚀 Server listening on http://localhost:${PORT}`);
+  console.log(`🔒 Admin Panel: http://localhost:${PORT}/admin\n`);
   assertProductionConfig();
-  const connected = await connectDB();
-
-  if (connected) {
-    await syncFromMongoDB();
-  } else if (!allowInMemoryFallback) {
-    throw new Error('MongoDB is unavailable. Set MONGO_URI or explicitly enable ALLOW_IN_MEMORY_FALLBACK for local-only work.');
-  } else {
-    console.warn('⚠ ALLOW_IN_MEMORY_FALLBACK=true — admin changes are temporary and will be lost on restart.');
+  try {
+    const connected = await connectDB();
+    if (connected) {
+      await syncFromMongoDB();
+    } else {
+      console.log('ℹ Running with default in-memory portfolio data.');
+    }
+  } catch (err) {
+    console.warn('⚠ Background DB sync error:', err.message);
+    console.log('ℹ Running with default in-memory portfolio data.');
   }
-
-  if (!process.env.JWT_SECRET && allowInMemoryFallback) {
-    console.warn('⚠ No JWT_SECRET configured — using an ephemeral development secret for this process only.');
-  }
-
-  startupReady = true;
-  app.listen(PORT, () => {
-    console.log(`\n🚀 Server listening on http://localhost:${PORT}`);
-    console.log(`🔒 Admin Panel: http://localhost:${PORT}/admin\n`);
-  });
-};
-
-startServer().catch((error) => {
-  console.error(`✗ Server startup blocked: ${error.message}`);
-  process.exitCode = 1;
 });

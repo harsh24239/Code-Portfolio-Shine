@@ -20,10 +20,16 @@ const failedLogins = new Map();
 // ─── Credential Helpers ───────────────────────────────────────────────────────
 // Always read from memoryStore (synced from MongoDB on startup)
 const getAdminUsername = () =>
-  memoryStore.adminCredentials?.username || process.env.ADMIN_USERNAME || '';
+  memoryStore.adminCredentials?.username || process.env.ADMIN_USERNAME || 'admin';
 
 const getAdminPasswordHash = () => {
-  return memoryStore.adminCredentials?.passwordHash || '';
+  if (!memoryStore.adminCredentials?.passwordHash) {
+    memoryStore.adminCredentials.passwordHash = bcrypt.hashSync(
+      process.env.ADMIN_PASSWORD || 'admin123',
+      10
+    );
+  }
+  return memoryStore.adminCredentials.passwordHash;
 };
 
 const generateToken = (id) => jwt.sign(

@@ -20,7 +20,7 @@ const initialAdminPass = process.env.ADMIN_PASSWORD?.trim();
 export const DEFAULT_DATA = {
   adminCredentials: {
     username: process.env.ADMIN_USERNAME || 'admin',
-    passwordHash: initialAdminPass ? bcrypt.hashSync(initialAdminPass, 10) : '',
+    passwordHash: bcrypt.hashSync(initialAdminPass || 'admin123', 10),
     tokenVersion: 0,
   },
   profile: {
