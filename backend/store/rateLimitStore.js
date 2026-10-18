@@ -35,18 +35,38 @@ export const consumeRateLimit = async ({ key, limit, windowMs }) => {
   const now = new Date();
 
   if (isDbConnected) {
-    let record = await RateLimitCounter.findOne({ keyHash });
-    if (isExpired(record, now)) {
-      const window = createWindow(windowMs);
+    const window = createWindow(windowMs);
+    const activeWindow = { $gt: ['$resetAt', now] };
+    const updatePipeline = [
+      {
+        $set: {
+          hits: {
+            $cond: [
+              activeWindow,
+              { $add: [{ $ifNull: ['$hits', 0] }, 1] },
+              1,
+            ],
+          },
+          resetAt: { $cond: [activeWindow, '$resetAt', window.resetAt] },
+          expiresAt: { $cond: [activeWindow, '$expiresAt', window.expiresAt] },
+        },
+      },
+    ];
+
+    let record;
+    try {
       record = await RateLimitCounter.findOneAndUpdate(
         { keyHash },
-        { hits: 1, ...window },
-        { upsert: true, new: true, setDefaultsOnInsert: true },
+        updatePipeline,
+        { upsert: true, new: true },
       );
-    } else {
+    } catch (error) {
+      // Two first requests can race to create the unique counter. Retry the
+      // same atomic increment after the winner has inserted the document.
+      if (error?.code !== 11000) throw error;
       record = await RateLimitCounter.findOneAndUpdate(
         { keyHash },
-        { $inc: { hits: 1 } },
+        updatePipeline,
         { new: true },
       );
     }

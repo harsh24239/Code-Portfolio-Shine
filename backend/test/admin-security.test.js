@@ -212,6 +212,13 @@ test('enforces the shared in-memory limiter and clears login throttles', async (
   assert.equal(second.allowed, true);
   assert.equal(third.allowed, false);
 
+  const concurrentKey = `concurrent-key-${Date.now()}-${Math.random()}`;
+  const concurrentResults = await Promise.all(
+    Array.from({ length: 10 }, () => consumeRateLimit({ key: concurrentKey, limit: 5, windowMs: 60_000 })),
+  );
+  assert.equal(concurrentResults.filter((result) => result.allowed).length, 5);
+  assert.equal(Math.max(...concurrentResults.map((result) => result.remaining)), 4);
+
   for (let attempt = 0; attempt < 5; attempt += 1) await registerLoginFailure(key);
   assert.equal((await getLoginThrottle(key)).blocked, true);
   await clearLoginThrottle(key);
