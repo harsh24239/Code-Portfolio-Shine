@@ -1,5 +1,5 @@
 const API_BASE = '/api';
-let authToken = sessionStorage.getItem('shadow_admin_session') || '';
+let csrfToken = '';
 
 // DOM Elements
 const loginOverlay = document.getElementById('login-overlay');
@@ -15,19 +15,27 @@ const btnForgotPass = document.getElementById('btn-forgot-pass');
 const tabBtns = document.querySelectorAll('.tab-btn');
 const tabContents = document.querySelectorAll('.tab-content');
 
+const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+async function bootstrapCsrf() {
+  const res = await fetch(`${API_BASE}/admin/csrf`, { credentials: 'include' });
+  const data = await res.json();
+  if (!res.ok || !data.csrfToken) throw new Error('CSRF bootstrap failed');
+  csrfToken = data.csrfToken;
+}
+
+async function adminFetch(url, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  if (unsafeMethods.has(method) && !csrfToken) await bootstrapCsrf();
+  const headers = new Headers(options.headers || {});
+  if (unsafeMethods.has(method)) headers.set('X-CSRF-Token', csrfToken);
+  return fetch(url, { ...options, headers, credentials: 'include' });
+}
+
 // Init
 document.addEventListener('DOMContentLoaded', () => {
-  if (authToken) {
-    verifyAuth();
-  } else {
-    showLogin();
-  }
+  verifyAuth();
   setupEventListeners();
-});
-
-// Strict Security: Automatic Logout on Page Refresh / Tab Close / URL Copy
-window.addEventListener('beforeunload', () => {
-  sessionStorage.removeItem('shadow_admin_session');
 });
 
 function setupEventListeners() {
@@ -97,17 +105,16 @@ async function handleLogin(e) {
   const password = document.getElementById('login-password').value;
 
   try {
-    const res = await fetch(`${API_BASE}/admin/login`, {
+    await bootstrapCsrf();
+    const res = await adminFetch(`${API_BASE}/admin/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
 
     const data = await res.json();
-    if (res.ok && data.token) {
-      authToken = data.token;
+    if (res.ok && data.username) {
       isLoggedOut = false;
-      sessionStorage.setItem('shadow_admin_session', authToken);
       if (data.username) {
         document.getElementById('user-display').textContent = `Logged in as ${data.username}`;
       }
@@ -131,12 +138,9 @@ async function handleChangeUsername(e) {
   msgEl.textContent = 'Updating...';
 
   try {
-    const res = await fetch(`${API_BASE}/admin/change-username`, {
+    const res = await adminFetch(`${API_BASE}/admin/change-username`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ currentPassword, newUsername }),
     });
 
@@ -169,12 +173,9 @@ async function handleChangePassword(e) {
   msgEl.textContent = 'Updating...';
 
   try {
-    const res = await fetch(`${API_BASE}/admin/change-password`, {
+    const res = await adminFetch(`${API_BASE}/admin/change-password`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ currentPassword, newPassword }),
     });
 
@@ -196,9 +197,8 @@ async function handleChangePassword(e) {
 
 async function verifyAuth() {
   try {
-    const res = await fetch(`${API_BASE}/admin/me`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
+    await bootstrapCsrf();
+    const res = await adminFetch(`${API_BASE}/admin/me`);
 
     if (res.ok) {
       showApp();
@@ -224,10 +224,10 @@ function showApp() {
 }
 
 function handleLogout() {
-  if (isLoggedOut && !authToken) return; // Prevent double logout
+  if (isLoggedOut) return;
   isLoggedOut = true;
-  authToken = '';
-  sessionStorage.removeItem('shadow_admin_session');
+  adminFetch(`${API_BASE}/admin/logout`, { method: 'POST' }).catch(() => {});
+  csrfToken = '';
   const loginUser = document.getElementById('login-username');
   const loginPass = document.getElementById('login-password');
   if (loginUser) loginUser.value = '';
@@ -248,9 +248,7 @@ async function loadAllData() {
 async function loadSystemStatus() {
   const statusEl = document.getElementById('system-status');
   try {
-    const res = await fetch(`${API_BASE}/admin/status`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
+    const res = await adminFetch(`${API_BASE}/admin/status`);
     const data = await res.json();
     statusEl.className = `system-status ${data.persistence === 'durable' ? 'is-secure' : 'is-warning'}`;
     statusEl.textContent = data.persistence === 'durable'
@@ -314,12 +312,9 @@ async function handleSaveProfile(e) {
   };
 
   try {
-    const res = await fetch(`${API_BASE}/admin/profile`, {
+    const res = await adminFetch(`${API_BASE}/admin/profile`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
 
@@ -338,9 +333,7 @@ async function handleSaveProfile(e) {
 let currentProjects = [];
 async function loadProjects() {
   try {
-    const res = await fetch(`${API_BASE}/admin/projects`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
+    const res = await adminFetch(`${API_BASE}/admin/projects`);
     currentProjects = await res.json();
     renderProjects();
   } catch (err) {
@@ -420,9 +413,8 @@ function editProject(id) {
 async function deleteProject(id) {
   if (!confirm('Are you sure you want to delete this project?')) return;
   try {
-    const res = await fetch(`${API_BASE}/admin/projects/${id}`, {
+    const res = await adminFetch(`${API_BASE}/admin/projects/${id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${authToken}` },
     });
     if (res.ok) {
       loadProjects();
@@ -457,12 +449,9 @@ async function handleSaveProject(e) {
   saveBtn.disabled = true;
 
   try {
-    const res = await fetch(url, {
+    const res = await adminFetch(url, {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
 
@@ -485,9 +474,7 @@ async function handleSaveProject(e) {
 let currentSkills = [];
 async function loadSkills() {
   try {
-    const res = await fetch(`${API_BASE}/admin/skills`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
+    const res = await adminFetch(`${API_BASE}/admin/skills`);
     currentSkills = await res.json();
     renderSkills();
   } catch (err) {
@@ -529,9 +516,8 @@ function editSkill(id) {
 async function deleteSkill(id) {
   if (!confirm('Are you sure you want to delete this skill?')) return;
   try {
-    await fetch(`${API_BASE}/admin/skills/${id}`, {
+    await adminFetch(`${API_BASE}/admin/skills/${id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${authToken}` },
     });
     loadSkills();
   } catch (err) {
@@ -557,12 +543,9 @@ async function handleSaveSkill(e) {
   saveBtn.disabled = true;
 
   try {
-    const res = await fetch(url, {
+    const res = await adminFetch(url, {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
 
@@ -585,9 +568,7 @@ async function handleSaveSkill(e) {
 let currentTestimonials = [];
 async function loadTestimonials() {
   try {
-    const res = await fetch(`${API_BASE}/admin/focus-areas`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
+    const res = await adminFetch(`${API_BASE}/admin/focus-areas`);
     currentTestimonials = await res.json();
     renderTestimonials();
   } catch (err) {
@@ -629,9 +610,8 @@ function editTestimonial(id) {
 async function deleteTestimonial(id) {
   if (!confirm('Are you sure you want to delete this focus domain?')) return;
   try {
-    await fetch(`${API_BASE}/admin/focus-areas/${id}`, {
+    await adminFetch(`${API_BASE}/admin/focus-areas/${id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${authToken}` },
     });
     loadTestimonials();
   } catch (err) {
@@ -657,12 +637,9 @@ async function handleSaveTestimonial(e) {
   saveBtn.disabled = true;
 
   try {
-    const res = await fetch(url, {
+    const res = await adminFetch(url, {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
 
@@ -684,9 +661,7 @@ async function handleSaveTestimonial(e) {
 // --- MESSAGES INBOX ---
 async function loadMessages() {
   try {
-    const res = await fetch(`${API_BASE}/admin/messages`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
+    const res = await adminFetch(`${API_BASE}/admin/messages`);
     const messages = await res.json();
     document.getElementById('msg-badge').textContent = messages.length;
 
@@ -737,9 +712,8 @@ async function loadMessages() {
 async function deleteMessage(id) {
   if (!confirm('Delete this transmission?')) return;
   try {
-    await fetch(`${API_BASE}/admin/messages/${id}`, {
+    await adminFetch(`${API_BASE}/admin/messages/${id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${authToken}` },
     });
     loadMessages();
   } catch (err) {

@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -18,15 +17,27 @@ import { Project } from './models/Project.js';
 import { Skill } from './models/Skill.js';
 import { FocusArea } from './models/FocusArea.js';
 
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 
 // Security Middleware
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:'],
+      connectSrc: ["'self'"],
+    },
+  },
+}));
 
 // Anti-caching headers for admin routes
 app.use(['/admin', '/api/admin'], (req, res, next) => {
@@ -51,19 +62,22 @@ const contactLimiter = rateLimit({
 // CORS
 const allowedOrigins = process.env.ALLOWED_ORIGIN
   ? process.env.ALLOWED_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
-  : ['*'];
+  : isProduction ? [] : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5050', 'http://127.0.0.1:5050'];
+
+if (isProduction) app.set('trust proxy', 1);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('CORS Policy: Access denied from this origin.'));
       }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
+    credentials: true,
   })
 );
 
@@ -81,11 +95,13 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+let startupReady = false;
+
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    db: isDbConnected ? 'MongoDB Atlas' : 'in-memory only',
-    message: 'Shadow Portfolio Backend Operational',
+  const ready = startupReady && (isDbConnected || allowInMemoryFallback);
+  res.status(ready ? 200 : 503).json({
+    status: ready ? 'OK' : 'DEGRADED',
+    message: ready ? 'Shadow Portfolio Backend Operational' : 'Service is not ready.',
   });
 });
 
@@ -98,12 +114,7 @@ app.get('/health', (req, res) => {
 //  If no data exists yet in MongoDB, seeds it from DEFAULT_DATA defaults.
 // ─────────────────────────────────────────────────────────────────────────────
 const syncFromMongoDB = async () => {
-  if (!isDbConnected) {
-    console.log('ℹ  DB not connected — serving default in-memory data.');
-    return;
-  }
-
-  try {
+  if (!isDbConnected) throw new Error('Cannot synchronize portfolio data before MongoDB is connected.');
     // ── Admin ────────────────────────────────────────────────────────────────
     let admin = await Admin.findOne();
     if (admin) {
@@ -154,10 +165,6 @@ const syncFromMongoDB = async () => {
     await syncCollection(FocusArea, DEFAULT_DATA.focusAreas, { sortOrder: 1, createdAt: 1 }, 'focusAreas', 'Focus areas');
 
     console.log('✓ Startup sync complete — all data ready from MongoDB Atlas');
-  } catch (err) {
-    console.error('✗ Startup sync error:', err.message);
-    console.log('  Serving default in-memory data as fallback.');
-  }
 };
 
 /** Convert a Mongoose doc to a plain JS object with _id as string */
@@ -169,21 +176,27 @@ const toPlainObj = (doc) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 5050;
+const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, async () => {
-  console.log(`\n🚀 Server listening on http://localhost:${PORT}`);
-  console.log(`🔒 Admin Panel: http://localhost:${PORT}/admin\n`);
+const startServer = async () => {
   assertProductionConfig();
-  try {
-    const connected = await connectDB();
-    if (connected) {
-      await syncFromMongoDB();
-    } else {
-      console.log('ℹ Running with default in-memory portfolio data.');
-    }
-  } catch (err) {
-    console.warn('⚠ Background DB sync error:', err.message);
-    console.log('ℹ Running with default in-memory portfolio data.');
+  const connected = await connectDB();
+  if (connected) {
+    await syncFromMongoDB();
+  } else if (!allowInMemoryFallback) {
+    throw new Error('MongoDB is unavailable. Set MONGO_URI or enable ALLOW_IN_MEMORY_FALLBACK only for local development.');
+  } else {
+    console.warn('⚠ ALLOW_IN_MEMORY_FALLBACK=true — admin changes are temporary and will be lost on restart.');
   }
+
+  startupReady = true;
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Server listening on http://localhost:${PORT}`);
+    console.log(`🔒 Admin Panel: http://localhost:${PORT}/admin\n`);
+  });
+};
+
+startServer().catch((error) => {
+  console.error(`✗ Server startup blocked: ${error.message}`);
+  process.exitCode = 1;
 });

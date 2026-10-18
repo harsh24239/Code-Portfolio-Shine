@@ -19,8 +19,8 @@ const initialAdminPass = process.env.ADMIN_PASSWORD?.trim();
 // After that, all data comes from MongoDB Atlas.
 export const DEFAULT_DATA = {
   adminCredentials: {
-    username: process.env.ADMIN_USERNAME || 'admin',
-    passwordHash: bcrypt.hashSync(initialAdminPass || 'admin123', 10),
+    username: process.env.ADMIN_USERNAME?.trim() || '',
+    passwordHash: initialAdminPass ? bcrypt.hashSync(initialAdminPass, 10) : '',
     tokenVersion: 0,
   },
   profile: {

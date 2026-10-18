@@ -1,8 +1,7 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { isDbConnected } from '../config/db.js';
-import { allowInMemoryFallback, assertAdminStorageAvailable, getJwtSecret, jwtAlgorithm, jwtAudience, jwtIssuer } from '../config/security.js';
+import { allowInMemoryFallback, assertAdminStorageAvailable, csrfCookieName, sessionCookieName, sessionTtlSeconds } from '../config/security.js';
 import { memoryStore } from '../store/memoryStore.js';
 import { Admin } from '../models/Admin.js';
 import { Profile } from '../models/Profile.js';
@@ -11,6 +10,9 @@ import { Skill } from '../models/Skill.js';
 import { FocusArea } from '../models/FocusArea.js';
 import { Message } from '../models/Message.js';
 import { protect } from '../middleware/auth.js';
+import { requireCsrf, issueCsrfToken } from '../middleware/csrf.js';
+import { createSession, destroyAdminSessions, destroySession } from '../store/sessionStore.js';
+import { appendCookie, parseCookies, serializeCookie } from '../utils/cookies.js';
 import { isValidEmail, normalizeText, normalizeUrl } from '../utils/validation.js';
 
 const router = express.Router();
@@ -20,27 +22,11 @@ const failedLogins = new Map();
 // ─── Credential Helpers ───────────────────────────────────────────────────────
 // Always read from memoryStore (synced from MongoDB on startup)
 const getAdminUsername = () =>
-  memoryStore.adminCredentials?.username || process.env.ADMIN_USERNAME || 'admin';
+  memoryStore.adminCredentials?.username || process.env.ADMIN_USERNAME || '';
 
 const getAdminPasswordHash = () => {
-  if (!memoryStore.adminCredentials?.passwordHash) {
-    memoryStore.adminCredentials.passwordHash = bcrypt.hashSync(
-      process.env.ADMIN_PASSWORD || 'admin123',
-      10
-    );
-  }
-  return memoryStore.adminCredentials.passwordHash;
+  return memoryStore.adminCredentials?.passwordHash || '';
 };
-
-const generateToken = (id) => jwt.sign(
-  {
-    id: String(id),
-    role: 'admin',
-    tokenVersion: memoryStore.adminCredentials.tokenVersion || 0,
-  },
-  getJwtSecret(),
-  { expiresIn: '30m', algorithm: jwtAlgorithm, issuer: jwtIssuer, audience: jwtAudience },
-);
 
 const requireAdminStorage = (res) => {
   const status = assertAdminStorageAvailable();
@@ -52,6 +38,27 @@ const requireAdminStorage = (res) => {
 };
 
 const getLoginKey = (req, username) => `${req.ip}:${String(username || '').trim().toLowerCase()}`;
+
+const setSessionCookies = (res, { token, csrfToken }) => {
+  const secure = process.env.NODE_ENV === 'production';
+  appendCookie(res, serializeCookie(sessionCookieName, token, {
+    httpOnly: true,
+    secure,
+    sameSite: 'Lax',
+    maxAge: sessionTtlSeconds,
+  }));
+  appendCookie(res, serializeCookie(csrfCookieName, csrfToken, {
+    secure,
+    sameSite: 'Lax',
+    maxAge: sessionTtlSeconds,
+  }));
+};
+
+const clearSessionCookies = (res) => {
+  const secure = process.env.NODE_ENV === 'production';
+  appendCookie(res, serializeCookie(sessionCookieName, '', { httpOnly: true, secure, sameSite: 'Lax', maxAge: 0 }));
+  appendCookie(res, serializeCookie(csrfCookieName, '', { secure, sameSite: 'Lax', maxAge: 0 }));
+};
 
 const cleanProfile = (body = {}) => {
   const profile = {
@@ -106,8 +113,10 @@ const toPlain = (doc) => {
   return obj;
 };
 
-// ─── LOGIN ────────────────────────────────────────────────────────────────────
-router.post('/login', async (req, res) => {
+// ─── LOGIN / SESSION BOOTSTRAP ────────────────────────────────────────────────
+router.get('/csrf', issueCsrfToken);
+
+router.post('/login', requireCsrf, async (req, res) => {
   const username = normalizeText(req.body?.username, 80);
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
 
@@ -149,7 +158,16 @@ router.post('/login', async (req, res) => {
 
     if (isValid) {
       failedLogins.delete(loginKey);
-      return res.json({ token: generateToken(authUserId), username: authUsername });
+      await destroyAdminSessions(authUserId);
+      const csrfToken = parseCookies(req.headers.cookie)[csrfCookieName] || '';
+      if (!csrfToken) return res.status(403).json({ message: 'CSRF bootstrap required.' });
+      const session = await createSession({
+        adminId: authUserId,
+        tokenVersion: memoryStore.adminCredentials.tokenVersion || 0,
+        csrfToken,
+      });
+      setSessionCookies(res, session);
+      return res.json({ username: authUsername });
     }
 
     const attempts = (activeLockout?.attempts || 0) + 1;
@@ -166,12 +184,21 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// ─── ME ───────────────────────────────────────────────────────────────────────
-router.get('/me', protect, (req, res) => {
+// ─── AUTHENTICATED ADMIN ROUTES ───────────────────────────────────────────────
+router.post('/logout', protect, requireCsrf, async (req, res) => {
+  await destroySession(req.sessionToken);
+  clearSessionCookies(res);
+  res.json({ message: 'Logged out.' });
+});
+
+router.use(protect);
+router.use(requireCsrf);
+
+router.get('/me', (req, res) => {
   res.json({ status: 'authenticated', user: req.user });
 });
 
-router.get('/status', protect, (req, res) => {
+router.get('/status', (req, res) => {
   res.json({
     persistence: isDbConnected ? 'durable' : 'memory-only',
     warning: isDbConnected ? '' : 'Changes will be lost when the server restarts.',
@@ -179,7 +206,7 @@ router.get('/status', protect, (req, res) => {
 });
 
 // ─── CHANGE USERNAME ──────────────────────────────────────────────────────────
-router.put('/change-username', protect, async (req, res) => {
+router.put('/change-username', async (req, res) => {
   const currentPassword = typeof req.body?.currentPassword === 'string' ? req.body.currentPassword : '';
   const newUsername = normalizeText(req.body?.newUsername, 80);
 
@@ -212,6 +239,8 @@ router.put('/change-username', protect, async (req, res) => {
     // 2. Update in-memory cache
     memoryStore.adminCredentials.username = trimmed;
     if (!isDbConnected) memoryStore.adminCredentials.tokenVersion += 1;
+    await destroyAdminSessions(req.user.id);
+    clearSessionCookies(res);
 
     return res.json({ message: 'Username updated successfully!', username: trimmed });
   } catch (err) {
@@ -220,7 +249,7 @@ router.put('/change-username', protect, async (req, res) => {
 });
 
 // ─── CHANGE PASSWORD ──────────────────────────────────────────────────────────
-router.put('/change-password', protect, async (req, res) => {
+router.put('/change-password', async (req, res) => {
   const currentPassword = typeof req.body?.currentPassword === 'string' ? req.body.currentPassword : '';
   const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
 
@@ -254,6 +283,8 @@ router.put('/change-password', protect, async (req, res) => {
     // 2. Update in-memory cache
     memoryStore.adminCredentials.passwordHash = newHash;
     if (!isDbConnected) memoryStore.adminCredentials.tokenVersion += 1;
+    await destroyAdminSessions(req.user.id);
+    clearSessionCookies(res);
 
     return res.json({ message: 'Password updated successfully!' });
   } catch (err) {
@@ -262,7 +293,7 @@ router.put('/change-password', protect, async (req, res) => {
 });
 
 // ─── PROFILE ──────────────────────────────────────────────────────────────────
-router.put('/profile', protect, async (req, res) => {
+router.put('/profile', async (req, res) => {
   if (!requireAdminStorage(res)) return;
   try {
     const changes = cleanProfile(req.body);
@@ -287,7 +318,7 @@ router.put('/profile', protect, async (req, res) => {
 });
 
 // ─── PROJECTS ─────────────────────────────────────────────────────────────────
-router.get('/projects', protect, async (req, res) => {
+router.get('/projects', async (req, res) => {
   if (isDbConnected) {
     const projects = await Project.find().sort({ sortOrder: 1, createdAt: 1 });
     if (projects.length > 0) {
@@ -298,7 +329,7 @@ router.get('/projects', protect, async (req, res) => {
   res.json(memoryStore.projects);
 });
 
-router.post('/projects', protect, async (req, res) => {
+router.post('/projects', async (req, res) => {
   if (!requireAdminStorage(res)) return;
   try {
     const changes = cleanProject(req.body);
@@ -321,7 +352,7 @@ router.post('/projects', protect, async (req, res) => {
   }
 });
 
-router.put('/projects/:id', protect, async (req, res) => {
+router.put('/projects/:id', async (req, res) => {
   if (!requireAdminStorage(res)) return;
   try {
     const changes = cleanProject(req.body);
@@ -347,7 +378,7 @@ router.put('/projects/:id', protect, async (req, res) => {
   }
 });
 
-router.delete('/projects/:id', protect, async (req, res) => {
+router.delete('/projects/:id', async (req, res) => {
   if (!requireAdminStorage(res)) return;
   try {
     if (isDbConnected) {
@@ -364,7 +395,7 @@ router.delete('/projects/:id', protect, async (req, res) => {
 });
 
 // ─── SKILLS ───────────────────────────────────────────────────────────────────
-router.get('/skills', protect, async (req, res) => {
+router.get('/skills', async (req, res) => {
   if (isDbConnected) {
     const skills = await Skill.find().sort({ createdAt: 1 });
     if (skills.length > 0) {
@@ -375,7 +406,7 @@ router.get('/skills', protect, async (req, res) => {
   res.json(memoryStore.skills);
 });
 
-router.post('/skills', protect, async (req, res) => {
+router.post('/skills', async (req, res) => {
   if (!requireAdminStorage(res)) return;
   try {
     const changes = cleanSkill(req.body);
@@ -396,7 +427,7 @@ router.post('/skills', protect, async (req, res) => {
   }
 });
 
-router.put('/skills/:id', protect, async (req, res) => {
+router.put('/skills/:id', async (req, res) => {
   if (!requireAdminStorage(res)) return;
   try {
     const changes = cleanSkill(req.body);
@@ -421,7 +452,7 @@ router.put('/skills/:id', protect, async (req, res) => {
   }
 });
 
-router.delete('/skills/:id', protect, async (req, res) => {
+router.delete('/skills/:id', async (req, res) => {
   if (!requireAdminStorage(res)) return;
   try {
     if (isDbConnected) {
@@ -438,7 +469,7 @@ router.delete('/skills/:id', protect, async (req, res) => {
 });
 
 // ─── FOCUS AREAS ──────────────────────────────────────────────────────────────
-router.get('/focus-areas', protect, async (req, res) => {
+router.get('/focus-areas', async (req, res) => {
   if (isDbConnected) {
     const areas = await FocusArea.find().sort({ sortOrder: 1, createdAt: 1 });
     if (areas.length > 0) {
@@ -449,7 +480,7 @@ router.get('/focus-areas', protect, async (req, res) => {
   res.json(memoryStore.focusAreas);
 });
 
-router.post('/focus-areas', protect, async (req, res) => {
+router.post('/focus-areas', async (req, res) => {
   if (!requireAdminStorage(res)) return;
   try {
     const changes = cleanFocusArea(req.body);
@@ -470,7 +501,7 @@ router.post('/focus-areas', protect, async (req, res) => {
   }
 });
 
-router.put('/focus-areas/:id', protect, async (req, res) => {
+router.put('/focus-areas/:id', async (req, res) => {
   if (!requireAdminStorage(res)) return;
   try {
     const changes = cleanFocusArea(req.body);
@@ -495,7 +526,7 @@ router.put('/focus-areas/:id', protect, async (req, res) => {
   }
 });
 
-router.delete('/focus-areas/:id', protect, async (req, res) => {
+router.delete('/focus-areas/:id', async (req, res) => {
   if (!requireAdminStorage(res)) return;
   try {
     if (isDbConnected) {
@@ -512,7 +543,7 @@ router.delete('/focus-areas/:id', protect, async (req, res) => {
 });
 
 // ─── MESSAGES ─────────────────────────────────────────────────────────────────
-router.get('/messages', protect, async (req, res) => {
+router.get('/messages', async (req, res) => {
   if (isDbConnected) {
     const messages = await Message.find().sort({ createdAt: -1 });
     return res.json(messages);
@@ -520,7 +551,7 @@ router.get('/messages', protect, async (req, res) => {
   res.json(memoryStore.messages);
 });
 
-router.delete('/messages/:id', protect, async (req, res) => {
+router.delete('/messages/:id', async (req, res) => {
   if (!requireAdminStorage(res)) return;
   try {
     if (isDbConnected) {
