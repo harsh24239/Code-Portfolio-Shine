@@ -1,18 +1,17 @@
 :root {
-  --bg: #0b1118;
-  --surface: #121c27;
-  --surface-hover: #1b2a3a;
-  --text: #f4f7fb;
-  --fg: #a8b5c4;
-  --accent: #7dd3fc;
-  --muted: #718096;
-  --primary: #f07067;
-  --primary-hover: #ff8f83;
-  --border: #2b3a4b;
-  --border-bright: #466078;
+  --bg: #0a0000;
+  --surface: #1f0505;
+  --surface-hover: #2d0808;
+  --text: #f7e8e8;
+  --fg: #8c8080;
+  --accent: #ff6060;
+  --muted: #6e5c5c;
+  --primary: #d40000;
+  --primary-hover: #ff1a1a;
+  --border: #4a1818;
+  --border-bright: #7a2525;
   --success: #7ee2a2;
   --shadow: 0 20px 70px rgba(0, 0, 0, 0.42);
-  --font-ui: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
   --font-serif: 'Fraunces', serif;
 }
@@ -25,9 +24,9 @@
 
 body {
   background-color: var(--bg);
-  background-image: radial-gradient(circle at 20% -10%, rgba(64, 146, 196, 0.16), transparent 34rem), radial-gradient(circle at 100% 35%, rgba(240, 112, 103, 0.08), transparent 28rem);
+  background-image: radial-gradient(circle at 20% -10%, rgba(212, 0, 0, 0.2), transparent 34rem), radial-gradient(circle at 100% 35%, rgba(255, 96, 96, 0.06), transparent 28rem);
   color: var(--text);
-  font-family: var(--font-ui);
+  font-family: var(--font-mono);
   font-size: 15px;
   line-height: 1.6;
   min-height: 100vh;
@@ -133,7 +132,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(4, 8, 14, 0.84);
+  background: rgba(10, 0, 0, 0.85);
   backdrop-filter: blur(8px);
   z-index: 100;
   display: flex;
@@ -216,7 +215,7 @@ textarea {
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text);
-  font-family: var(--font-ui);
+  font-family: var(--font-mono);
   padding: 0.75rem 1rem;
   font-size: 13px;
   width: 100%;
@@ -367,7 +366,7 @@ textarea:focus-visible {
   top: 0;
   z-index: 20;
   border-bottom: 1px solid var(--border);
-  background: rgba(18, 28, 39, 0.92);
+  background: rgba(31, 5, 5, 0.92);
   backdrop-filter: blur(18px);
   padding: 1rem 0;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.22);
@@ -436,7 +435,7 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--border);
   margin: 1.25rem 0 2rem 0;
   padding: 0.25rem;
-  background: rgba(18, 28, 39, 0.7);
+  background: rgba(31, 5, 5, 0.52);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
@@ -476,7 +475,7 @@ textarea:focus-visible {
   margin-bottom: 1.25rem;
   padding: 2.5rem;
   border: 1px solid var(--border);
-  background: linear-gradient(135deg, rgba(24, 55, 78, 0.98), rgba(18, 28, 39, 0.92));
+  background: linear-gradient(135deg, rgba(73, 11, 11, 0.96), rgba(31, 5, 5, 0.88));
   box-shadow: var(--shadow);
   overflow: hidden;
   position: relative;
@@ -551,7 +550,7 @@ textarea:focus-visible {
   padding: 1.2rem;
   border: 1px solid var(--border);
   border-top: 2px solid var(--border-bright);
-  background: rgba(18, 28, 39, 0.82);
+  background: rgba(31, 5, 5, 0.78);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
