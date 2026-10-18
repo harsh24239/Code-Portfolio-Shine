@@ -23,8 +23,8 @@
 
 #projects .projects-header-meta {
   color: #d17d7d;
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  letter-spacing: 0.11em;
 }
 
 #projects .projects-header-meta span {
@@ -156,7 +156,7 @@
   top: 20px;
   z-index: 3;
   color: #bf7e7e;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1;
 }
 
@@ -213,7 +213,7 @@
   align-items: center;
   gap: clamp(0.35rem, 1.2vw, 0.8rem);
   color: #e2a0a0;
-  font-size: clamp(0.48rem, 0.8vw, 0.62rem);
+  font-size: clamp(0.68rem, 0.9vw, 0.8rem);
   letter-spacing: 0.16em;
 }
 
@@ -288,10 +288,10 @@
 
 .project-signal-systems { inset: 17% 18%; }
 .signal-stack { position: relative; z-index: 1; display: grid; gap: 8px; width: min(72%, 220px); animation: signal-stack-breathe 7s ease-in-out infinite; }
-.signal-stack span { padding: 0.75rem 1rem; border: 1px solid #d76b6b66; background: #1b0505e6; color: #e2a0a0; font-size: 0.58rem; letter-spacing: 0.2em; text-align: center; box-shadow: 12px 0 0 #6c111128; }
+.signal-stack span { padding: 0.75rem 1rem; border: 1px solid #d76b6b66; background: #1b0505e6; color: #e2a0a0; font-size: 0.72rem; letter-spacing: 0.14em; text-align: center; box-shadow: 12px 0 0 #6c111128; }
 .signal-stack span:nth-child(2) { translate: 18px 0; }.signal-stack span:nth-child(3) { translate: 36px 0; }
 .signal-stack-line { position: absolute; width: 1px; height: 34%; background: #d76b6b66; rotate: 38deg; }.signal-stack-line-one { left: 30%; top: 32%; }.signal-stack-line-two { right: 20%; bottom: 20%; rotate: -38deg; }
-.signal-stack-caption { position: absolute; right: 0; bottom: 4%; color: #9b6262; font-size: 0.5rem; letter-spacing: 0.16em; writing-mode: vertical-rl; }
+.signal-stack-caption { position: absolute; right: 0; bottom: 4%; color: #9b6262; font-size: 0.7rem; letter-spacing: 0.12em; writing-mode: vertical-rl; }
 
 #projects .project-card-body {
   display: flex;
@@ -316,7 +316,7 @@
 #projects .project-tag {
   margin-bottom: 14px;
   color: #d17d7d;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 400;
   letter-spacing: 0.11em;
   line-height: 1.8;
@@ -327,7 +327,7 @@
   padding: 4px 7px;
   border: 1px solid #d28b8b33;
   color: #9d7878;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.1em;
   line-height: 1;
   text-transform: uppercase;
@@ -372,7 +372,7 @@
   padding-left: 10px;
   border-left: 1px solid #d55555;
   color: #e0b1b1;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.11em;
   line-height: 1.5;
   text-transform: uppercase;
@@ -392,7 +392,7 @@
 
 #projects .project-year {
   color: #9d7878;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   line-height: 1.8;
 }
@@ -403,7 +403,7 @@
   gap: 13px;
   min-height: 28px;
   color: #e0b1b1;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -459,7 +459,7 @@
   #projects .project-footer { margin-top: 23px; padding-top: 14px; }
   .project-signal { inset: 18% 9%; }
   .project-signal-data { inset: 18% 12%; }
-  .signal-ai-flow { gap: 0.28rem; font-size: 0.44rem; }
+  .signal-ai-flow { gap: 0.28rem; font-size: 0.7rem; }
   .signal-ai-flow span { padding: 0.55rem 0.3rem; }
 }
 
