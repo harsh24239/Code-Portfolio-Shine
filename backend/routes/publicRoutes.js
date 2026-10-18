@@ -7,12 +7,18 @@ import { Skill } from '../models/Skill.js';
 import { FocusArea } from '../models/FocusArea.js';
 import { Message } from '../models/Message.js';
 import { sendContactEmailNotification } from '../config/email.js';
+import { allowInMemoryFallback } from '../config/security.js';
+import { isValidEmail, normalizeText } from '../utils/validation.js';
 
 const router = express.Router();
 
 // GET /api/portfolio — main public data endpoint
 router.get('/portfolio', async (req, res) => {
   try {
+    if (!isDbConnected && !allowInMemoryFallback) {
+      return res.status(503).json({ message: 'Portfolio data is temporarily unavailable.' });
+    }
+
     if (isDbConnected) {
       const [profile, projects, skills, focusAreas] = await Promise.all([
         Profile.findOne(),
@@ -48,6 +54,9 @@ router.get('/portfolio', async (req, res) => {
     });
   } catch (err) {
     console.error('Portfolio route error:', err.message);
+    if (!allowInMemoryFallback) {
+      return res.status(503).json({ message: 'Portfolio data is temporarily unavailable.' });
+    }
     return res.json({
       profile: memoryStore.profile,
       projects: memoryStore.projects,
@@ -60,8 +69,15 @@ router.get('/portfolio', async (req, res) => {
 // POST /api/contact
 router.post('/contact', async (req, res) => {
   try {
-    const { name, email, subject, message } = req.body;
-    if (!name || !email || !message) {
+    if (!isDbConnected && !allowInMemoryFallback) {
+      return res.status(503).json({ message: 'Contact service is temporarily unavailable.' });
+    }
+
+    const name = normalizeText(req.body?.name, 120);
+    const email = normalizeText(req.body?.email, 254);
+    const subject = normalizeText(req.body?.subject, 200) || 'Portfolio Contact';
+    const message = normalizeText(req.body?.message, 16000, { allowNewlines: true });
+    if (!name || !email || !message || !isValidEmail(email)) {
       return res.status(400).json({ message: 'Name, email, and message are required.' });
     }
 
@@ -71,14 +87,14 @@ router.post('/contact', async (req, res) => {
       const doc = await Message.create({
         name,
         email,
-        subject: subject || 'Portfolio Contact',
+        subject,
         message,
       });
       messageId = doc._id;
       memoryStore.messages.unshift({
         _id: String(doc._id),
         name, email,
-        subject: subject || 'Portfolio Contact',
+        subject,
         message,
         createdAt: doc.createdAt,
       });
@@ -86,7 +102,7 @@ router.post('/contact', async (req, res) => {
       const newMsg = {
         _id: String(Date.now()),
         name, email,
-        subject: subject || 'Portfolio Contact',
+        subject,
         message,
         createdAt: new Date().toISOString(),
       };
@@ -101,8 +117,8 @@ router.post('/contact', async (req, res) => {
 
     res.status(201).json({ message: 'Transmission received.', messageId });
   } catch (err) {
-    console.error('Contact error:', err);
-    res.status(500).json({ message: 'Failed to record transmission', error: err.message });
+    console.error('Contact error:', err.message);
+    res.status(500).json({ message: 'Failed to record transmission.' });
   }
 });
 

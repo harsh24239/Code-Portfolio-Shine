@@ -5,6 +5,7 @@ const adminSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, unique: true, default: 'admin' },
     password: { type: String, required: true },
+    tokenVersion: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

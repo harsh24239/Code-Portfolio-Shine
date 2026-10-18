@@ -712,9 +712,6 @@ nav {
 
 .project-link:hover { gap: 0.7rem; color: var(--link-hover); }
 
-.project-card-featured { grid-column: span 2; }
-.project-card-featured .project-card-image { aspect-ratio: 21 / 9; }
-
 /* PHILOSOPHY */
 #philosophy {
   padding: clamp(4rem, 10vh, 7rem) 0;

@@ -2,6 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { isDbConnected } from '../config/db.js';
+import { allowInMemoryFallback, assertAdminStorageAvailable, getJwtSecret, jwtAlgorithm, jwtAudience, jwtIssuer } from '../config/security.js';
 import { memoryStore } from '../store/memoryStore.js';
 import { Admin } from '../models/Admin.js';
 import { Profile } from '../models/Profile.js';
@@ -10,30 +11,86 @@ import { Skill } from '../models/Skill.js';
 import { FocusArea } from '../models/FocusArea.js';
 import { Message } from '../models/Message.js';
 import { protect } from '../middleware/auth.js';
+import { isValidEmail, normalizeText, normalizeUrl } from '../utils/validation.js';
 
 const router = express.Router();
 
-let failedLoginCount = 0;
-let lockoutExpiryTime = 0;
+const failedLogins = new Map();
 
 // ─── Credential Helpers ───────────────────────────────────────────────────────
 // Always read from memoryStore (synced from MongoDB on startup)
 const getAdminUsername = () =>
-  memoryStore.adminCredentials?.username || process.env.ADMIN_USERNAME || 'admin';
+  memoryStore.adminCredentials?.username || process.env.ADMIN_USERNAME || '';
 
 const getAdminPasswordHash = () => {
-  if (!memoryStore.adminCredentials?.passwordHash) {
-    // Safety fallback — should never happen after startup sync
-    memoryStore.adminCredentials.passwordHash = bcrypt.hashSync(
-      process.env.ADMIN_PASSWORD || 'admin123',
-      10
-    );
-  }
-  return memoryStore.adminCredentials.passwordHash;
+  return memoryStore.adminCredentials?.passwordHash || '';
 };
 
-const generateToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret_key_12345', { expiresIn: '12h' });
+const generateToken = (id) => jwt.sign(
+  {
+    id: String(id),
+    role: 'admin',
+    tokenVersion: memoryStore.adminCredentials.tokenVersion || 0,
+  },
+  getJwtSecret(),
+  { expiresIn: '30m', algorithm: jwtAlgorithm, issuer: jwtIssuer, audience: jwtAudience },
+);
+
+const requireAdminStorage = (res) => {
+  const status = assertAdminStorageAvailable();
+  if (!isDbConnected && !allowInMemoryFallback) {
+    res.status(503).json({ message: status.message });
+    return false;
+  }
+  return true;
+};
+
+const getLoginKey = (req, username) => `${req.ip}:${String(username || '').trim().toLowerCase()}`;
+
+const cleanProfile = (body = {}) => {
+  const profile = {
+    eyebrow: normalizeText(body.eyebrow, 120),
+    title1: normalizeText(body.title1, 80),
+    titleAccent: normalizeText(body.titleAccent, 80),
+    title2: normalizeText(body.title2, 80),
+    subtext: normalizeText(body.subtext, 500, { allowNewlines: true }),
+    projectsShipped: normalizeText(body.projectsShipped, 30),
+    yearsCoding: normalizeText(body.yearsCoding, 30),
+    clientsServed: normalizeText(body.clientsServed, 30),
+    status: normalizeText(body.status, 160),
+    statusDetail: normalizeText(body.statusDetail, 500, { allowNewlines: true }),
+    email: normalizeText(body.email, 254),
+    pgpKey: normalizeUrl(body.pgpKey),
+    linkedin: normalizeUrl(body.linkedin),
+    leetcode: normalizeUrl(body.leetcode),
+    twitter: normalizeUrl(body.twitter),
+  };
+  if (!isValidEmail(profile.email)) throw new Error('A valid public email is required.');
+  return profile;
+};
+
+const cleanProject = (body = {}) => ({
+  title: normalizeText(body.title, 140),
+  tag: normalizeText(body.tag, 160),
+  description: normalizeText(body.description, 800, { allowNewlines: true }),
+  year: normalizeText(body.year, 30),
+  link: normalizeUrl(body.link),
+  iconText: normalizeText(body.iconText, 8),
+  featured: Boolean(body.featured),
+});
+
+const cleanSkill = (body = {}) => ({
+  name: normalizeText(body.name, 120),
+  desc: normalizeText(body.desc, 300, { allowNewlines: true }),
+  pips: Math.min(5, Math.max(1, Number(body.pips) || 1)),
+  iconType: normalizeText(body.iconType, 40),
+});
+
+const cleanFocusArea = (body = {}) => ({
+  tag: normalizeText(body.tag, 80),
+  title: normalizeText(body.title, 140),
+  desc: normalizeText(body.desc, 500, { allowNewlines: true }),
+});
 
 /** Convert Mongoose doc to plain object with string _id */
 const toPlain = (doc) => {
@@ -45,14 +102,20 @@ const toPlain = (doc) => {
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  const username = normalizeText(req.body?.username, 80);
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
 
-  if (Date.now() < lockoutExpiryTime) {
-    const minsLeft = Math.ceil((lockoutExpiryTime - Date.now()) / 60000);
-    return res.status(429).json({
-      message: `SECURITY LOCKOUT: Account locked. Try again in ${minsLeft} minute(s).`,
-    });
+  if (!isDbConnected && !allowInMemoryFallback) {
+    return res.status(503).json({ message: 'Admin login is unavailable until persistent storage is connected.' });
   }
+
+  const loginKey = getLoginKey(req, username);
+  const lockout = failedLogins.get(loginKey);
+  const activeLockout = lockout && Date.now() < lockout.expiresAt ? lockout : null;
+  if (activeLockout) {
+    return res.status(429).json({ message: 'Too many failed attempts. Try again later.' });
+  }
+  if (lockout) failedLogins.delete(loginKey);
 
   try {
     let isValid = false;
@@ -64,7 +127,7 @@ router.post('/login', async (req, res) => {
       const admin = await Admin.findOne({ username });
       if (admin && (await admin.matchPassword(password))) {
         isValid = true;
-        authUserId = admin._id;
+        authUserId = String(admin._id);
         authUsername = admin.username;
         // Keep memoryStore in sync on every successful login
         memoryStore.adminCredentials.username = admin.username;
@@ -79,23 +142,21 @@ router.post('/login', async (req, res) => {
     }
 
     if (isValid) {
-      failedLoginCount = 0;
-      lockoutExpiryTime = 0;
+      failedLogins.delete(loginKey);
       return res.json({ token: generateToken(authUserId), username: authUsername });
     }
 
-    failedLoginCount += 1;
-    if (failedLoginCount >= 5) {
-      lockoutExpiryTime = Date.now() + 15 * 60 * 1000;
+    const attempts = (activeLockout?.attempts || 0) + 1;
+    if (attempts >= 5) {
+      failedLogins.set(loginKey, { attempts, expiresAt: Date.now() + 15 * 60 * 1000 });
       return res.status(429).json({
-        message: 'SECURITY ALERT: 5 failed attempts. Account locked for 15 minutes.',
+        message: 'Too many failed attempts. Try again later.',
       });
     }
-    return res.status(401).json({
-      message: `Invalid credentials. ${5 - failedLoginCount} attempt(s) remaining before lockout.`,
-    });
+    failedLogins.set(loginKey, { attempts, expiresAt: Date.now() + 15 * 60 * 1000 });
+    return res.status(401).json({ message: 'Invalid credentials.' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: 'Authentication service unavailable.' });
   }
 });
 
@@ -104,11 +165,20 @@ router.get('/me', protect, (req, res) => {
   res.json({ status: 'authenticated', user: req.user });
 });
 
+router.get('/status', protect, (req, res) => {
+  res.json({
+    persistence: isDbConnected ? 'durable' : 'memory-only',
+    warning: isDbConnected ? '' : 'Changes will be lost when the server restarts.',
+  });
+});
+
 // ─── CHANGE USERNAME ──────────────────────────────────────────────────────────
 router.put('/change-username', protect, async (req, res) => {
-  const { currentPassword, newUsername } = req.body;
+  const currentPassword = typeof req.body?.currentPassword === 'string' ? req.body.currentPassword : '';
+  const newUsername = normalizeText(req.body?.newUsername, 80);
 
-  if (!currentPassword || !newUsername || newUsername.trim().length < 3) {
+  if (!requireAdminStorage(res)) return;
+  if (!currentPassword || newUsername.length < 3) {
     return res.status(400).json({ message: 'Current password and new username (min 3 chars) required.' });
   }
 
@@ -120,19 +190,22 @@ router.put('/change-username', protect, async (req, res) => {
       return res.status(400).json({ message: 'Current password incorrect.' });
     }
 
-    const trimmed = newUsername.trim();
+    const trimmed = newUsername;
 
     // 1. Save to MongoDB (permanent)
     if (isDbConnected) {
       const admin = await Admin.findOne();
       if (admin) {
         admin.username = trimmed;
+        admin.tokenVersion = (admin.tokenVersion || 0) + 1;
         await admin.save();
+        memoryStore.adminCredentials.tokenVersion = admin.tokenVersion;
       }
     }
 
     // 2. Update in-memory cache
     memoryStore.adminCredentials.username = trimmed;
+    if (!isDbConnected) memoryStore.adminCredentials.tokenVersion += 1;
 
     return res.json({ message: 'Username updated successfully!', username: trimmed });
   } catch (err) {
@@ -142,10 +215,12 @@ router.put('/change-username', protect, async (req, res) => {
 
 // ─── CHANGE PASSWORD ──────────────────────────────────────────────────────────
 router.put('/change-password', protect, async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
+  const currentPassword = typeof req.body?.currentPassword === 'string' ? req.body.currentPassword : '';
+  const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
 
-  if (!currentPassword || !newPassword || newPassword.length < 6) {
-    return res.status(400).json({ message: 'Current password and new password (min 6 chars) required.' });
+  if (!requireAdminStorage(res)) return;
+  if (!currentPassword || newPassword.length < 12) {
+    return res.status(400).json({ message: 'Current password and new password (min 12 chars) required.' });
   }
 
   try {
@@ -164,12 +239,15 @@ router.put('/change-password', protect, async (req, res) => {
       const admin = await Admin.findOne();
       if (admin) {
         admin.password = newHash; // already hashed — hook skips because starts with '$2'
+        admin.tokenVersion = (admin.tokenVersion || 0) + 1;
         await admin.save();
+        memoryStore.adminCredentials.tokenVersion = admin.tokenVersion;
       }
     }
 
     // 2. Update in-memory cache
     memoryStore.adminCredentials.passwordHash = newHash;
+    if (!isDbConnected) memoryStore.adminCredentials.tokenVersion += 1;
 
     return res.json({ message: 'Password updated successfully!' });
   } catch (err) {
@@ -179,20 +257,22 @@ router.put('/change-password', protect, async (req, res) => {
 
 // ─── PROFILE ──────────────────────────────────────────────────────────────────
 router.put('/profile', protect, async (req, res) => {
+  if (!requireAdminStorage(res)) return;
   try {
+    const changes = cleanProfile(req.body);
     // 1. Save to MongoDB (permanent)
     if (isDbConnected) {
       let profile = await Profile.findOne();
       if (profile) {
-        Object.assign(profile, req.body);
+        Object.assign(profile, changes);
         await profile.save();
       } else {
-        profile = await Profile.create(req.body);
+        await Profile.create(changes);
       }
     }
 
     // 2. Update in-memory cache
-    Object.assign(memoryStore.profile, req.body);
+    Object.assign(memoryStore.profile, changes);
 
     res.json(memoryStore.profile);
   } catch (err) {
@@ -213,15 +293,17 @@ router.get('/projects', protect, async (req, res) => {
 });
 
 router.post('/projects', protect, async (req, res) => {
+  if (!requireAdminStorage(res)) return;
   try {
+    const changes = cleanProject(req.body);
     let saved;
 
     // 1. Save to MongoDB (permanent)
     if (isDbConnected) {
-      const doc = await Project.create(req.body);
+      const doc = await Project.create(changes);
       saved = toPlain(doc);
     } else {
-      saved = { _id: String(Date.now()), ...req.body };
+      saved = { _id: `memory_project_${Date.now()}`, ...changes };
     }
 
     // 2. Update in-memory cache
@@ -234,48 +316,41 @@ router.post('/projects', protect, async (req, res) => {
 });
 
 router.put('/projects/:id', protect, async (req, res) => {
+  if (!requireAdminStorage(res)) return;
   try {
+    const changes = cleanProject(req.body);
     let updated;
 
-    // Try MongoDB first — may fail if id is a non-ObjectId default string
     if (isDbConnected) {
-      try {
-        const doc = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (doc) updated = toPlain(doc);
-        else {
-          // Not found in MongoDB — create it fresh
-          const created = await Project.create(req.body);
-          updated = toPlain(created);
-        }
-      } catch (dbErr) {
-        // CastError = invalid ObjectId (default id) — ignore and fall through to memoryStore
-        if (dbErr.name !== 'CastError') throw dbErr;
-      }
+      const doc = await Project.findByIdAndUpdate(req.params.id, changes, { new: true, runValidators: true });
+      if (!doc) return res.status(404).json({ message: 'Project not found.' });
+      updated = toPlain(doc);
     }
 
     // Always update in-memory cache
     const idx = memoryStore.projects.findIndex((p) => String(p._id) === req.params.id);
     if (idx !== -1) {
-      memoryStore.projects[idx] = { ...memoryStore.projects[idx], ...req.body };
+      memoryStore.projects[idx] = { ...memoryStore.projects[idx], ...changes };
       if (!updated) updated = memoryStore.projects[idx];
     }
 
-    res.json(updated || req.body);
+    if (!updated) return res.status(404).json({ message: 'Project not found.' });
+    res.json(updated);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 });
 
 router.delete('/projects/:id', protect, async (req, res) => {
+  if (!requireAdminStorage(res)) return;
   try {
     if (isDbConnected) {
-      try {
-        await Project.findByIdAndDelete(req.params.id);
-      } catch (dbErr) {
-        if (dbErr.name !== 'CastError') throw dbErr;
-      }
+      const deleted = await Project.findByIdAndDelete(req.params.id);
+      if (!deleted) return res.status(404).json({ message: 'Project not found.' });
     }
+    const count = memoryStore.projects.length;
     memoryStore.projects = memoryStore.projects.filter((p) => String(p._id) !== req.params.id);
+    if (!isDbConnected && memoryStore.projects.length === count) return res.status(404).json({ message: 'Project not found.' });
     res.json({ message: 'Project deleted' });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -295,14 +370,16 @@ router.get('/skills', protect, async (req, res) => {
 });
 
 router.post('/skills', protect, async (req, res) => {
+  if (!requireAdminStorage(res)) return;
   try {
+    const changes = cleanSkill(req.body);
     let saved;
 
     if (isDbConnected) {
-      const doc = await Skill.create(req.body);
+      const doc = await Skill.create(changes);
       saved = toPlain(doc);
     } else {
-      saved = { _id: String(Date.now()), ...req.body };
+      saved = { _id: `memory_skill_${Date.now()}`, ...changes };
     }
 
     memoryStore.skills.push(saved);
@@ -314,44 +391,40 @@ router.post('/skills', protect, async (req, res) => {
 });
 
 router.put('/skills/:id', protect, async (req, res) => {
+  if (!requireAdminStorage(res)) return;
   try {
+    const changes = cleanSkill(req.body);
     let updated;
 
     if (isDbConnected) {
-      try {
-        const doc = await Skill.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (doc) updated = toPlain(doc);
-        else {
-          const created = await Skill.create(req.body);
-          updated = toPlain(created);
-        }
-      } catch (dbErr) {
-        if (dbErr.name !== 'CastError') throw dbErr;
-      }
+      const doc = await Skill.findByIdAndUpdate(req.params.id, changes, { new: true, runValidators: true });
+      if (!doc) return res.status(404).json({ message: 'Skill not found.' });
+      updated = toPlain(doc);
     }
 
     const idx = memoryStore.skills.findIndex((s) => String(s._id) === req.params.id);
     if (idx !== -1) {
-      memoryStore.skills[idx] = { ...memoryStore.skills[idx], ...req.body };
+      memoryStore.skills[idx] = { ...memoryStore.skills[idx], ...changes };
       if (!updated) updated = memoryStore.skills[idx];
     }
 
-    res.json(updated || req.body);
+    if (!updated) return res.status(404).json({ message: 'Skill not found.' });
+    res.json(updated);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 });
 
 router.delete('/skills/:id', protect, async (req, res) => {
+  if (!requireAdminStorage(res)) return;
   try {
     if (isDbConnected) {
-      try {
-        await Skill.findByIdAndDelete(req.params.id);
-      } catch (dbErr) {
-        if (dbErr.name !== 'CastError') throw dbErr;
-      }
+      const deleted = await Skill.findByIdAndDelete(req.params.id);
+      if (!deleted) return res.status(404).json({ message: 'Skill not found.' });
     }
+    const count = memoryStore.skills.length;
     memoryStore.skills = memoryStore.skills.filter((s) => String(s._id) !== req.params.id);
+    if (!isDbConnected && memoryStore.skills.length === count) return res.status(404).json({ message: 'Skill not found.' });
     res.json({ message: 'Skill deleted' });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -371,14 +444,16 @@ router.get('/focus-areas', protect, async (req, res) => {
 });
 
 router.post('/focus-areas', protect, async (req, res) => {
+  if (!requireAdminStorage(res)) return;
   try {
+    const changes = cleanFocusArea(req.body);
     let saved;
 
     if (isDbConnected) {
-      const doc = await FocusArea.create({ ...req.body, sortOrder: memoryStore.focusAreas.length });
+      const doc = await FocusArea.create({ ...changes, sortOrder: memoryStore.focusAreas.length });
       saved = toPlain(doc);
     } else {
-      saved = { _id: String(Date.now()), ...req.body };
+      saved = { _id: `memory_focus_${Date.now()}`, ...changes, sortOrder: memoryStore.focusAreas.length };
     }
 
     memoryStore.focusAreas.push(saved);
@@ -390,44 +465,40 @@ router.post('/focus-areas', protect, async (req, res) => {
 });
 
 router.put('/focus-areas/:id', protect, async (req, res) => {
+  if (!requireAdminStorage(res)) return;
   try {
+    const changes = cleanFocusArea(req.body);
     let updated;
 
     if (isDbConnected) {
-      try {
-        const doc = await FocusArea.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (doc) updated = toPlain(doc);
-        else {
-          const created = await FocusArea.create(req.body);
-          updated = toPlain(created);
-        }
-      } catch (dbErr) {
-        if (dbErr.name !== 'CastError') throw dbErr;
-      }
+      const doc = await FocusArea.findByIdAndUpdate(req.params.id, changes, { new: true, runValidators: true });
+      if (!doc) return res.status(404).json({ message: 'Focus area not found.' });
+      updated = toPlain(doc);
     }
 
     const idx = memoryStore.focusAreas.findIndex((f) => String(f._id) === req.params.id);
     if (idx !== -1) {
-      memoryStore.focusAreas[idx] = { ...memoryStore.focusAreas[idx], ...req.body };
+      memoryStore.focusAreas[idx] = { ...memoryStore.focusAreas[idx], ...changes };
       if (!updated) updated = memoryStore.focusAreas[idx];
     }
 
-    res.json(updated || req.body);
+    if (!updated) return res.status(404).json({ message: 'Focus area not found.' });
+    res.json(updated);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 });
 
 router.delete('/focus-areas/:id', protect, async (req, res) => {
+  if (!requireAdminStorage(res)) return;
   try {
     if (isDbConnected) {
-      try {
-        await FocusArea.findByIdAndDelete(req.params.id);
-      } catch (dbErr) {
-        if (dbErr.name !== 'CastError') throw dbErr;
-      }
+      const deleted = await FocusArea.findByIdAndDelete(req.params.id);
+      if (!deleted) return res.status(404).json({ message: 'Focus area not found.' });
     }
+    const count = memoryStore.focusAreas.length;
     memoryStore.focusAreas = memoryStore.focusAreas.filter((f) => String(f._id) !== req.params.id);
+    if (!isDbConnected && memoryStore.focusAreas.length === count) return res.status(404).json({ message: 'Focus area not found.' });
     res.json({ message: 'Focus area deleted' });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -444,11 +515,15 @@ router.get('/messages', protect, async (req, res) => {
 });
 
 router.delete('/messages/:id', protect, async (req, res) => {
+  if (!requireAdminStorage(res)) return;
   try {
     if (isDbConnected) {
-      await Message.findByIdAndDelete(req.params.id);
+      const deleted = await Message.findByIdAndDelete(req.params.id);
+      if (!deleted) return res.status(404).json({ message: 'Message not found.' });
     }
+    const count = memoryStore.messages.length;
     memoryStore.messages = memoryStore.messages.filter((m) => m._id !== req.params.id);
+    if (!isDbConnected && memoryStore.messages.length === count) return res.status(404).json({ message: 'Message not found.' });
     res.json({ message: 'Message deleted' });
   } catch (err) {
     res.status(400).json({ message: err.message });

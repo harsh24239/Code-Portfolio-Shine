@@ -149,6 +149,7 @@ async function handleChangeUsername(e) {
       }
       setTimeout(() => {
         document.getElementById('username-modal').classList.add('hidden');
+        handleLogout();
       }, 1500);
     } else {
       msgEl.textContent = data.message || 'Failed to update username.';
@@ -183,6 +184,7 @@ async function handleChangePassword(e) {
       msgEl.textContent = '✓ Password updated successfully!';
       setTimeout(() => {
         document.getElementById('password-modal').classList.add('hidden');
+        handleLogout();
       }, 1500);
     } else {
       msgEl.textContent = data.message || 'Failed to update password.';
@@ -235,11 +237,29 @@ function handleLogout() {
 
 // --- LOAD ALL DATA ---
 async function loadAllData() {
+  loadSystemStatus();
   loadProfile();
   loadProjects();
   loadSkills();
   loadTestimonials();
   loadMessages();
+}
+
+async function loadSystemStatus() {
+  const statusEl = document.getElementById('system-status');
+  try {
+    const res = await fetch(`${API_BASE}/admin/status`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
+    const data = await res.json();
+    statusEl.className = `system-status ${data.persistence === 'durable' ? 'is-secure' : 'is-warning'}`;
+    statusEl.textContent = data.persistence === 'durable'
+      ? '● DATABASE SYNCED — changes persist across restarts.'
+      : `▲ MEMORY-ONLY MODE — ${data.warning || 'changes will be lost when the server restarts.'}`;
+  } catch {
+    statusEl.className = 'system-status is-warning';
+    statusEl.textContent = '▲ STORAGE STATUS UNKNOWN — verify MongoDB before saving changes.';
+  }
 }
 
 // --- PROFILE ---
@@ -328,25 +348,49 @@ async function loadProjects() {
   }
 }
 
+function createItemCard({ tag, title, description, onEdit, onDelete }) {
+  const card = document.createElement('div');
+  card.className = 'item-card';
+
+  const content = document.createElement('div');
+  const tagEl = document.createElement('div');
+  tagEl.className = 'item-tag';
+  tagEl.textContent = tag;
+  const titleEl = document.createElement('div');
+  titleEl.className = 'item-title';
+  titleEl.textContent = title;
+  const descriptionEl = document.createElement('div');
+  descriptionEl.className = 'item-desc';
+  descriptionEl.textContent = description;
+  content.append(tagEl, titleEl, descriptionEl);
+
+  const actions = document.createElement('div');
+  actions.className = 'item-actions';
+  const editButton = document.createElement('button');
+  editButton.type = 'button';
+  editButton.className = 'btn-ghost-sm';
+  editButton.textContent = 'EDIT';
+  editButton.addEventListener('click', onEdit);
+  const deleteButton = document.createElement('button');
+  deleteButton.type = 'button';
+  deleteButton.className = 'btn-danger-sm';
+  deleteButton.textContent = 'DELETE';
+  deleteButton.addEventListener('click', onDelete);
+  actions.append(editButton, deleteButton);
+
+  card.append(content, actions);
+  return card;
+}
+
 function renderProjects() {
   const container = document.getElementById('projects-list');
-  container.innerHTML = currentProjects
-    .map(
-      (p) => `
-    <div class="item-card">
-      <div>
-        <div class="item-tag">${p.tag} ${p.featured ? '★ FEATURED' : ''}</div>
-        <div class="item-title">${p.title} (${p.year})</div>
-        <div class="item-desc">${p.description}</div>
-      </div>
-      <div class="item-actions">
-        <button class="btn-ghost-sm" onclick="editProject('${p._id}')">EDIT</button>
-        <button class="btn-danger-sm" onclick="deleteProject('${p._id}')">DELETE</button>
-      </div>
-    </div>
-  `
-    )
-    .join('');
+  container.replaceChildren(...currentProjects.map((p) => createItemCard({
+    tag: `${p.tag || ''}${p.featured ? ' ★ FEATURED' : ''}`,
+    title: `${p.title || 'Untitled project'} (${p.year || '—'})`,
+    description: p.description || '',
+    onEdit: () => openProjectModal(p),
+    onDelete: () => deleteProject(p._id),
+  })));
 }
 
 function openProjectModal(project = null) {
@@ -363,7 +407,7 @@ function openProjectModal(project = null) {
   document.getElementById('project-modal').classList.remove('hidden');
 }
 
-window.editProject = (id) => {
+function editProject(id) {
   const p = currentProjects.find((x) => String(x._id) === String(id));
   if (p) {
     openProjectModal(p);
@@ -371,9 +415,9 @@ window.editProject = (id) => {
     console.error('Project not found for id:', id, 'Available:', currentProjects.map(x => x._id));
     alert('Could not find project to edit. Please refresh and try again.');
   }
-};
+}
 
-window.deleteProject = async (id) => {
+async function deleteProject(id) {
   if (!confirm('Are you sure you want to delete this project?')) return;
   try {
     const res = await fetch(`${API_BASE}/admin/projects/${id}`, {
@@ -388,7 +432,7 @@ window.deleteProject = async (id) => {
   } catch (err) {
     alert('Failed to delete project');
   }
-};
+}
 
 async function handleSaveProject(e) {
   e.preventDefault();
@@ -453,23 +497,13 @@ async function loadSkills() {
 
 function renderSkills() {
   const container = document.getElementById('skills-list');
-  container.innerHTML = currentSkills
-    .map(
-      (s) => `
-    <div class="item-card">
-      <div>
-        <div class="item-tag">RANK: ${'★'.repeat(s.pips)} (${s.pips}/5)</div>
-        <div class="item-title">${s.name}</div>
-        <div class="item-desc">${s.desc}</div>
-      </div>
-      <div class="item-actions">
-        <button class="btn-ghost-sm" onclick="editSkill('${s._id}')">EDIT</button>
-        <button class="btn-danger-sm" onclick="deleteSkill('${s._id}')">DELETE</button>
-      </div>
-    </div>
-  `
-    )
-    .join('');
+  container.replaceChildren(...currentSkills.map((s) => createItemCard({
+    tag: `RANK: ${'★'.repeat(Number(s.pips) || 0)} (${s.pips}/5)`,
+    title: s.name || 'Untitled skill',
+    description: s.desc || '',
+    onEdit: () => openSkillModal(s),
+    onDelete: () => deleteSkill(s._id),
+  })));
 }
 
 function openSkillModal(skill = null) {
@@ -482,7 +516,7 @@ function openSkillModal(skill = null) {
   document.getElementById('skill-modal').classList.remove('hidden');
 }
 
-window.editSkill = (id) => {
+function editSkill(id) {
   const s = currentSkills.find((x) => String(x._id) === String(id));
   if (s) {
     openSkillModal(s);
@@ -490,9 +524,9 @@ window.editSkill = (id) => {
     console.error('Skill not found for id:', id, 'Available:', currentSkills.map(x => x._id));
     alert('Could not find skill to edit. Please refresh and try again.');
   }
-};
+}
 
-window.deleteSkill = async (id) => {
+async function deleteSkill(id) {
   if (!confirm('Are you sure you want to delete this skill?')) return;
   try {
     await fetch(`${API_BASE}/admin/skills/${id}`, {
@@ -503,7 +537,7 @@ window.deleteSkill = async (id) => {
   } catch (err) {
     alert('Failed to delete skill');
   }
-};
+}
 
 async function handleSaveSkill(e) {
   e.preventDefault();
@@ -563,23 +597,13 @@ async function loadTestimonials() {
 
 function renderTestimonials() {
   const container = document.getElementById('testimonials-list');
-  container.innerHTML = currentTestimonials
-    .map(
-      (t) => `
-    <div class="item-card">
-      <div>
-        <div class="item-tag">${t.tag}</div>
-        <div class="item-title">${t.title}</div>
-        <div class="item-desc">${t.desc}</div>
-      </div>
-      <div class="item-actions">
-        <button class="btn-ghost-sm" onclick="editTestimonial('${t._id}')">EDIT</button>
-        <button class="btn-danger-sm" onclick="deleteTestimonial('${t._id}')">DELETE</button>
-      </div>
-    </div>
-  `
-    )
-    .join('');
+  container.replaceChildren(...currentTestimonials.map((t) => createItemCard({
+    tag: t.tag || 'FOCUS DOMAIN',
+    title: t.title || 'Untitled focus area',
+    description: t.desc || '',
+    onEdit: () => openTestimonialModal(t),
+    onDelete: () => deleteTestimonial(t._id),
+  })));
 }
 
 function openTestimonialModal(focusArea = null) {
@@ -592,7 +616,7 @@ function openTestimonialModal(focusArea = null) {
   document.getElementById('testimonial-modal').classList.remove('hidden');
 }
 
-window.editTestimonial = (id) => {
+function editTestimonial(id) {
   const t = currentTestimonials.find((x) => String(x._id) === String(id));
   if (t) {
     openTestimonialModal(t);
@@ -600,9 +624,9 @@ window.editTestimonial = (id) => {
     console.error('Focus area not found for id:', id, 'Available:', currentTestimonials.map(x => x._id));
     alert('Could not find focus area to edit. Please refresh and try again.');
   }
-};
+}
 
-window.deleteTestimonial = async (id) => {
+async function deleteTestimonial(id) {
   if (!confirm('Are you sure you want to delete this focus domain?')) return;
   try {
     await fetch(`${API_BASE}/admin/focus-areas/${id}`, {
@@ -613,7 +637,7 @@ window.deleteTestimonial = async (id) => {
   } catch (err) {
     alert('Failed to delete focus area');
   }
-};
+}
 
 async function handleSaveTestimonial(e) {
   e.preventDefault();
@@ -668,33 +692,49 @@ async function loadMessages() {
 
     const container = document.getElementById('messages-list');
     if (!Array.isArray(messages) || messages.length === 0) {
-      container.innerHTML = `<div class="item-desc">No transmissions received yet.</div>`;
+      const empty = document.createElement('div');
+      empty.className = 'item-desc';
+      empty.textContent = 'No transmissions received yet.';
+      container.replaceChildren(empty);
       return;
     }
 
-    container.innerHTML = messages
-      .map(
-        (m) => `
-      <div class="msg-card">
-        <div class="msg-meta">
-          <span class="msg-author">${m.name} (${m.email})</span>
-          <span class="msg-date">${new Date(m.createdAt).toLocaleString()}</span>
-        </div>
-        <div class="msg-subject">SUBJECT: ${m.subject}</div>
-        <div class="msg-body">${m.message}</div>
-        <div style="margin-top: 0.75rem;">
-          <button class="btn-danger-sm" onclick="deleteMessage('${m._id}')">DELETE TRANSMISSION</button>
-        </div>
-      </div>
-    `
-      )
-      .join('');
+    const cards = messages.map((m) => {
+      const card = document.createElement('div');
+      card.className = 'msg-card';
+      const meta = document.createElement('div');
+      meta.className = 'msg-meta';
+      const author = document.createElement('span');
+      author.className = 'msg-author';
+      author.textContent = `${m.name || 'Unknown sender'} (${m.email || 'no email'})`;
+      const date = document.createElement('span');
+      date.className = 'msg-date';
+      date.textContent = new Date(m.createdAt).toLocaleString();
+      meta.append(author, date);
+      const subject = document.createElement('div');
+      subject.className = 'msg-subject';
+      subject.textContent = `SUBJECT: ${m.subject || 'Portfolio Contact'}`;
+      const body = document.createElement('div');
+      body.className = 'msg-body';
+      body.textContent = m.message || '';
+      const actions = document.createElement('div');
+      actions.className = 'msg-actions';
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'btn-danger-sm';
+      deleteButton.textContent = 'DELETE TRANSMISSION';
+      deleteButton.addEventListener('click', () => deleteMessage(m._id));
+      actions.append(deleteButton);
+      card.append(meta, subject, body, actions);
+      return card;
+    });
+    container.replaceChildren(...cards);
   } catch (err) {
     console.error('Failed to load messages', err);
   }
 }
 
-window.deleteMessage = async (id) => {
+async function deleteMessage(id) {
   if (!confirm('Delete this transmission?')) return;
   try {
     await fetch(`${API_BASE}/admin/messages/${id}`, {
@@ -705,4 +745,4 @@ window.deleteMessage = async (id) => {
   } catch (err) {
     alert('Failed to delete message');
   }
-};
+}

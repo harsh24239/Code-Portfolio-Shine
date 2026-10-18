@@ -1,0 +1,38 @@
+/* An editorial interface over the original crimson identity. */
+:root{--rich-line:#e5b0b026;--rich-ink:#f5dede;--rich-soft:#b69292}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.motion-toggle{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:36px;background:#260c0c50;border:1px solid var(--rich-line);color:#c5a3a3;cursor:pointer;padding:8px 11px;transition:background .25s,border-color .25s,color .25s}
+.motion-toggle:hover{background:#391010;border-color:#cd6a6a6b;color:var(--text)}
+.motion-toggle{border-color:transparent;background:transparent;padding-inline:8px;gap:7px}.motion-toggle span{font-size:9px}.motion-toggle:disabled{opacity:.4;cursor:default}
+.nav-actions-right{gap:9px}.nav-links{gap:1.6rem}
+
+/* Original photograph, custom light field. */
+.portrait-field{z-index:1}.portrait-field canvas{opacity:0;transition:opacity 1s}.hero[data-portrait-ready='true'] .portrait-field canvas{opacity:1}.hero[data-portrait-ready='true'] .hero-bg-image img{opacity:0}
+.portrait-field::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,#0a0000f5 0%,#0a0000dc 23%,#0a000069 46%,transparent 76%),linear-gradient(0deg,#0a0000 0%,transparent 38%)}
+.hero{min-height:max(860px,100svh)}.hero-text{max-width:720px;padding-bottom:6rem}.hero-title-main{font-size:clamp(3.5rem,8.2vw,7.4rem)}.hero-title-code,.hero-title-nowrap{text-shadow:0 12px 60px #0004}.hero-title-accent{letter-spacing:.11em}
+.hero-stats{max-width:510px}.hero-stat-value{font-size:2.25rem}
+
+/* Skills link to evidence. */
+#skills::before{content:'';position:absolute;left:0;top:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#e6949460,transparent)}
+#skills .skills-heading-col{top:120px}
+
+/* A filtered work collection, led by an editorial feature. */
+
+/* Three distinct, conceptual engineering plates. */
+
+/* Project reader and its working trace controls. */
+
+/* Searchable navigation through real portfolio content. */
+#contact::before{content:'';position:absolute;left:-10%;top:-50%;width:80%;height:140%;border:1px solid #ae575710;border-radius:50%;transform:rotate(-25deg);pointer-events:none}
+
+@media(max-width:1280px){.motion-toggle>span{display:none}}
+@media(max-width:1100px){.hero{min-height:820px}}
+@media(max-width:900px){
+nav.nav-desktop{display:none}.mobile-menu-toggle{display:flex}
+}
+@media(max-width:640px){
+.nav-actions-right{gap:5px}.nav-actions-right .nav-cta{display:none}.motion-toggle{width:32px;height:39px;padding:0}.mobile-menu-toggle{min-width:39px;min-height:39px;padding:0}
+.hero{min-height:780px}.hero-text{padding-bottom:4.5rem}.hero-title-main{font-size:clamp(3rem,12vw,4.8rem)}.portrait-field::after{background:linear-gradient(90deg,#0a0000cf,#0a000078 60%,#0a000060),linear-gradient(0deg,#0a0000 0%,transparent 90%)}.hero-stat-value{font-size:1.7rem}
+}
+html[data-motion='off'] *,html[data-motion='off'] *::before,html[data-motion='off'] *::after{animation:none!important;transition-duration:0s!important;scroll-behavior:auto!important}
+html[data-motion='off'] .depth-card,html[data-motion='off'] .hero-text,html[data-motion='off'] .hero-bg-image{transform:none!important;translate:none!important}html[data-motion='off'] .pointer-aura{display:none}

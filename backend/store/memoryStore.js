@@ -13,14 +13,15 @@
 
 import bcrypt from 'bcryptjs';
 
-const initialAdminPass = process.env.ADMIN_PASSWORD || 'admin123';
+const initialAdminPass = process.env.ADMIN_PASSWORD?.trim();
 
 // Default data — used ONLY when MongoDB has no documents yet (first-ever boot).
 // After that, all data comes from MongoDB Atlas.
 export const DEFAULT_DATA = {
   adminCredentials: {
     username: process.env.ADMIN_USERNAME || 'admin',
-    passwordHash: bcrypt.hashSync(initialAdminPass, 10),
+    passwordHash: initialAdminPass ? bcrypt.hashSync(initialAdminPass, 10) : '',
+    tokenVersion: 0,
   },
   profile: {
     eyebrow: 'WEB DEVELOPER & AI BUILDER',
@@ -43,11 +44,10 @@ export const DEFAULT_DATA = {
   },
   projects: [
     {
-      _id: 'default_proj_1',
       title: 'AI Placement Copilot',
       tag: 'FastAPI — LangGraph — AI',
       description:
-        'Agentic AI-powered placement preparation platform using LangGraph, FastAPI, React, and RAG vector retrieval with ChromaDB & Gemini embeddings.',
+        'A guided placement-prep workspace that routes questions through an agentic LangGraph workflow, retrieves grounded context, and returns focused practice through a React + FastAPI interface.',
       year: '2026 (Ongoing)',
       link: 'https://github.com/harsh24239/ai-placement-copilot',
       iconText: 'AI',
@@ -55,11 +55,10 @@ export const DEFAULT_DATA = {
       sortOrder: 0,
     },
     {
-      _id: 'default_proj_2',
       title: 'SQVS – Student Qualification Verification System',
       tag: 'React — Node.js — MySQL — DBMS',
       description:
-        'Full-stack credential verification web application developed as a Database Systems project under Prof. Vikram Goyal. Features RBAC auth, analytics dashboards, audit logs, and RESTful Express APIs on a normalized MySQL schema.',
+        'A full-stack credential verification platform that gives institutions role-based review flows, auditability, and operational visibility over student records.',
       year: '2026',
       link: 'https://github.com/harsh24239',
       iconText: 'SQ',
@@ -67,11 +66,10 @@ export const DEFAULT_DATA = {
       sortOrder: 1,
     },
     {
-      _id: 'default_proj_3',
       title: 'University ERP System',
       tag: 'Java — Swing & JDBC — Systems',
       description:
-        'Role-based desktop ERP application built in Java with a 4-layer architecture (UI, API, Service, DAO) under Prof. Sambuddho Chakravarty. Features BCrypt authentication, grade management, and JUnit unit tests.',
+        'A role-based university desktop system that centralizes academic workflows behind a four-layer Java architecture, secure authentication, and tested data access.',
       year: '2025',
       link: 'https://github.com/harsh24239',
       iconText: 'UE',
@@ -80,18 +78,18 @@ export const DEFAULT_DATA = {
     },
   ],
   skills: [
-    { _id: 'default_skill_1', name: 'Languages & Core', desc: 'Python, Java, C/C++, JavaScript, SQL', pips: 5, iconType: 'frontend' },
-    { _id: 'default_skill_2', name: 'Frontend Development', desc: 'React.js, Vite, HTML5, CSS3, Responsive Design Systems', pips: 5, iconType: 'backend' },
-    { _id: 'default_skill_3', name: 'Backend & APIs', desc: 'Node.js, Express.js, FastAPI, RESTful APIs, Java JDBC', pips: 5, iconType: 'database' },
-    { _id: 'default_skill_4', name: 'Databases & Storage', desc: 'MySQL (DBMS), ChromaDB (Vector DB), SQLite, Normalized Schemas', pips: 5, iconType: 'devops' },
-    { _id: 'default_skill_5', name: 'AI & Agentic Workflows', desc: 'LangGraph, RAG Vector Retrieval, Gemini API, Multi-Agent Pipelines', pips: 5, iconType: 'security' },
-    { _id: 'default_skill_6', name: 'CS Core & Security', desc: 'DSA (100+ Solved), OOP, BCrypt, JWT, RBAC Auth, JUnit Testing, Git/Linux', pips: 5, iconType: 'ai' },
+    { name: 'Languages & Core', desc: 'Python, Java, C/C++, JavaScript, SQL', pips: 5, iconType: 'frontend' },
+    { name: 'Frontend Development', desc: 'React.js, Vite, HTML5, CSS3, Responsive Design Systems', pips: 5, iconType: 'backend' },
+    { name: 'Backend & APIs', desc: 'Node.js, Express.js, FastAPI, RESTful APIs, Java JDBC', pips: 5, iconType: 'database' },
+    { name: 'Databases & Storage', desc: 'MySQL (DBMS), ChromaDB (Vector DB), SQLite, Normalized Schemas', pips: 5, iconType: 'devops' },
+    { name: 'AI & Agentic Workflows', desc: 'LangGraph, RAG Vector Retrieval, Gemini API, Multi-Agent Pipelines', pips: 5, iconType: 'security' },
+    { name: 'CS Core & Security', desc: 'DSA (100+ Solved), OOP, BCrypt, JWT, RBAC Auth, JUnit Testing, Git/Linux', pips: 5, iconType: 'ai' },
   ],
   focusAreas: [
-    { _id: 'default_fa_1', tag: 'DOMAIN 01', title: 'Web Application Development', desc: 'Designing and building scalable, responsive web apps using React, Node.js, Express, and modern database architectures.', sortOrder: 0 },
-    { _id: 'default_fa_2', tag: 'DOMAIN 02', title: 'Agentic AI & RAG Workflows', desc: 'Developing intelligent workflows, multi-agent systems with LangGraph, and retrieval-augmented generation pipelines.', sortOrder: 1 },
-    { _id: 'default_fa_3', tag: 'DOMAIN 03', title: 'Data Structures & Algorithms', desc: 'Strong foundation in computer science core principles, algorithmic problem solving, and software design patterns.', sortOrder: 2 },
-    { _id: 'default_fa_4', tag: 'DOMAIN 04', title: 'Software Craft & Security', desc: 'Applying 4-layer system design, BCrypt password security, role-based access control (RBAC), and automated unit testing.', sortOrder: 3 },
+    { tag: 'DOMAIN 01', title: 'Web Application Development', desc: 'Designing and building scalable, responsive web apps using React, Node.js, Express, and modern database architectures.', sortOrder: 0 },
+    { tag: 'DOMAIN 02', title: 'Agentic AI & RAG Workflows', desc: 'Developing intelligent workflows, multi-agent systems with LangGraph, and retrieval-augmented generation pipelines.', sortOrder: 1 },
+    { tag: 'DOMAIN 03', title: 'Data Structures & Algorithms', desc: 'Strong foundation in computer science core principles, algorithmic problem solving, and software design patterns.', sortOrder: 2 },
+    { tag: 'DOMAIN 04', title: 'Software Craft & Security', desc: 'Applying 4-layer system design, BCrypt password security, role-based access control (RBAC), and automated unit testing.', sortOrder: 3 },
   ],
   messages: [],
   testimonials: [],
@@ -102,9 +100,9 @@ export const DEFAULT_DATA = {
 export const memoryStore = {
   adminCredentials: { ...DEFAULT_DATA.adminCredentials },
   profile: { ...DEFAULT_DATA.profile },
-  projects: [...DEFAULT_DATA.projects],
-  skills: [...DEFAULT_DATA.skills],
-  focusAreas: [...DEFAULT_DATA.focusAreas],
+  projects: DEFAULT_DATA.projects.map((project, index) => ({ ...project, _id: `memory_project_${index + 1}` })),
+  skills: DEFAULT_DATA.skills.map((skill, index) => ({ ...skill, _id: `memory_skill_${index + 1}` })),
+  focusAreas: DEFAULT_DATA.focusAreas.map((area, index) => ({ ...area, _id: `memory_focus_${index + 1}` })),
   messages: [],
   testimonials: [],
 };

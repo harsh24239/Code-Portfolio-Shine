@@ -1,0 +1,17 @@
+/* Quiet interaction, using the original crimson identity. */
+main,footer{overflow-x:clip}
+.cursor-dot,.pointer-aura{position:fixed;left:0;top:0;pointer-events:none;z-index:1600;translate:-50% -50%;opacity:0;will-change:transform}
+.cursor-dot{width:4px;height:4px;border-radius:50%;background:var(--text);transition:opacity .2s}
+.pointer-aura{width:22px;height:22px;border:1px solid #ff606066;border-radius:50%;background:transparent;transition:width .25s,height .25s,opacity .18s,scale .2s,background .25s}
+.cursor-dot[data-visible='true'],.pointer-aura[data-visible='true']{opacity:1}
+.pointer-aura[data-mode='action']{width:30px;height:30px;border-color:#ff606099;background:#d4000012}
+.pointer-aura[data-down='true']{scale:.8}
+body:has(dialog[open]) .cursor-dot,body:has(dialog[open]) .pointer-aura{opacity:0}
+@media(hover:hover) and (pointer:fine){html[data-cursor='on'],html[data-cursor='on'] *{cursor:none!important}}
+.depth-card{--reveal-x:0px;translate:var(--reveal-x) var(--reveal-y,0px)}
+.footer-motion{display:inline-flex;align-items:center;gap:7px;padding:8px 0;border:0;background:transparent;color:#ac8686;font:inherit;font-size:9px;cursor:pointer}
+.footer-motion:hover{color:var(--text)}.footer-motion:disabled{opacity:.5;cursor:default}
+@media(hover:none),(pointer:coarse){.cursor-dot,.pointer-aura{display:none}}
+html[data-motion='off'] .cursor-dot,html[data-motion='off'] .pointer-aura{display:none}
+html[data-motion='off'] .depth-card{translate:none!important}
+@media(prefers-reduced-motion:reduce){.cursor-dot,.pointer-aura{display:none}.depth-card{translate:none!important}}
