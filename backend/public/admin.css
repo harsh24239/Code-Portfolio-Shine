@@ -466,6 +466,48 @@ textarea:focus-visible {
   border-top: 1px solid var(--border);
 }
 
+/* SECURITY CENTER */
+.security-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.security-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.security-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  padding: 1rem;
+}
+
+.security-item.current { border-left-color: #4ade80; }
+.security-item.audit-failure { border-left-color: var(--primary); }
+.security-item strong { color: var(--text); font-size: 12px; letter-spacing: 0.08em; }
+.security-date { color: var(--fg); font-size: 11px; }
+
+.security-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+  margin-top: 0.9rem;
+  color: var(--fg);
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.security-meta b {
+  color: var(--accent);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  margin-right: 0.25rem;
+}
+
 /* MESSAGES INBOX */
 .messages-stack {
   display: flex;
@@ -505,4 +547,5 @@ textarea:focus-visible {
   .nav-inner { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
   .user-group { width: 100%; justify-content: space-between; }
   .backup-codes { grid-template-columns: 1fr; }
+  .security-meta { grid-template-columns: 1fr; }
 }

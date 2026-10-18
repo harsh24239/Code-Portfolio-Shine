@@ -11,7 +11,14 @@ const digest = (value) => crypto.createHmac('sha256', getSessionSecret()).update
 
 const sessionExpiry = () => new Date(Date.now() + sessionTtlSeconds * 1000);
 
-export const createSession = async ({ adminId, tokenVersion, csrfToken: existingCsrfToken = '', mfaVerified = false }) => {
+export const createSession = async ({
+  adminId,
+  tokenVersion,
+  csrfToken: existingCsrfToken = '',
+  mfaVerified = false,
+  ip = '',
+  userAgent = '',
+}) => {
   const token = crypto.randomBytes(32).toString('base64url');
   const csrfToken = existingCsrfToken || crypto.randomBytes(32).toString('base64url');
   const session = {
@@ -19,16 +26,22 @@ export const createSession = async ({ adminId, tokenVersion, csrfToken: existing
     tokenVersion,
     mfaVerified,
     csrfHash: digest(csrfToken),
+    ip: String(ip || '').slice(0, 120),
+    userAgent: String(userAgent || '').slice(0, 500),
+    lastActivityAt: new Date(),
     expiresAt: sessionExpiry(),
   };
 
   if (isDbConnected) {
-    await AdminSession.create({ tokenHash: digest(token), ...session });
+    const created = await AdminSession.create({ tokenHash: digest(token), ...session });
+    return { token, csrfToken, expiresAt: created.expiresAt, sessionId: String(created._id) };
   } else if (allowInMemoryFallback) {
-    memorySessions.set(digest(token), session);
+    const sessionId = crypto.randomUUID();
+    memorySessions.set(digest(token), { _id: sessionId, ...session });
+    return { token, csrfToken, expiresAt: session.expiresAt, sessionId };
   }
 
-  return { token, csrfToken, expiresAt: session.expiresAt };
+  return { token, csrfToken, expiresAt: session.expiresAt, sessionId: '' };
 };
 
 export const getSession = async (token) => {
@@ -65,6 +78,70 @@ export const destroyAdminSessions = async (adminId) => {
   for (const [tokenHash, session] of memorySessions) {
     if (session.adminId === normalizedId) memorySessions.delete(tokenHash);
   }
+};
+
+export const listAdminSessions = async (adminId) => {
+  const normalizedId = String(adminId);
+  const now = new Date();
+  if (isDbConnected) {
+    await AdminSession.deleteMany({ adminId: normalizedId, expiresAt: { $lte: now } });
+    const sessions = await AdminSession.find({ adminId: normalizedId, expiresAt: { $gt: now } })
+      .sort({ lastActivityAt: -1, createdAt: -1 })
+      .lean();
+    return sessions.map((session) => ({ ...session, _id: String(session._id) }));
+  }
+
+  if (!allowInMemoryFallback) return [];
+  return [...memorySessions.values()]
+    .filter((session) => session.adminId === normalizedId && session.expiresAt > now)
+    .sort((a, b) => new Date(b.lastActivityAt) - new Date(a.lastActivityAt));
+};
+
+export const revokeAdminSession = async (adminId, sessionId) => {
+  const normalizedId = String(adminId);
+  if (isDbConnected) {
+    const deleted = await AdminSession.findOneAndDelete({ _id: sessionId, adminId: normalizedId });
+    return Boolean(deleted);
+  }
+
+  if (!allowInMemoryFallback) return false;
+  for (const [tokenHash, session] of memorySessions) {
+    if (session._id === sessionId && session.adminId === normalizedId) {
+      memorySessions.delete(tokenHash);
+      return true;
+    }
+  }
+  return false;
+};
+
+export const revokeOtherAdminSessions = async (adminId, currentSessionId) => {
+  const normalizedId = String(adminId);
+  if (isDbConnected) {
+    const result = await AdminSession.deleteMany({ adminId: normalizedId, _id: { $ne: currentSessionId } });
+    return result.deletedCount || 0;
+  }
+
+  if (!allowInMemoryFallback) return 0;
+  let count = 0;
+  for (const [tokenHash, session] of memorySessions) {
+    if (session.adminId === normalizedId && session._id !== currentSessionId) {
+      memorySessions.delete(tokenHash);
+      count += 1;
+    }
+  }
+  return count;
+};
+
+export const touchSession = async (token) => {
+  if (!token) return;
+  const tokenHash = digest(token);
+  const lastActivityAt = new Date();
+  if (isDbConnected) {
+    await AdminSession.updateOne({ tokenHash }, { $set: { lastActivityAt } });
+    return;
+  }
+  const session = memorySessions.get(tokenHash);
+  if (session) session.lastActivityAt = lastActivityAt;
 };
 
 export const verifyCsrf = (session, csrfToken) => Boolean(

@@ -10,6 +10,7 @@ const btnLogout = document.getElementById('btn-logout');
 const btnChangePassTrigger = document.getElementById('btn-change-pass-trigger');
 const btnChangeUsernameTrigger = document.getElementById('btn-change-username-trigger');
 const btnMfaTrigger = document.getElementById('btn-mfa-trigger');
+const btnSecurityTrigger = document.getElementById('btn-security-trigger');
 const btnForgotPass = document.getElementById('btn-forgot-pass');
 
 // Tabs
@@ -62,6 +63,9 @@ function setupEventListeners() {
 
   document.getElementById('password-form')?.addEventListener('submit', handleChangePassword);
   btnMfaTrigger?.addEventListener('click', openMfaModal);
+  btnSecurityTrigger?.addEventListener('click', () => activateTab('security'));
+  document.getElementById('btn-revoke-other-sessions')?.addEventListener('click', revokeOtherSessions);
+  document.getElementById('security-sessions-list')?.addEventListener('click', handleSessionAction);
   document.getElementById('mfa-confirm-form')?.addEventListener('submit', handleMfaConfirm);
   document.getElementById('btn-start-mfa')?.addEventListener('click', startMfaSetup);
   document.getElementById('btn-regenerate-recovery')?.addEventListener('click', regenerateRecoveryCodes);
@@ -73,14 +77,7 @@ function setupEventListeners() {
   });
 
   tabBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      tabBtns.forEach((b) => b.classList.remove('active'));
-      tabContents.forEach((c) => c.classList.remove('active'));
-
-      btn.classList.add('active');
-      const tabId = `tab-${btn.dataset.tab}`;
-      document.getElementById(tabId)?.classList.add('active');
-    });
+    btn.addEventListener('click', () => activateTab(btn.dataset.tab));
   });
 
   // Profile Form
@@ -104,6 +101,12 @@ function setupEventListeners() {
       e.target.closest('.modal-overlay').classList.add('hidden');
     });
   });
+}
+
+function activateTab(tabId) {
+  tabBtns.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabId));
+  tabContents.forEach((content) => content.classList.toggle('active', content.id === `tab-${tabId}`));
+  if (tabId === 'security') loadSecurityCenter();
 }
 
 // --- AUTHENTICATION ---
@@ -270,11 +273,122 @@ function handleLogout() {
 async function loadAllData() {
   loadSystemStatus();
   loadMfaStatus();
+  loadSecurityCenter();
   loadProfile();
   loadProjects();
   loadSkills();
   loadTestimonials();
   loadMessages();
+}
+
+const escapeHtml = (value) => String(value ?? '')
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#039;');
+
+const formatSecurityDate = (value) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Unknown time' : date.toLocaleString();
+};
+
+async function loadSecurityCenter() {
+  await Promise.all([loadSecuritySessions(), loadSecurityAudit()]);
+}
+
+async function loadSecuritySessions() {
+  const status = document.getElementById('security-session-status');
+  const list = document.getElementById('security-sessions-list');
+  if (!status || !list) return;
+  status.textContent = 'Loading active sessions...';
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/security/sessions`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Unable to load active sessions.');
+    status.textContent = `${data.sessions.length} active session(s)`;
+    list.innerHTML = data.sessions.length
+      ? data.sessions.map((session) => `
+        <article class="security-item ${session.current ? 'current' : ''}">
+          <div class="flex-between">
+            <strong>${session.current ? '● CURRENT SESSION' : 'ACTIVE SESSION'}</strong>
+            <button type="button" class="btn-danger-sm" data-revoke-session="${escapeHtml(session.id)}">REVOKE</button>
+          </div>
+          <div class="security-meta">
+            <span><b>DEVICE</b> ${escapeHtml(session.userAgent)}</span>
+            <span><b>IP</b> ${escapeHtml(session.ip)}</span>
+            <span><b>LAST ACTIVE</b> ${escapeHtml(formatSecurityDate(session.lastActivityAt))}</span>
+            <span><b>EXPIRES</b> ${escapeHtml(formatSecurityDate(session.expiresAt))}</span>
+          </div>
+        </article>`).join('')
+      : '<p class="modal-sub">No active sessions found.</p>';
+  } catch (error) {
+    status.textContent = error.message;
+    list.innerHTML = '';
+  }
+}
+
+async function loadSecurityAudit() {
+  const list = document.getElementById('security-audit-list');
+  if (!list) return;
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/security/audit?limit=50`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Unable to load the audit log.');
+    list.innerHTML = data.events.length
+      ? data.events.map((event) => `
+        <article class="security-item audit-${escapeHtml(event.outcome)}">
+          <div class="flex-between">
+            <strong>${escapeHtml(event.event.replaceAll('_', ' ').toUpperCase())}</strong>
+            <span class="security-date">${escapeHtml(formatSecurityDate(event.createdAt))}</span>
+          </div>
+          <div class="security-meta">
+            <span><b>RESULT</b> ${escapeHtml(event.outcome)}</span>
+            <span><b>IP</b> ${escapeHtml(event.ip || 'Unknown')}</span>
+            ${event.details ? `<span><b>DETAILS</b> ${escapeHtml(event.details)}</span>` : ''}
+          </div>
+        </article>`).join('')
+      : '<p class="modal-sub">No security events recorded yet.</p>';
+  } catch (error) {
+    list.innerHTML = `<p class="error-text">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+async function handleSessionAction(event) {
+  const button = event.target.closest('[data-revoke-session]');
+  if (!button || !window.confirm('Revoke this session?')) return;
+  button.disabled = true;
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/security/sessions/${encodeURIComponent(button.dataset.revokeSession)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Unable to revoke session.');
+    if (data.current) {
+      isLoggedOut = true;
+      csrfToken = '';
+      showLogin();
+      return;
+    }
+    await loadSecurityCenter();
+  } catch (error) {
+    document.getElementById('security-session-status').textContent = error.message;
+    button.disabled = false;
+  }
+}
+
+async function revokeOtherSessions() {
+  if (!window.confirm('Revoke every other active session?')) return;
+  const button = document.getElementById('btn-revoke-other-sessions');
+  button.disabled = true;
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/security/sessions/revoke-others`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Unable to revoke other sessions.');
+    await loadSecurityCenter();
+  } catch (error) {
+    document.getElementById('security-session-status').textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function loadMfaStatus() {

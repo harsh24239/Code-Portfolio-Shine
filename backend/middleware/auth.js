@@ -1,7 +1,7 @@
 import { isDbConnected } from '../config/db.js';
 import { allowInMemoryFallback, sessionCookieName } from '../config/security.js';
 import { memoryStore } from '../store/memoryStore.js';
-import { getSession, destroySession } from '../store/sessionStore.js';
+import { getSession, destroySession, touchSession } from '../store/sessionStore.js';
 import { parseCookies } from '../utils/cookies.js';
 
 export const protect = async (req, res, next) => {
@@ -19,7 +19,9 @@ export const protect = async (req, res, next) => {
 
     req.sessionToken = token;
     req.session = session;
+    req.sessionId = String(session._id || '');
     req.user = { id: session.adminId, role: 'admin' };
+    await touchSession(token);
     return next();
   } catch (error) {
     console.error('Admin session validation failed:', error.message);

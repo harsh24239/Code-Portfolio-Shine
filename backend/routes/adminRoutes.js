@@ -12,7 +12,8 @@ import { FocusArea } from '../models/FocusArea.js';
 import { Message } from '../models/Message.js';
 import { protect } from '../middleware/auth.js';
 import { requireCsrf, issueCsrfToken } from '../middleware/csrf.js';
-import { consumeMfaChallenge, createMfaChallenge, createSession, destroyAdminSessions, destroyMfaChallenge, destroySession, incrementMfaChallengeAttempts } from '../store/sessionStore.js';
+import { consumeMfaChallenge, createMfaChallenge, createSession, destroyAdminSessions, destroyMfaChallenge, destroySession, incrementMfaChallengeAttempts, listAdminSessions, revokeAdminSession, revokeOtherAdminSessions } from '../store/sessionStore.js';
+import { listAuditEvents, recordAuditEvent } from '../store/auditStore.js';
 import { appendCookie, parseCookies, serializeCookie } from '../utils/cookies.js';
 import { isValidEmail, normalizeText, normalizeUrl } from '../utils/validation.js';
 import { createTotpSetup, generateBackupCodes, normalizeBackupCode, verifyTotp } from '../utils/totp.js';
@@ -184,6 +185,7 @@ router.post('/login', requireCsrf, async (req, res) => {
   const lockout = failedLogins.get(loginKey);
   const activeLockout = lockout && Date.now() < lockout.expiresAt ? lockout : null;
   if (activeLockout) {
+    await recordAuditEvent({ event: 'login_failure', outcome: 'failure', req, details: 'rate_limited' });
     return res.status(429).json({ message: 'Too many failed attempts. Try again later.' });
   }
   if (lockout) failedLogins.delete(loginKey);
@@ -219,10 +221,10 @@ router.post('/login', requireCsrf, async (req, res) => {
       if (authAdmin.mfaEnabled) {
         const challenge = await createMfaChallenge(authUserId);
         setMfaChallengeCookie(res, challenge.token);
+        await recordAuditEvent({ event: 'login_mfa_required', adminId: authUserId, req });
         return res.json({ mfaRequired: true, username: authUsername });
       }
 
-      await destroyAdminSessions(authUserId);
       const csrfToken = parseCookies(req.headers.cookie)[csrfCookieName] || '';
       if (!csrfToken) return res.status(403).json({ message: 'CSRF bootstrap required.' });
       const session = await createSession({
@@ -230,21 +232,27 @@ router.post('/login', requireCsrf, async (req, res) => {
         tokenVersion: memoryStore.adminCredentials.tokenVersion || 0,
         csrfToken,
         mfaVerified: true,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
       });
       setSessionCookies(res, session);
+      await recordAuditEvent({ event: 'login_success', adminId: authUserId, req });
       return res.json({ username: authUsername });
     }
 
     const attempts = (activeLockout?.attempts || 0) + 1;
     if (attempts >= 5) {
       failedLogins.set(loginKey, { attempts, expiresAt: Date.now() + 15 * 60 * 1000 });
+      await recordAuditEvent({ event: 'login_failure', outcome: 'failure', req, details: 'rate_limited' });
       return res.status(429).json({
         message: 'Too many failed attempts. Try again later.',
       });
     }
     failedLogins.set(loginKey, { attempts, expiresAt: Date.now() + 15 * 60 * 1000 });
+    await recordAuditEvent({ event: 'login_failure', outcome: 'failure', req, details: 'invalid_credentials' });
     return res.status(401).json({ message: 'Invalid credentials.' });
   } catch (err) {
+    await recordAuditEvent({ event: 'login_failure', outcome: 'failure', req, details: 'authentication_error' });
     res.status(500).json({ message: 'Authentication service unavailable.' });
   }
 });
@@ -257,7 +265,10 @@ router.post('/mfa/verify-login', requireCsrf, async (req, res) => {
   try {
     const challengeToken = parseCookies(req.headers.cookie)[mfaChallengeCookieName];
     const challenge = await consumeMfaChallenge(challengeToken);
-    if (!challenge) return res.status(401).json({ message: 'MFA challenge expired. Start login again.' });
+    if (!challenge) {
+      await recordAuditEvent({ event: 'mfa_failure', outcome: 'failure', req, details: 'challenge_expired' });
+      return res.status(401).json({ message: 'MFA challenge expired. Start login again.' });
+    }
 
     const admin = await getAdminRecord(challenge.adminId);
     if (!admin?.mfaEnabled || !admin.mfaSecret) {
@@ -287,6 +298,7 @@ router.post('/mfa/verify-login', requireCsrf, async (req, res) => {
 
     if (!valid) {
       await incrementMfaChallengeAttempts(challenge);
+      await recordAuditEvent({ event: 'mfa_failure', outcome: 'failure', adminId: challenge.adminId, req, details: 'invalid_code' });
       return res.status(401).json({ message: 'Invalid MFA code.' });
     }
 
@@ -296,8 +308,6 @@ router.post('/mfa/verify-login', requireCsrf, async (req, res) => {
       ? { mfaBackupCodes: backupCodes }
       : { mfaBackupCodes: backupCodes, mfaLastUsedStep: timeStep };
     await updateAdminRecord(challenge.adminId, changes);
-    await destroyAdminSessions(challenge.adminId);
-
     const csrfToken = parseCookies(req.headers.cookie)[csrfCookieName] || '';
     if (!csrfToken) return res.status(403).json({ message: 'CSRF bootstrap required.' });
     const session = await createSession({
@@ -305,10 +315,14 @@ router.post('/mfa/verify-login', requireCsrf, async (req, res) => {
       tokenVersion: memoryStore.adminCredentials.tokenVersion || 0,
       csrfToken,
       mfaVerified: true,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
     });
     setSessionCookies(res, session);
+    await recordAuditEvent({ event: 'mfa_success', adminId: challenge.adminId, req });
     return res.json({ username: admin.username });
   } catch (error) {
+    await recordAuditEvent({ event: 'mfa_failure', outcome: 'failure', req, details: 'verification_error' });
     console.error('MFA verification failed:', error.message);
     return res.status(401).json({ message: 'MFA verification failed.' });
   }
@@ -316,6 +330,7 @@ router.post('/mfa/verify-login', requireCsrf, async (req, res) => {
 
 // ─── AUTHENTICATED ADMIN ROUTES ───────────────────────────────────────────────
 router.post('/logout', protect, requireCsrf, async (req, res) => {
+  await recordAuditEvent({ event: 'logout', adminId: req.user.id, req });
   await destroySession(req.sessionToken);
   clearSessionCookies(res);
   res.json({ message: 'Logged out.' });
@@ -326,6 +341,61 @@ router.use(requireCsrf);
 
 router.get('/me', (req, res) => {
   res.json({ status: 'authenticated', user: req.user });
+});
+
+// ─── SECURITY CENTER ──────────────────────────────────────────────────────────
+router.get('/security/sessions', async (req, res) => {
+  try {
+    const sessions = await listAdminSessions(req.user.id);
+    return res.json({
+      sessions: sessions.map((session) => ({
+        id: String(session._id),
+        current: String(session._id) === req.sessionId,
+        ip: session.ip || 'Unknown',
+        userAgent: session.userAgent || 'Unknown device',
+        createdAt: session.createdAt,
+        lastActivityAt: session.lastActivityAt || session.updatedAt || session.createdAt,
+        expiresAt: session.expiresAt,
+        mfaVerified: Boolean(session.mfaVerified),
+      })),
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Unable to load active sessions.' });
+  }
+});
+
+router.delete('/security/sessions/:id', async (req, res) => {
+  try {
+    const revoked = await revokeAdminSession(req.user.id, req.params.id);
+    if (!revoked) return res.status(404).json({ message: 'Session not found.' });
+    const isCurrent = req.params.id === req.sessionId;
+    await recordAuditEvent({ event: 'session_revoked', adminId: req.user.id, req, details: isCurrent ? 'current_session' : 'single_session' });
+    if (isCurrent) {
+      clearSessionCookies(res);
+      return res.json({ message: 'Current session revoked.', current: true });
+    }
+    return res.json({ message: 'Session revoked.', current: false });
+  } catch (error) {
+    return res.status(400).json({ message: 'Invalid session identifier.' });
+  }
+});
+
+router.post('/security/sessions/revoke-others', async (req, res) => {
+  try {
+    const count = await revokeOtherAdminSessions(req.user.id, req.sessionId);
+    await recordAuditEvent({ event: 'sessions_revoked', adminId: req.user.id, req, details: `${count} other session(s)` });
+    return res.json({ message: `${count} other session(s) revoked.`, count });
+  } catch (error) {
+    return res.status(500).json({ message: 'Unable to revoke other sessions.' });
+  }
+});
+
+router.get('/security/audit', async (req, res) => {
+  try {
+    return res.json({ events: await listAuditEvents(req.query.limit) });
+  } catch (error) {
+    return res.status(500).json({ message: 'Unable to load the audit log.' });
+  }
 });
 
 router.get('/mfa/status', async (req, res) => {
@@ -381,6 +451,7 @@ router.post('/mfa/confirm', async (req, res) => {
     });
     await destroyAdminSessions(req.user.id);
     clearSessionCookies(res);
+    await recordAuditEvent({ event: 'mfa_enabled', adminId: req.user.id, req });
     return res.json({ backupCodes });
   } catch (error) {
     return res.status(400).json({ message: error.message });
@@ -409,6 +480,7 @@ router.post('/mfa/disable', async (req, res) => {
     });
     await destroyAdminSessions(req.user.id);
     clearSessionCookies(res);
+    await recordAuditEvent({ event: 'mfa_disabled', adminId: req.user.id, req });
     return res.json({ message: 'MFA disabled. Sign in again.' });
   } catch (error) {
     return res.status(400).json({ message: error.message });
@@ -427,6 +499,7 @@ router.post('/mfa/regenerate-backup-codes', async (req, res) => {
       mfaBackupCodes: await hashBackupCodes(backupCodes),
       mfaLastUsedStep: result.timeStep,
     });
+    await recordAuditEvent({ event: 'recovery_codes_regenerated', adminId: req.user.id, req });
     return res.json({ backupCodes });
   } catch (error) {
     return res.status(400).json({ message: error.message });
@@ -477,6 +550,8 @@ router.put('/change-username', async (req, res) => {
     await destroyAdminSessions(req.user.id);
     clearSessionCookies(res);
 
+    await recordAuditEvent({ event: 'username_changed', adminId: req.user.id, req });
+
     return res.json({ message: 'Username updated successfully!', username: trimmed });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -520,6 +595,8 @@ router.put('/change-password', async (req, res) => {
     if (!isDbConnected) memoryStore.adminCredentials.tokenVersion += 1;
     await destroyAdminSessions(req.user.id);
     clearSessionCookies(res);
+
+    await recordAuditEvent({ event: 'password_changed', adminId: req.user.id, req });
 
     return res.json({ message: 'Password updated successfully!' });
   } catch (err) {

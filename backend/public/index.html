@@ -48,6 +48,7 @@
         </div>
         <div class="user-group">
           <span id="user-display">Logged in as Admin</span>
+          <button id="btn-security-trigger" class="btn-ghost-sm">SECURITY CENTER</button>
           <button id="btn-mfa-trigger" class="btn-ghost-sm">SECURITY / MFA</button>
           <button id="btn-change-username-trigger" class="btn-ghost-sm">SECURITY / USERNAME</button>
           <button id="btn-change-pass-trigger" class="btn-ghost-sm">SECURITY / PASSWORD</button>
@@ -67,7 +68,33 @@
         <button class="tab-btn" data-tab="messages">
           MESSAGES INBOX <span id="msg-badge" class="badge">0</span>
         </button>
+        <button class="tab-btn" data-tab="security">SECURITY CENTER</button>
       </nav>
+
+      <!-- TAB: SECURITY CENTER -->
+      <section id="tab-security" class="tab-content">
+        <div class="security-grid">
+          <div class="section-card">
+            <div class="card-header flex-between">
+              <div>
+                <h3>ACTIVE SESSIONS</h3>
+                <p>Review signed-in devices and revoke access you do not recognize.</p>
+              </div>
+              <button type="button" id="btn-revoke-other-sessions" class="btn-danger-sm">REVOKE OTHER SESSIONS</button>
+            </div>
+            <div id="security-session-status" class="modal-sub"></div>
+            <div id="security-sessions-list" class="security-list"></div>
+          </div>
+
+          <div class="section-card">
+            <div class="card-header">
+              <h3>SECURITY AUDIT LOG</h3>
+              <p>Recent authentication and account-security events for this admin account.</p>
+            </div>
+            <div id="security-audit-list" class="security-list"></div>
+          </div>
+        </div>
+      </section>
 
       <!-- TAB 1: PROFILE & HERO -->
       <section id="tab-profile" class="tab-content active">
