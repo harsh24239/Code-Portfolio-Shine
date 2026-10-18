@@ -33,7 +33,7 @@ nav.nav-desktop { position: static; height: auto; background: transparent; borde
 .hero-stat-label { font-size: 11px; color: #bfa8a8; letter-spacing: .12em; margin-top: .55rem; }
 .hero-scroll-hint { font-size: 11px; bottom: 1.5rem; color: #c4a8a8; }
 .hero-interaction-note { position: absolute; right: clamp(1rem,5vw,4rem); bottom: 1.5rem; z-index: 3; display: inline-flex; align-items: center; gap: 9px; color: #b99595; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
-.hero-interaction-note span { color: var(--accent); font-size: 10px; }
+.hero-interaction-note span { color: var(--accent); font-size: 11px; }
 .hero-bg-image { transform: translate3d(0,calc(var(--scene-scroll,0) * -18px),0) rotateX(calc(var(--scene-scroll,0) * 1.2deg)) rotateY(calc(var(--scene-scroll,0) * -2deg)) rotateX(var(--hero-pitch,0deg)) rotateY(var(--hero-yaw,0deg)) scale(calc(var(--hero-zoom,1.035) + var(--scene-scroll,0) * .045)); transform-origin: 68% 40%; transform-style: preserve-3d; }
 .hero-bg-image img { transform: translate3d(var(--hero-shift-x,0px),calc(var(--hero-shift-y,0px) + var(--scene-scroll,0) * -8px),0) scale(1.035); object-position: 65% 25%; filter: contrast(1.04) saturate(.9); transition: opacity .9s; }
 .hero-bg-image::before { background: linear-gradient(90deg,#0a0000f5 0%,#0a0000d4 23%,#0a000075 44%,#0a000008 75%),linear-gradient(0deg,#0a0000 0%,transparent 32%); }
@@ -133,7 +133,7 @@ body:has(dialog[open]) .pointer-aura { opacity: 0; }
   .hero { min-height: 780px; }
   .hero-text { padding: 4rem 0 4.5rem; }
   .hero-title-main { font-size: clamp(3rem,12vw,4.8rem); }
-  .hero-eyebrow { font-size: 10px; gap: 10px; margin-bottom: 1.9rem; letter-spacing: .11em; }
+  .hero-eyebrow { font-size: 11px; gap: 10px; margin-bottom: 1.9rem; letter-spacing: .1em; }
   .hero-sub { font-size: 15px; max-width: 32ch; line-height: 1.6; margin-top: 1.8rem; }
   .hero-bg-image img { object-position: 59% 20%; }
   .hero-bg-image::before { background: linear-gradient(90deg,#0a0000ce,#0a000083 60%,#0a000065),linear-gradient(0deg,#0a0000 0%,transparent 90%); }
@@ -150,7 +150,7 @@ body:has(dialog[open]) .pointer-aura { opacity: 0; }
   .skills-heading-col h2 { font-size: 2.45rem; }
   .projects-header { margin-bottom: 2rem; gap: 1rem; }
   .projects-header h2 { font-size: 2.8rem; }
-  .projects-header-meta { font-size: 10px; }
+  .projects-header-meta { font-size: 11px; }
   #about .skills-grid { grid-template-columns: 1fr; gap: .5rem; }
   #about .testimonials-heading { font-size: 2rem; }
   #about .skill-item { padding-block: 1.6rem !important; }

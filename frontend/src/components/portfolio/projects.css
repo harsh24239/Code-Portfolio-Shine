@@ -213,7 +213,7 @@
   align-items: center;
   gap: clamp(0.35rem, 1.2vw, 0.8rem);
   color: #e2a0a0;
-  font-size: clamp(0.68rem, 0.9vw, 0.8rem);
+  font-size: clamp(0.75rem, 0.9vw, 0.82rem);
   letter-spacing: 0.16em;
 }
 
@@ -459,7 +459,7 @@
   #projects .project-footer { margin-top: 23px; padding-top: 14px; }
   .project-signal { inset: 18% 9%; }
   .project-signal-data { inset: 18% 12%; }
-  .signal-ai-flow { gap: 0.28rem; font-size: 0.7rem; }
+  .signal-ai-flow { gap: 0.28rem; font-size: 0.75rem; }
   .signal-ai-flow span { padding: 0.55rem 0.3rem; }
 }
 
