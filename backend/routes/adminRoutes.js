@@ -14,6 +14,7 @@ import { protect } from '../middleware/auth.js';
 import { requireCsrf, issueCsrfToken } from '../middleware/csrf.js';
 import { consumeMfaChallenge, createMfaChallenge, createSession, destroyAdminSessions, destroyMfaChallenge, destroySession, incrementMfaChallengeAttempts, listAdminSessions, revokeAdminSession, revokeOtherAdminSessions } from '../store/sessionStore.js';
 import { listAuditEvents, recordAuditEvent } from '../store/auditStore.js';
+import { clearLoginThrottle, getLoginThrottle, registerLoginFailure } from '../store/loginThrottleStore.js';
 import { appendCookie, parseCookies, serializeCookie } from '../utils/cookies.js';
 import { isValidEmail, normalizeText, normalizeUrl } from '../utils/validation.js';
 import { createTotpSetup, generateBackupCodes, normalizeBackupCode, verifyTotp } from '../utils/totp.js';
@@ -21,7 +22,6 @@ import { decryptSecret, encryptSecret } from '../utils/secretBox.js';
 
 const router = express.Router();
 
-const failedLogins = new Map();
 const mfaChallengeCookieName = 'portfolio_admin_mfa_challenge';
 
 // ─── Credential Helpers ───────────────────────────────────────────────────────
@@ -182,15 +182,13 @@ router.post('/login', requireCsrf, async (req, res) => {
   }
 
   const loginKey = getLoginKey(req, username);
-  const lockout = failedLogins.get(loginKey);
-  const activeLockout = lockout && Date.now() < lockout.expiresAt ? lockout : null;
-  if (activeLockout) {
-    await recordAuditEvent({ event: 'login_failure', outcome: 'failure', req, details: 'rate_limited' });
-    return res.status(429).json({ message: 'Too many failed attempts. Try again later.' });
-  }
-  if (lockout) failedLogins.delete(loginKey);
-
   try {
+    const throttle = await getLoginThrottle(loginKey);
+    if (throttle.blocked) {
+      await recordAuditEvent({ event: 'login_failure', outcome: 'failure', req, details: 'rate_limited' });
+      return res.status(429).json({ message: 'Too many failed attempts. Try again later.' });
+    }
+
     let isValid = false;
     let authUserId = 'mem_admin_1';
     let authUsername = getAdminUsername();
@@ -217,7 +215,7 @@ router.post('/login', requireCsrf, async (req, res) => {
     }
 
     if (isValid) {
-      failedLogins.delete(loginKey);
+      await clearLoginThrottle(loginKey);
       if (authAdmin.mfaEnabled) {
         const challenge = await createMfaChallenge(authUserId);
         setMfaChallengeCookie(res, challenge.token);
@@ -240,15 +238,13 @@ router.post('/login', requireCsrf, async (req, res) => {
       return res.json({ username: authUsername });
     }
 
-    const attempts = (activeLockout?.attempts || 0) + 1;
-    if (attempts >= 5) {
-      failedLogins.set(loginKey, { attempts, expiresAt: Date.now() + 15 * 60 * 1000 });
+    const failure = await registerLoginFailure(loginKey);
+    if (failure.blocked) {
       await recordAuditEvent({ event: 'login_failure', outcome: 'failure', req, details: 'rate_limited' });
       return res.status(429).json({
         message: 'Too many failed attempts. Try again later.',
       });
     }
-    failedLogins.set(loginKey, { attempts, expiresAt: Date.now() + 15 * 60 * 1000 });
     await recordAuditEvent({ event: 'login_failure', outcome: 'failure', req, details: 'invalid_credentials' });
     return res.status(401).json({ message: 'Invalid credentials.' });
   } catch (err) {
