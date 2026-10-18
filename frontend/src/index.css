@@ -83,7 +83,7 @@ body {
   width: 100%;
 }
 
-p + p { margin-top: 2em; }
+p + p { margin-top: 1.25em; }
 
 h1, h2, h3, h4 {
   line-height: 1.05;

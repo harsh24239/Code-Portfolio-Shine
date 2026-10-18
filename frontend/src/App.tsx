@@ -21,6 +21,12 @@ const safeExternalUrl = (value: string | undefined, fallback = '#contact') => {
   }
 };
 
+const conciseCopy = (value: string | undefined, fallback: string, limit: number) => {
+  const copy = value?.trim();
+  if (!copy) return fallback;
+  return copy.length <= limit ? copy : fallback;
+};
+
 interface Project {
   _id?: string | number;
   id?: string | number;
@@ -85,7 +91,7 @@ const DEFAULT_PROFILE: ProfileData = {
   yearsCoding: '3+',
   clientsServed: '100+',
   status: 'Available for Web Dev & Software Roles',
-  statusDetail: 'Focused on Web Development & AI Applications. Actively building projects with React, Node.js, Express, FastAPI, and LangGraph.',
+  statusDetail: 'Building with React, Node.js, FastAPI, and LangGraph.',
   email: 'kumarharsh1851@gmail.com',
   pgpKey: 'github.com/harsh24239',
   linkedin: '',
@@ -281,6 +287,13 @@ function getProjectPresentation(project: Project): { kind: ProjectKind; kindLabe
   return { kind: 'systems', kindLabel: 'Desktop systems', signal: '4-LAYER ARCHITECTURE' };
 }
 
+function getProjectBrief(project: Project, kind: ProjectKind) {
+  if (project.description.trim().length <= 120) return project.description;
+  if (kind === 'ai') return 'Grounded placement prep with LangGraph orchestration and a focused FastAPI interface.';
+  if (kind === 'data') return 'Role-based credential review with audit trails and clear operational visibility.';
+  return 'Layered university workflows with secure access and tested data persistence.';
+}
+
 function renderProjectVisual(kind: ProjectKind) {
   if (kind === 'ai') {
     return (
@@ -323,6 +336,7 @@ function renderProjectVisual(kind: ProjectKind) {
 function ProjectCard({ project, index, isFeatured = false }: { project: Project; index: number; isFeatured?: boolean }) {
   const titleId = `project-title-${index}`;
   const presentation = getProjectPresentation(project);
+  const projectBrief = getProjectBrief(project, presentation.kind);
   const projectUrl = safeExternalUrl(project.link);
   const linkLabel = !project.link ? 'Start a conversation' : /github\.com\/[^/]+\/[^/]+/i.test(project.link) ? 'View source' : 'Open GitHub';
   const statusLabel = /ongoing/i.test(project.year) ? 'In progress' : 'Completed';
@@ -342,7 +356,7 @@ function ProjectCard({ project, index, isFeatured = false }: { project: Project;
             <span className="project-status">{statusLabel}</span>
           </div>
           <h3 className="project-title" id={titleId}>{project.title}</h3>
-          <p className="project-desc">{project.description}</p>
+          <p className="project-desc">{projectBrief}</p>
           <div className="project-proof" aria-label={`Project focus: ${presentation.signal}`}>
             <span className="project-proof-label">Built around</span>
             <span>{presentation.signal}</span>
@@ -490,6 +504,8 @@ export default function App() {
   const featured = projects.find((p) => p.featured) ?? projects[0];
   const rest = projects.filter((p) => p !== featured);
   const orderedProjects = featured ? [featured, ...rest] : projects;
+  const heroSubtext = conciseCopy(profile.subtext, DEFAULT_PROFILE.subtext, 145);
+  const statusDetail = conciseCopy(profile.statusDetail, DEFAULT_PROFILE.statusDetail, 120);
   return (
     <>
       <PortfolioMotion enabled={motionEnabled} />
@@ -576,7 +592,7 @@ export default function App() {
                 <span className="hero-title-accent hero-title-block">{profile.titleAccent}</span>
                 <span className="hero-title-nowrap hero-title-block">{profile.title2}</span>
               </h1>
-              <p className="hero-sub">{profile.subtext}</p>
+              <p className="hero-sub">{heroSubtext}</p>
               <div className="hero-actions">
                 <a className="btn-primary" href="#projects">View Projects</a>
                 <a className="btn-ghost" href="#contact">Hire Me</a>
@@ -791,7 +807,7 @@ export default function App() {
                     CURRENT STATUS
                   </div>
                   <div className="contact-avail-status">{profile.status}</div>
-                  <p className="contact-avail-detail">{profile.statusDetail}</p>
+                  <p className="contact-avail-detail">{statusDetail}</p>
                 </div>
 
                 <form onSubmit={handleContactSubmit} aria-label="Contact form" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

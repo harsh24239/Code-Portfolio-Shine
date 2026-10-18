@@ -51,8 +51,8 @@ const fragment = `
       float distanceToTrail=length((vUv-uTrail[i].xy)*metric);
       wake=max(wake,(1.0-smoothstep(.02,.22,distanceToTrail))*uTrail[i].z);
     }
-    float portraitMask=smoothstep(.34,.53,vUv.x);
-    vec2 fineGrid=uSize/vec2(8.0,12.0);
+    float portraitMask=smoothstep(.18,.44,vUv.x);
+    vec2 fineGrid=uSize/vec2(9.0,14.0);
     vec2 fineCell=floor(vUv*fineGrid);
     float seed=hash(fineCell);
     // An irregular front expands from the entry point, without drawing a visible ring.
@@ -78,7 +78,7 @@ const fragment = `
     vec3 data=vec3(.005,0.0,0.0)+codeInk(source,highlight)*glyph;
     // Keep a little photographic detail between the characters so the face still reads.
     data+=source*.10*(1.0-glyph);
-    vec3 color=mix(photograph,data,dissolve*.86);
+    vec3 color=mix(photograph,data,dissolve*.94);
 
     // A sparse foreground layer separates into larger, brighter fragments near the wave.
     vec2 coarseGrid=uSize/vec2(19.0,28.0);
@@ -88,15 +88,16 @@ const fragment = `
     float coarseSeed=hash(coarseCell+vec2(19.0,31.0));
     float coarseBit=step(.5,hash(coarseCell+floor(uTime*.75)));
     float coarseGlyph=binary((coarseLocal-vec2(.17,.12))/vec2(.66,.76),coarseBit);
-    float sparse=step(.91,coarseSeed);
+    float sparse=step(.82,coarseSeed);
     float lift=clamp(frontier*.8+nearPointer*.38+wake*energy*.55,0.0,1.0);
     vec3 coarseSource=portraitAt((coarseCell+.5)/coarseGrid,cover);
     color+=codeInk(coarseSource,.65)*coarseGlyph*sparse*lift*amount*.75;
     // A few larger fragments drift out of alignment before snapping back into the portrait.
     float fracture=clamp((frontier*1.4+nearPointer*.7+wake*.35)*amount,0.0,1.0);
-    vec2 shardOffset=(vec2(hash(coarseCell+vec2(41.0,17.0)),hash(coarseCell+vec2(73.0,29.0)))-.5)*.05*fracture;
+    vec2 shardOffset=(vec2(hash(coarseCell+vec2(41.0,17.0)),hash(coarseCell+vec2(73.0,29.0)))-.5)*.09*fracture;
     vec3 shardSource=portraitAt((coarseCell+.5)/coarseGrid+shardOffset,cover);
-    color+=(codeInk(shardSource,.9)-codeInk(coarseSource,.2))*coarseGlyph*sparse*fracture*.7;
+    vec3 chromaShard=vec3(shardSource.r,coarseSource.g*.78,coarseSource.b*.78);
+    color+=(codeInk(chromaShard,.95)-codeInk(coarseSource,.2))*coarseGlyph*sparse*fracture*.85;
     // A fine red edge light accompanies the transformation, using the original palette.
     color+=vec3(.024,.001,.001)*frontier*amount*(1.0-glyph);
     gl_FragColor=vec4(max(color,vec3(0.0)),1.0);

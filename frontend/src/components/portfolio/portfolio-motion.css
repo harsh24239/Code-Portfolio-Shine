@@ -21,7 +21,7 @@ nav.nav-desktop { position: static; height: auto; background: transparent; borde
 .hero-title-main > span { transform-origin: left center; }
 .hero-title-code, .hero-title-nowrap { line-height: 1; letter-spacing: -.035em; }
 .hero-title-accent { font-size: .72em; line-height: 1.12; letter-spacing: .08em; margin: .08em 0 .15em !important; }
-.hero-sub { color: #c2aaaa; font-size: clamp(.875rem,1.08vw,1rem); max-width: 450px; line-height: 1.85; margin-top: 2rem; letter-spacing: 0; }
+.hero-sub { color: #d4bebe; font-size: clamp(1rem,1.18vw,1.12rem); max-width: 36ch; line-height: 1.65; margin-top: 2rem; letter-spacing: -.01em; text-wrap: balance; }
 .hero-actions { margin-top: 2rem; gap: .8rem; }
 .hero-actions a { font-size: 10px; min-height: 49px; padding: .9rem 1.8rem; }
 .btn-primary { color: var(--text); background: #ba1717; }
@@ -30,7 +30,7 @@ nav.nav-desktop { position: static; height: auto; background: transparent; borde
 .hero-actions a, .nav-cta, .contact-channel { translate: var(--magnet-x,0px) var(--magnet-y,0px); transition: translate .35s cubic-bezier(.2,.8,.2,1), background .25s, border-color .25s; }
 .hero-stats { max-width: 490px; gap: 2.9rem; margin-top: 2.7rem; padding-top: 1.8rem; border-color: var(--presentation-line); }
 .hero-stat-value { font-size: 2rem; letter-spacing: 0; }
-.hero-stat-label { font-size: 8px; color: #b39b9b; letter-spacing: .18em; margin-top: .55rem; }
+.hero-stat-label { font-size: 9px; color: #bfa8a8; letter-spacing: .16em; margin-top: .55rem; }
 .hero-scroll-hint { font-size: 9px; bottom: 1.5rem; color: #c4a8a8; }
 .hero-interaction-note { position: absolute; right: clamp(1rem,5vw,4rem); bottom: 1.5rem; z-index: 3; display: inline-flex; align-items: center; gap: 9px; color: #b99595; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
 .hero-interaction-note span { color: var(--accent); font-size: 8px; }
@@ -46,7 +46,7 @@ nav.nav-desktop { position: static; height: auto; background: transparent; borde
 #skills, #philosophy, #contact { background: #190404; }
 .skills-layout { gap: clamp(3rem,8vw,7rem); grid-template-columns: 1fr 1.7fr; }
 .skills-heading-col h2, .projects-header h2, .philosophy-text-col h2, .contact-heading { letter-spacing: -.035em; line-height: 1.03; }
-.skills-heading-col > p:last-child { color: var(--presentation-muted); font-size: 13px; line-height: 1.9; }
+.skills-heading-col > p:last-child { color: var(--presentation-muted); font-size: 14px; line-height: 1.75; max-width: 34ch; }
 .skills-eyebrow, .projects-eyebrow, .philosophy-eyebrow, .testimonials-eyebrow, .contact-eyebrow { font-size: 10px; letter-spacing: .21em; }
 .skills-grid { background: transparent; gap: 0; }
 #skills .skill-item { border-top: 1px solid var(--presentation-line); }
@@ -54,7 +54,7 @@ nav.nav-desktop { position: static; height: auto; background: transparent; borde
 .skill-item { background: #190404; padding: 2.25rem 1.75rem; }
 .skill-item:hover { background: #240707; }
 .skill-name { font-family: 'Manrope', system-ui, sans-serif !important; font-weight: 700; letter-spacing: -.025em; font-size: 17px; line-height: 1.5; }
-.skill-desc { color: var(--presentation-muted); font-size: 12px; line-height: 1.85; }
+.skill-desc { color: var(--presentation-muted); font-size: 13.5px; line-height: 1.7; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 .skill-icon { width: 29px; height: 29px; margin-bottom: 1.6rem; stroke-width: 1; }
 .skill-rank { gap: 4px; margin-top: 1.4rem; }
 .skill-rank-pip { width: 23px; height: 2px; background: #6a3d3d; }
@@ -71,13 +71,13 @@ nav.nav-desktop { position: static; height: auto; background: transparent; borde
 .philosophy-stripe { height: 1px; opacity: .5; }
 .philosophy-layout { align-items: start; }
 .philosophy-quote { padding-left: 1.4rem; border-left-width: 1px; font-size: clamp(1.6rem,2.6vw,2.2rem); letter-spacing: -.03em; line-height: 1.35; margin-block: 2.1rem; }
-.philosophy-body { color: var(--presentation-muted); font-size: 13px; line-height: 1.9; }
+.philosophy-body { color: var(--presentation-muted); font-size: 14px; line-height: 1.75; max-width: 42ch; }
 .tenet-item { padding-block: 2rem; gap: 1.3rem; border-color: var(--presentation-line); }
 .tenet-item:first-child { border-color: var(--presentation-line); }
 .tenet-item:hover { background: transparent; }
 .tenet-marker { font-size: 16px; padding-top: 4px; }
 .tenet-title { font-size: 16px; letter-spacing: -.015em; line-height: 1.5; margin-bottom: 9px; }
-.tenet-text { color: var(--presentation-muted); font-size: 12px; line-height: 1.9; }
+.tenet-text { color: var(--presentation-muted); font-size: 13.5px; line-height: 1.75; }
 #about .skills-grid { grid-template-columns: repeat(4,1fr); gap: 1.6rem; background: none; }
 #about .skill-item { padding: 1.8rem 0 !important; background: transparent; border-top: 1px solid var(--presentation-line); }
 #about .skill-item::before { top: -1px; }
@@ -85,11 +85,11 @@ nav.nav-desktop { position: static; height: auto; background: transparent; borde
 #about .testimonials-heading { letter-spacing: -.035em; }
 #about .skill-name { line-height: 1.4; }
 .contact-layout { gap: clamp(3rem,7vw,6rem); }
-.contact-intro, .contact-avail-detail { color: var(--presentation-muted); font-size: 13px; line-height: 1.9; }
+.contact-intro, .contact-avail-detail { color: var(--presentation-muted); font-size: 14px; line-height: 1.75; }
 .contact-heading { font-size: clamp(2.3rem,5.5vw,4.8rem); }
 .contact-channel { background: transparent; padding: 1.2rem 0; border: 0; border-bottom: 1px solid var(--presentation-line); gap: .8rem; }
 .contact-channel:hover { background: transparent; }
-.contact-channel-detail { font-size: 11px; color: #bca1a1; }
+.contact-channel-detail { font-size: 12px; color: #bca1a1; }
 .contact-channel-label { font-size: 10px; }
 .contact-availability { border-color: var(--presentation-line); background: #130303; border-left-width: 1px; padding: 1.7rem; }
 .contact-avail-label { font-size: 9px; }
@@ -102,7 +102,7 @@ nav.nav-desktop { position: static; height: auto; background: transparent; borde
 .contact-bg-kanji { opacity: .15; }
 footer.site-footer { border-color: var(--presentation-line); }
 .footer-logo { font-size: 22px; letter-spacing: -.025em; }
-.footer-tagline, .footer-nav-list a { font-size: 12px; color: var(--presentation-muted); }
+.footer-tagline, .footer-nav-list a { font-size: 13px; color: var(--presentation-muted); }
 .footer-divider { border-color: var(--presentation-line); }
 .footer-col-heading, .footer-legal { font-size: 9px; color: #a58080; }
 .pointer-aura { position: fixed; top: 0; left: 0; width: 22px; height: 22px; border: 1px solid #e39b9b55; border-radius: 50%; pointer-events: none; z-index: 1100; translate: -50% -50%; opacity: 0; transition: width .25s,height .25s,opacity .25s; }
@@ -134,14 +134,14 @@ body:has(dialog[open]) .pointer-aura { opacity: 0; }
   .hero-text { padding: 4rem 0 4.5rem; }
   .hero-title-main { font-size: clamp(3rem,12vw,4.8rem); }
   .hero-eyebrow { font-size: 8px; gap: 10px; margin-bottom: 1.9rem; letter-spacing: .13em; }
-  .hero-sub { font-size: 13px; max-width: 350px; line-height: 1.9; margin-top: 1.8rem; }
+  .hero-sub { font-size: 15px; max-width: 31ch; line-height: 1.65; margin-top: 1.8rem; }
   .hero-bg-image img { object-position: 59% 20%; }
   .hero-bg-image::before { background: linear-gradient(90deg,#0a0000ce,#0a000083 60%,#0a000065),linear-gradient(0deg,#0a0000 0%,transparent 90%); }
   .hero-actions { flex-wrap: nowrap; gap: 10px; margin-top: 1.8rem; }
   .hero-actions a { width: auto; flex: 1; padding-inline: .7rem; font-size: 9px; }
   .hero-stats { gap: 1.3rem; margin-top: 2rem; padding-top: 1.4rem; }
   .hero-stat-value { font-size: 1.65rem; }
-  .hero-stat-label { font-size: 7px; letter-spacing: .12em; }
+  .hero-stat-label { font-size: 8px; letter-spacing: .11em; }
   .hero-scroll-hint { font-size: 8px; }
   .hero-interaction-note { display: none; }
   #skills, #projects, #philosophy, #about, #contact { padding-block: 4.5rem; }
