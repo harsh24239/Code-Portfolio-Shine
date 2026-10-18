@@ -48,6 +48,8 @@
         </div>
         <div class="user-group">
           <span id="user-display">Logged in as Admin</span>
+          <span class="header-link-status"><i></i> CONTROL LINK LIVE</span>
+          <button id="btn-refresh-dashboard" class="btn-ghost-sm">REFRESH PLANE</button>
           <button id="btn-security-trigger" class="btn-ghost-sm">SECURITY CENTER</button>
           <button id="btn-mfa-trigger" class="btn-ghost-sm">SECURITY / MFA</button>
           <button id="btn-change-username-trigger" class="btn-ghost-sm">SECURITY / USERNAME</button>
@@ -61,7 +63,8 @@
       <div id="system-status" class="system-status" role="status" aria-live="polite"></div>
       <!-- NAVIGATION TABS -->
       <nav class="admin-tabs">
-        <button class="tab-btn active" data-tab="profile">PROFILE & HERO</button>
+        <button class="tab-btn active" data-tab="overview">COMMAND CENTER</button>
+        <button class="tab-btn" data-tab="profile">PROFILE & HERO</button>
         <button class="tab-btn" data-tab="projects">PROJECTS DOSSIER</button>
         <button class="tab-btn" data-tab="skills">SKILLS ARSENAL</button>
         <button class="tab-btn" data-tab="testimonials">BACKGROUND & FOCUS</button>
@@ -70,6 +73,90 @@
         </button>
         <button class="tab-btn" data-tab="security">SECURITY CENTER</button>
       </nav>
+
+      <!-- TAB: COMMAND CENTER -->
+      <section id="tab-overview" class="tab-content active">
+        <div class="overview-hero">
+          <div>
+            <div class="eyebrow-line"><span class="eyebrow-dot"></span> LIVE CONTROL PLANE / PORTFOLIO OPERATIONS</div>
+            <h1>Everything important, <em>in sight.</em></h1>
+            <p>Monitor the public portfolio, protect the admin surface, and ship content changes from one calm operational view.</p>
+          </div>
+          <div class="overview-hero-actions">
+            <span class="live-signal"><i></i> LIVE SYSTEM</span>
+            <button type="button" id="btn-overview-refresh" class="btn-primary">REFRESH CONTROL PLANE</button>
+          </div>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric-card metric-card-featured">
+            <span class="metric-label">PERSISTENCE LAYER</span>
+            <strong id="overview-persistence">CHECKING</strong>
+            <small id="overview-persistence-detail">Verifying database sync...</small>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">PUBLIC API LINK</span>
+            <strong id="overview-frontend-sync">CHECKING</strong>
+            <small id="overview-frontend-detail">Testing frontend data path...</small>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">AUTHENTICATOR MFA</span>
+            <strong id="overview-mfa">CHECKING</strong>
+            <small id="overview-mfa-detail">Reading account protection...</small>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">ACTIVE SESSIONS</span>
+            <strong id="overview-sessions">—</strong>
+            <small id="overview-sessions-detail">Loading session inventory...</small>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">AUDIT EVENTS</span>
+            <strong id="overview-audit">—</strong>
+            <small id="overview-audit-detail">Loading security trail...</small>
+          </article>
+        </div>
+
+        <div class="overview-grid">
+          <section class="section-card quick-actions-card">
+            <div class="card-header">
+              <div class="eyebrow-line">OPERATIONS</div>
+              <h3>QUICK ACTIONS</h3>
+              <p>Jump directly to the surfaces that keep the portfolio moving.</p>
+            </div>
+            <div class="quick-actions">
+              <button type="button" class="quick-action" data-target-tab="profile"><span class="quick-action-icon">01</span><span><b>EDIT HERO</b><small>Update public positioning and links.</small></span><span class="quick-action-arrow">→</span></button>
+              <button type="button" class="quick-action" data-target-tab="projects"><span class="quick-action-icon">02</span><span><b>SHIP PROJECT</b><small>Add a new case study to the portfolio.</small></span><span class="quick-action-arrow">→</span></button>
+              <button type="button" class="quick-action" data-target-tab="messages"><span class="quick-action-icon">03</span><span><b>READ INBOX</b><small>Review incoming visitor transmissions.</small></span><span class="quick-action-arrow">→</span></button>
+              <button type="button" class="quick-action quick-action-security" data-target-tab="security"><span class="quick-action-icon">04</span><span><b>OPEN SECURITY</b><small>Inspect sessions, MFA, and audit events.</small></span><span class="quick-action-arrow">→</span></button>
+            </div>
+          </section>
+
+          <section class="section-card posture-card">
+            <div class="card-header">
+              <div class="eyebrow-line">DEFENSE LAYER</div>
+              <h3>SECURITY POSTURE</h3>
+              <p>High-signal checks for the admin control plane.</p>
+            </div>
+            <div class="posture-list">
+              <div id="posture-mfa" class="posture-row"><span class="posture-indicator"></span><span><b>MFA ENFORCEMENT</b><small>Checking authenticator status...</small></span><strong>—</strong></div>
+              <div id="posture-persistence" class="posture-row"><span class="posture-indicator"></span><span><b>DURABLE STORAGE</b><small>Checking MongoDB connection...</small></span><strong>—</strong></div>
+              <div id="posture-sessions" class="posture-row"><span class="posture-indicator"></span><span><b>SESSION INVENTORY</b><small>Checking active access...</small></span><strong>—</strong></div>
+              <div id="posture-frontend" class="posture-row"><span class="posture-indicator"></span><span><b>FRONTEND DATA PATH</b><small>Checking public API response...</small></span><strong>—</strong></div>
+            </div>
+          </section>
+
+          <section class="section-card overview-activity-card">
+            <div class="card-header flex-between">
+              <div>
+                <div class="eyebrow-line">TRACEABILITY</div>
+                <h3>RECENT ACTIVITY</h3>
+              </div>
+              <button type="button" class="btn-ghost-sm" data-target-tab="security">VIEW AUDIT</button>
+            </div>
+            <div id="overview-activity-list" class="overview-activity-list"></div>
+          </section>
+        </div>
+      </section>
 
       <!-- TAB: SECURITY CENTER -->
       <section id="tab-security" class="tab-content">
@@ -129,7 +216,7 @@
       </section>
 
       <!-- TAB 1: PROFILE & HERO -->
-      <section id="tab-profile" class="tab-content active">
+      <section id="tab-profile" class="tab-content">
         <div class="section-card">
           <div class="card-header">
             <h3>HERO & GENERAL PROFILE</h3>
@@ -269,6 +356,38 @@
       </section>
     </div>
   </div>
+
+  <!-- CONFIRMATION DIALOG -->
+  <div id="confirm-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="modal-card compact-card">
+      <div class="brand-badge">ACTION REVIEW</div>
+      <h3 id="confirm-title">CONFIRM ACTION</h3>
+      <p id="confirm-message" class="modal-sub"></p>
+      <div class="form-actions">
+        <button type="button" id="btn-confirm-cancel" class="btn-ghost">CANCEL</button>
+        <button type="button" id="btn-confirm-accept" class="btn-danger-sm">CONFIRM</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECURITY INPUT DIALOG -->
+  <div id="security-input-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="security-input-title">
+    <div class="modal-card compact-card">
+      <div class="brand-badge">STEP-UP VERIFICATION</div>
+      <h3 id="security-input-title">SECURITY CHECK</h3>
+      <p id="security-input-description" class="modal-sub"></p>
+      <form id="security-input-form">
+        <div id="security-input-fields"></div>
+        <div id="security-input-message" class="error-text"></div>
+        <div class="form-actions">
+          <button type="button" id="btn-security-input-cancel" class="btn-ghost">CANCEL</button>
+          <button type="submit" class="btn-primary">VERIFY & CONTINUE</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
 
   <!-- CHANGE USERNAME MODAL -->
   <div id="username-modal" class="modal-overlay hidden">

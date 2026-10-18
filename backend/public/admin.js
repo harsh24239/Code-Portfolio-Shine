@@ -11,6 +11,7 @@ const btnChangePassTrigger = document.getElementById('btn-change-pass-trigger');
 const btnChangeUsernameTrigger = document.getElementById('btn-change-username-trigger');
 const btnMfaTrigger = document.getElementById('btn-mfa-trigger');
 const btnSecurityTrigger = document.getElementById('btn-security-trigger');
+const btnRefreshDashboard = document.getElementById('btn-refresh-dashboard');
 const btnForgotPass = document.getElementById('btn-forgot-pass');
 
 // Tabs
@@ -20,6 +21,8 @@ const tabContents = document.querySelectorAll('.tab-content');
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 let mfaLoginPending = false;
 const securityAuditState = { page: 1, limit: 25 };
+let confirmationResolver = null;
+let securityInputResolver = null;
 
 async function bootstrapCsrf() {
   const res = await fetch(`${API_BASE}/admin/csrf`, { credentials: 'include' });
@@ -65,6 +68,11 @@ function setupEventListeners() {
   document.getElementById('password-form')?.addEventListener('submit', handleChangePassword);
   btnMfaTrigger?.addEventListener('click', openMfaModal);
   btnSecurityTrigger?.addEventListener('click', () => activateTab('security'));
+  btnRefreshDashboard?.addEventListener('click', handleDashboardRefresh);
+  document.getElementById('btn-overview-refresh')?.addEventListener('click', handleDashboardRefresh);
+  document.querySelectorAll('[data-target-tab]').forEach((button) => {
+    button.addEventListener('click', () => activateTab(button.dataset.targetTab));
+  });
   document.getElementById('btn-revoke-other-sessions')?.addEventListener('click', revokeOtherSessions);
   document.getElementById('security-sessions-list')?.addEventListener('click', handleSessionAction);
   document.getElementById('security-audit-event')?.addEventListener('change', () => {
@@ -90,6 +98,10 @@ function setupEventListeners() {
   document.getElementById('btn-start-mfa')?.addEventListener('click', startMfaSetup);
   document.getElementById('btn-regenerate-recovery')?.addEventListener('click', regenerateRecoveryCodes);
   document.getElementById('btn-disable-mfa')?.addEventListener('click', disableMfa);
+  document.getElementById('btn-confirm-cancel')?.addEventListener('click', () => closeConfirmation(false));
+  document.getElementById('btn-confirm-accept')?.addEventListener('click', () => closeConfirmation(true));
+  document.getElementById('security-input-form')?.addEventListener('submit', handleSecurityInputSubmit);
+  document.getElementById('btn-security-input-cancel')?.addEventListener('click', () => closeSecurityInput(null));
   document.getElementById('btn-close-backup')?.addEventListener('click', () => {
     document.getElementById('mfa-backup-panel').classList.add('hidden');
     isLoggedOut = true;
@@ -126,6 +138,7 @@ function setupEventListeners() {
 function activateTab(tabId) {
   tabBtns.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabId));
   tabContents.forEach((content) => content.classList.toggle('active', content.id === `tab-${tabId}`));
+  if (tabId === 'overview') loadOverview();
   if (tabId === 'security') loadSecurityCenter();
 }
 
@@ -289,16 +302,99 @@ function handleLogout() {
   showLogin();
 }
 
+function showToast(message, type = 'success') {
+  const region = document.getElementById('toast-region');
+  if (!region) return;
+  const toast = document.createElement('div');
+  toast.className = `toast ${type === 'error' ? 'is-error' : type === 'warning' ? 'is-warning' : ''}`;
+  toast.textContent = message;
+  region.appendChild(toast);
+  window.setTimeout(() => toast.remove(), 4200);
+}
+
+function requestConfirmation({ title = 'CONFIRM ACTION', message, confirmLabel = 'CONFIRM' }) {
+  return new Promise((resolve) => {
+    if (confirmationResolver) confirmationResolver(false);
+    confirmationResolver = resolve;
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').textContent = message;
+    document.getElementById('btn-confirm-accept').textContent = confirmLabel;
+    document.getElementById('confirm-modal').classList.remove('hidden');
+    document.getElementById('btn-confirm-cancel').focus();
+  });
+}
+
+function closeConfirmation(result) {
+  document.getElementById('confirm-modal').classList.add('hidden');
+  if (confirmationResolver) confirmationResolver(result);
+  confirmationResolver = null;
+}
+
+function requestSecurityInput({ title, description, fields }) {
+  return new Promise((resolve) => {
+    if (securityInputResolver) securityInputResolver(null);
+    securityInputResolver = resolve;
+    document.getElementById('security-input-title').textContent = title;
+    document.getElementById('security-input-description').textContent = description;
+    document.getElementById('security-input-message').textContent = '';
+    const container = document.getElementById('security-input-fields');
+    container.replaceChildren(...fields.map((field) => {
+      const group = document.createElement('div');
+      group.className = 'form-group';
+      const label = document.createElement('label');
+      label.setAttribute('for', `security-input-${field.id}`);
+      label.textContent = field.label;
+      const input = document.createElement('input');
+      input.id = `security-input-${field.id}`;
+      input.name = field.id;
+      input.type = field.type || 'text';
+      input.required = true;
+      input.placeholder = field.placeholder || '';
+      if (field.inputmode) input.inputMode = field.inputmode;
+      if (field.autocomplete) input.autocomplete = field.autocomplete;
+      group.append(label, input);
+      return group;
+    }));
+    document.getElementById('security-input-modal').classList.remove('hidden');
+    document.querySelector('#security-input-fields input')?.focus();
+  });
+}
+
+function handleSecurityInputSubmit(event) {
+  event.preventDefault();
+  const values = Object.fromEntries([...event.target.querySelectorAll('input')].map((input) => [input.name, input.value]));
+  closeSecurityInput(values);
+}
+
+function closeSecurityInput(result) {
+  document.getElementById('security-input-modal').classList.add('hidden');
+  if (securityInputResolver) securityInputResolver(result);
+  securityInputResolver = null;
+}
+
+async function handleDashboardRefresh() {
+  const buttons = [btnRefreshDashboard, document.getElementById('btn-overview-refresh')].filter(Boolean);
+  buttons.forEach((button) => { button.disabled = true; });
+  try {
+    await loadAllData();
+    showToast('Control plane refreshed.');
+  } catch (error) {
+    showToast(error.message || 'Unable to refresh the control plane.', 'error');
+  } finally {
+    buttons.forEach((button) => { button.disabled = false; });
+  }
+}
+
 // --- LOAD ALL DATA ---
 async function loadAllData() {
-  loadSystemStatus();
-  loadMfaStatus();
-  loadSecurityCenter();
-  loadProfile();
-  loadProjects();
-  loadSkills();
-  loadTestimonials();
-  loadMessages();
+  await Promise.all([
+    loadOverview(),
+    loadProfile(),
+    loadProjects(),
+    loadSkills(),
+    loadTestimonials(),
+    loadMessages(),
+  ]);
 }
 
 const escapeHtml = (value) => String(value ?? '')
@@ -312,6 +408,99 @@ const formatSecurityDate = (value) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? 'Unknown time' : date.toLocaleString();
 };
+
+const readResponse = async (responsePromise, fallbackMessage) => {
+  const response = await responsePromise;
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || fallbackMessage);
+  return data;
+};
+
+function setPosture(id, state, value, detail) {
+  const row = document.getElementById(id);
+  if (!row) return;
+  row.classList.remove('is-secure', 'is-warning');
+  if (state) row.classList.add(state === 'secure' ? 'is-secure' : 'is-warning');
+  const detailEl = row.querySelector('small');
+  const valueEl = row.querySelector('strong');
+  if (detailEl) detailEl.textContent = detail;
+  if (valueEl) valueEl.textContent = value;
+}
+
+function applySystemStatus(data) {
+  const statusEl = document.getElementById('system-status');
+  if (!statusEl) return;
+  const durable = data.persistence === 'durable';
+  statusEl.className = `system-status ${durable ? 'is-secure' : 'is-warning'}`;
+  statusEl.textContent = durable
+    ? '● DATABASE SYNCED — changes persist across restarts.'
+    : `▲ MEMORY-ONLY MODE — ${data.warning || 'changes will be lost when the server restarts.'}`;
+}
+
+function renderOverviewActivity(events = []) {
+  const container = document.getElementById('overview-activity-list');
+  if (!container) return;
+  if (events.length === 0) {
+    container.innerHTML = '<p class="modal-sub">No security activity recorded yet.</p>';
+    return;
+  }
+  container.innerHTML = events.slice(0, 5).map((event) => `
+    <article class="overview-activity-item ${event.outcome === 'failure' ? 'is-failure' : ''}">
+      <strong>${escapeHtml(String(event.event || 'event').replaceAll('_', ' ').toUpperCase())}</strong>
+      <small>${escapeHtml(formatSecurityDate(event.createdAt))}<br>${escapeHtml(event.details || event.outcome || 'Recorded')}</small>
+    </article>`).join('');
+}
+
+async function loadOverview() {
+  const results = await Promise.allSettled([
+    readResponse(adminFetch(`${API_BASE}/admin/status`), 'Storage status unavailable.'),
+    readResponse(adminFetch(`${API_BASE}/admin/mfa/status`), 'MFA status unavailable.'),
+    readResponse(adminFetch(`${API_BASE}/admin/security/sessions`), 'Session inventory unavailable.'),
+    readResponse(adminFetch(`${API_BASE}/admin/security/audit?limit=5`), 'Audit trail unavailable.'),
+    readResponse(fetch(`${API_BASE}/portfolio`, { credentials: 'include' }), 'Public API unavailable.'),
+  ]);
+  const [status, mfa, sessions, audit, portfolio] = results.map((result) => result.status === 'fulfilled' ? result.value : null);
+
+  if (status) {
+    applySystemStatus(status);
+    document.getElementById('overview-persistence').textContent = status.persistence === 'durable' ? 'DURABLE' : 'MEMORY ONLY';
+    document.getElementById('overview-persistence-detail').textContent = status.persistence === 'durable' ? 'MongoDB sync is active.' : 'Connect MongoDB before production edits.';
+    setPosture('posture-persistence', status.persistence === 'durable' ? 'secure' : 'warning', status.persistence === 'durable' ? 'READY' : 'CHECK', status.persistence === 'durable' ? 'MongoDB is accepting durable changes.' : 'Changes may not survive a restart.');
+  } else {
+    document.getElementById('overview-persistence').textContent = 'UNKNOWN';
+    document.getElementById('overview-persistence-detail').textContent = 'Storage status could not be read.';
+    setPosture('posture-persistence', 'warning', 'CHECK', 'Storage status could not be read.');
+  }
+
+  if (portfolio) {
+    document.getElementById('overview-frontend-sync').textContent = 'SYNCED';
+    document.getElementById('overview-frontend-detail').textContent = 'Public portfolio data path is responding.';
+    setPosture('posture-frontend', 'secure', 'LIVE', 'Frontend data path is responding.');
+  } else {
+    document.getElementById('overview-frontend-sync').textContent = 'DEGRADED';
+    document.getElementById('overview-frontend-detail').textContent = 'Public API needs attention.';
+    setPosture('posture-frontend', 'warning', 'CHECK', 'The public portfolio data path is unavailable.');
+  }
+
+  if (mfa) {
+    const enabled = Boolean(mfa.enabled);
+    document.getElementById('overview-mfa').textContent = enabled ? 'PROTECTED' : 'ACTION NEEDED';
+    document.getElementById('overview-mfa-detail').textContent = enabled ? `${mfa.recoveryCodesRemaining} recovery code(s) remain.` : 'Enable authenticator MFA now.';
+    setPosture('posture-mfa', enabled ? 'secure' : 'warning', enabled ? 'ACTIVE' : 'OPEN', enabled ? 'Authenticator verification is enabled.' : 'Admin account needs MFA enrollment.');
+  }
+
+  if (sessions) {
+    document.getElementById('overview-sessions').textContent = String(sessions.sessions.length);
+    document.getElementById('overview-sessions-detail').textContent = 'Signed-in devices currently visible.';
+    setPosture('posture-sessions', 'secure', 'VISIBLE', `${sessions.sessions.length} active session(s) in inventory.`);
+  }
+
+  if (audit) {
+    document.getElementById('overview-audit').textContent = String(audit.total);
+    document.getElementById('overview-audit-detail').textContent = 'Recent events retained in the security trail.';
+    renderOverviewActivity(audit.events);
+  }
+}
 
 async function loadSecurityCenter() {
   await Promise.all([loadSecuritySessions(), loadSecurityAudit()]);
@@ -388,7 +577,7 @@ async function loadSecurityAudit() {
 
 async function handleSessionAction(event) {
   const button = event.target.closest('[data-revoke-session]');
-  if (!button || !window.confirm('Revoke this session?')) return;
+  if (!button || !await requestConfirmation({ title: 'REVOKE SESSION', message: 'This device will lose access immediately. Continue?', confirmLabel: 'REVOKE' })) return;
   button.disabled = true;
   try {
     const res = await adminFetch(`${API_BASE}/admin/security/sessions/${encodeURIComponent(button.dataset.revokeSession)}`, { method: 'DELETE' });
@@ -408,7 +597,7 @@ async function handleSessionAction(event) {
 }
 
 async function revokeOtherSessions() {
-  if (!window.confirm('Revoke every other active session?')) return;
+  if (!await requestConfirmation({ title: 'REVOKE OTHER SESSIONS', message: 'Every other signed-in device will be logged out. Continue?', confirmLabel: 'REVOKE ALL OTHERS' })) return;
   const button = document.getElementById('btn-revoke-other-sessions');
   button.disabled = true;
   try {
@@ -490,13 +679,17 @@ function showBackupCodes(codes = []) {
 }
 
 async function regenerateRecoveryCodes() {
-  const code = window.prompt('Enter your current authenticator code to regenerate recovery codes:');
-  if (!code) return;
+  const values = await requestSecurityInput({
+    title: 'REGENERATE RECOVERY CODES',
+    description: 'Confirm this sensitive action with a current authenticator code. Existing recovery codes will be replaced.',
+    fields: [{ id: 'code', label: 'AUTHENTICATOR CODE', inputmode: 'numeric', autocomplete: 'one-time-code', placeholder: '000000' }],
+  });
+  if (!values?.code) return;
   try {
     const res = await adminFetch(`${API_BASE}/admin/mfa/regenerate-backup-codes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ code: values.code }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Unable to regenerate recovery codes.');
@@ -507,18 +700,24 @@ async function regenerateRecoveryCodes() {
 }
 
 async function disableMfa() {
-  const currentPassword = window.prompt('Enter your current admin password:');
-  const code = window.prompt('Enter your current authenticator code:');
-  if (!currentPassword || !code) return;
+  const values = await requestSecurityInput({
+    title: 'DISABLE MULTI-FACTOR AUTH',
+    description: 'This removes a primary protection layer. Verify both your password and current authenticator code to continue.',
+    fields: [
+      { id: 'password', label: 'CURRENT ADMIN PASSWORD', type: 'password', autocomplete: 'current-password', placeholder: '••••••••' },
+      { id: 'code', label: 'AUTHENTICATOR CODE', inputmode: 'numeric', autocomplete: 'one-time-code', placeholder: '000000' },
+    ],
+  });
+  if (!values?.password || !values?.code) return;
   try {
     const res = await adminFetch(`${API_BASE}/admin/mfa/disable`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ currentPassword, code }),
+      body: JSON.stringify({ currentPassword: values.password, code: values.code }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Unable to disable MFA.');
-    alert(data.message || 'MFA disabled.');
+    showToast(data.message || 'MFA disabled.', 'warning');
     handleLogout();
   } catch (error) {
     document.getElementById('mfa-enabled-msg').textContent = error.message;
@@ -528,12 +727,8 @@ async function disableMfa() {
 async function loadSystemStatus() {
   const statusEl = document.getElementById('system-status');
   try {
-    const res = await adminFetch(`${API_BASE}/admin/status`);
-    const data = await res.json();
-    statusEl.className = `system-status ${data.persistence === 'durable' ? 'is-secure' : 'is-warning'}`;
-    statusEl.textContent = data.persistence === 'durable'
-      ? '● DATABASE SYNCED — changes persist across restarts.'
-      : `▲ MEMORY-ONLY MODE — ${data.warning || 'changes will be lost when the server restarts.'}`;
+    const data = await readResponse(adminFetch(`${API_BASE}/admin/status`), 'Storage status unavailable.');
+    applySystemStatus(data);
   } catch {
     statusEl.className = 'system-status is-warning';
     statusEl.textContent = '▲ STORAGE STATUS UNKNOWN — verify MongoDB before saving changes.';
@@ -600,6 +795,7 @@ async function handleSaveProfile(e) {
 
     if (res.ok) {
       msgEl.textContent = '✓ Profile updated successfully!';
+      showToast('Hero profile synced to the public portfolio.');
       setTimeout(() => (msgEl.textContent = ''), 4000);
     } else {
       msgEl.textContent = '✕ Error saving profile';
@@ -686,23 +882,24 @@ function editProject(id) {
     openProjectModal(p);
   } else {
     console.error('Project not found for id:', id, 'Available:', currentProjects.map(x => x._id));
-    alert('Could not find project to edit. Please refresh and try again.');
+    showToast('Could not find project to edit. Refresh the control plane and try again.', 'error');
   }
 }
 
 async function deleteProject(id) {
-  if (!confirm('Are you sure you want to delete this project?')) return;
+  if (!await requestConfirmation({ title: 'DELETE PROJECT', message: 'This project will be removed from the public portfolio. Continue?', confirmLabel: 'DELETE PROJECT' })) return;
   try {
     const res = await adminFetch(`${API_BASE}/admin/projects/${id}`, {
       method: 'DELETE',
     });
     if (res.ok) {
       loadProjects();
+      showToast('Project removed from the public dossier.');
     } else {
-      alert('Failed to delete project');
+      showToast('Failed to delete project.', 'error');
     }
   } catch (err) {
-    alert('Failed to delete project');
+    showToast('Failed to delete project.', 'error');
   }
 }
 
@@ -738,12 +935,13 @@ async function handleSaveProject(e) {
     if (res.ok) {
       document.getElementById('project-modal').classList.add('hidden');
       loadProjects();
+      showToast(id ? 'Project dossier updated.' : 'Project dossier created.');
     } else {
       const data = await res.json().catch(() => ({}));
-      alert(`Failed to save project: ${data.message || res.statusText || 'Server error'}`);
+      showToast(`Failed to save project: ${data.message || res.statusText || 'Server error'}`, 'error');
     }
   } catch (err) {
-    alert(`Error saving project: ${err.message}`);
+    showToast(`Error saving project: ${err.message}`, 'error');
   } finally {
     saveBtn.textContent = origText;
     saveBtn.disabled = false;
@@ -789,19 +987,20 @@ function editSkill(id) {
     openSkillModal(s);
   } else {
     console.error('Skill not found for id:', id, 'Available:', currentSkills.map(x => x._id));
-    alert('Could not find skill to edit. Please refresh and try again.');
+    showToast('Could not find skill to edit. Refresh the control plane and try again.', 'error');
   }
 }
 
 async function deleteSkill(id) {
-  if (!confirm('Are you sure you want to delete this skill?')) return;
+  if (!await requestConfirmation({ title: 'DELETE SKILL', message: 'This capability will be removed from the public skills arsenal. Continue?', confirmLabel: 'DELETE SKILL' })) return;
   try {
     await adminFetch(`${API_BASE}/admin/skills/${id}`, {
       method: 'DELETE',
     });
     loadSkills();
+    showToast('Skill removed from the public arsenal.');
   } catch (err) {
-    alert('Failed to delete skill');
+    showToast('Failed to delete skill.', 'error');
   }
 }
 
@@ -832,12 +1031,13 @@ async function handleSaveSkill(e) {
     if (res.ok) {
       document.getElementById('skill-modal').classList.add('hidden');
       loadSkills();
+      showToast(id ? 'Skill updated.' : 'Skill added to the arsenal.');
     } else {
       const data = await res.json().catch(() => ({}));
-      alert(`Failed to save skill: ${data.message || res.statusText || 'Server error'}`);
+      showToast(`Failed to save skill: ${data.message || res.statusText || 'Server error'}`, 'error');
     }
   } catch (err) {
-    alert(`Error saving skill: ${err.message}`);
+    showToast(`Error saving skill: ${err.message}`, 'error');
   } finally {
     saveBtn.textContent = origText;
     saveBtn.disabled = false;
@@ -883,19 +1083,20 @@ function editTestimonial(id) {
     openTestimonialModal(t);
   } else {
     console.error('Focus area not found for id:', id, 'Available:', currentTestimonials.map(x => x._id));
-    alert('Could not find focus area to edit. Please refresh and try again.');
+    showToast('Could not find focus area to edit. Refresh the control plane and try again.', 'error');
   }
 }
 
 async function deleteTestimonial(id) {
-  if (!confirm('Are you sure you want to delete this focus domain?')) return;
+  if (!await requestConfirmation({ title: 'DELETE FOCUS DOMAIN', message: 'This focus domain will be removed from the public portfolio. Continue?', confirmLabel: 'DELETE DOMAIN' })) return;
   try {
     await adminFetch(`${API_BASE}/admin/focus-areas/${id}`, {
       method: 'DELETE',
     });
     loadTestimonials();
+    showToast('Focus domain removed.');
   } catch (err) {
-    alert('Failed to delete focus area');
+    showToast('Failed to delete focus area.', 'error');
   }
 }
 
@@ -926,12 +1127,13 @@ async function handleSaveTestimonial(e) {
     if (res.ok) {
       document.getElementById('testimonial-modal').classList.add('hidden');
       loadTestimonials();
+      showToast(id ? 'Focus domain updated.' : 'Focus domain created.');
     } else {
       const data = await res.json().catch(() => ({}));
-      alert(`Failed to save focus area: ${data.message || res.statusText || 'Server error'}`);
+      showToast(`Failed to save focus area: ${data.message || res.statusText || 'Server error'}`, 'error');
     }
   } catch (err) {
-    alert(`Error saving focus area: ${err.message}`);
+    showToast(`Error saving focus area: ${err.message}`, 'error');
   } finally {
     saveBtn.textContent = origText;
     saveBtn.disabled = false;
@@ -990,13 +1192,14 @@ async function loadMessages() {
 }
 
 async function deleteMessage(id) {
-  if (!confirm('Delete this transmission?')) return;
+  if (!await requestConfirmation({ title: 'DELETE TRANSMISSION', message: 'This visitor message will be permanently removed. Continue?', confirmLabel: 'DELETE MESSAGE' })) return;
   try {
     await adminFetch(`${API_BASE}/admin/messages/${id}`, {
       method: 'DELETE',
     });
     loadMessages();
+    showToast('Transmission deleted.');
   } catch (err) {
-    alert('Failed to delete message');
+    showToast('Failed to delete message.', 'error');
   }
 }
