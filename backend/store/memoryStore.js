@@ -22,6 +22,11 @@ export const DEFAULT_DATA = {
     username: process.env.ADMIN_USERNAME?.trim() || '',
     passwordHash: initialAdminPass ? bcrypt.hashSync(initialAdminPass, 10) : '',
     tokenVersion: 0,
+    mfaEnabled: false,
+    mfaSecret: null,
+    mfaPendingSecret: null,
+    mfaBackupCodes: [],
+    mfaLastUsedStep: -1,
   },
   profile: {
     eyebrow: 'WEB DEVELOPER & AI BUILDER',

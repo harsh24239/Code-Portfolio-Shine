@@ -1,5 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import { toDataURL } from 'qrcode';
 import { isDbConnected } from '../config/db.js';
 import { allowInMemoryFallback, assertAdminStorageAvailable, csrfCookieName, sessionCookieName, sessionTtlSeconds } from '../config/security.js';
 import { memoryStore } from '../store/memoryStore.js';
@@ -11,13 +12,16 @@ import { FocusArea } from '../models/FocusArea.js';
 import { Message } from '../models/Message.js';
 import { protect } from '../middleware/auth.js';
 import { requireCsrf, issueCsrfToken } from '../middleware/csrf.js';
-import { createSession, destroyAdminSessions, destroySession } from '../store/sessionStore.js';
+import { consumeMfaChallenge, createMfaChallenge, createSession, destroyAdminSessions, destroyMfaChallenge, destroySession, incrementMfaChallengeAttempts } from '../store/sessionStore.js';
 import { appendCookie, parseCookies, serializeCookie } from '../utils/cookies.js';
 import { isValidEmail, normalizeText, normalizeUrl } from '../utils/validation.js';
+import { createTotpSetup, generateBackupCodes, normalizeBackupCode, verifyTotp } from '../utils/totp.js';
+import { decryptSecret, encryptSecret } from '../utils/secretBox.js';
 
 const router = express.Router();
 
 const failedLogins = new Map();
+const mfaChallengeCookieName = 'portfolio_admin_mfa_challenge';
 
 // ─── Credential Helpers ───────────────────────────────────────────────────────
 // Always read from memoryStore (synced from MongoDB on startup)
@@ -59,6 +63,58 @@ const clearSessionCookies = (res) => {
   appendCookie(res, serializeCookie(sessionCookieName, '', { httpOnly: true, secure, sameSite: 'Lax', maxAge: 0 }));
   appendCookie(res, serializeCookie(csrfCookieName, '', { secure, sameSite: 'Lax', maxAge: 0 }));
 };
+
+const setMfaChallengeCookie = (res, token) => appendCookie(res, serializeCookie(mfaChallengeCookieName, token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'Lax',
+  maxAge: 5 * 60,
+}));
+
+const clearMfaChallengeCookie = (res) => appendCookie(res, serializeCookie(mfaChallengeCookieName, '', {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'Lax',
+  maxAge: 0,
+}));
+
+const getAdminRecord = async (adminId) => {
+  if (isDbConnected) return Admin.findById(adminId);
+  return memoryStore.adminCredentials;
+};
+
+const updateAdminRecord = async (adminId, changes) => {
+  if (isDbConnected) {
+    const admin = await Admin.findByIdAndUpdate(adminId, changes, { new: true, runValidators: true });
+    if (!admin) throw new Error('Admin account not found.');
+    Object.assign(memoryStore.adminCredentials, {
+      username: admin.username,
+      passwordHash: admin.password,
+      tokenVersion: admin.tokenVersion || 0,
+      mfaEnabled: Boolean(admin.mfaEnabled),
+      mfaSecret: admin.mfaSecret,
+      mfaPendingSecret: admin.mfaPendingSecret,
+      mfaBackupCodes: admin.mfaBackupCodes || [],
+      mfaLastUsedStep: admin.mfaLastUsedStep || -1,
+    });
+    return admin;
+  }
+
+  Object.assign(memoryStore.adminCredentials, changes);
+  return memoryStore.adminCredentials;
+};
+
+const safeMfaStatus = (admin) => ({
+  enabled: Boolean(admin?.mfaEnabled),
+  recoveryCodesRemaining: (admin?.mfaBackupCodes || []).filter((code) => !code.usedAt).length,
+});
+
+const emptyMfaSecret = () => ({ iv: '', ciphertext: '', authTag: '' });
+
+const hashBackupCodes = async (codes) => Promise.all(codes.map(async (code) => ({
+  hash: await bcrypt.hash(code, 12),
+  usedAt: null,
+})));
 
 const cleanProfile = (body = {}) => {
   const profile = {
@@ -136,6 +192,7 @@ router.post('/login', requireCsrf, async (req, res) => {
     let isValid = false;
     let authUserId = 'mem_admin_1';
     let authUsername = getAdminUsername();
+    let authAdmin = memoryStore.adminCredentials;
 
     if (isDbConnected) {
       // Authenticate against MongoDB
@@ -144,6 +201,7 @@ router.post('/login', requireCsrf, async (req, res) => {
         isValid = true;
         authUserId = String(admin._id);
         authUsername = admin.username;
+        authAdmin = admin;
         // Keep memoryStore in sync on every successful login
         memoryStore.adminCredentials.username = admin.username;
         memoryStore.adminCredentials.passwordHash = admin.password;
@@ -158,6 +216,12 @@ router.post('/login', requireCsrf, async (req, res) => {
 
     if (isValid) {
       failedLogins.delete(loginKey);
+      if (authAdmin.mfaEnabled) {
+        const challenge = await createMfaChallenge(authUserId);
+        setMfaChallengeCookie(res, challenge.token);
+        return res.json({ mfaRequired: true, username: authUsername });
+      }
+
       await destroyAdminSessions(authUserId);
       const csrfToken = parseCookies(req.headers.cookie)[csrfCookieName] || '';
       if (!csrfToken) return res.status(403).json({ message: 'CSRF bootstrap required.' });
@@ -165,6 +229,7 @@ router.post('/login', requireCsrf, async (req, res) => {
         adminId: authUserId,
         tokenVersion: memoryStore.adminCredentials.tokenVersion || 0,
         csrfToken,
+        mfaVerified: true,
       });
       setSessionCookies(res, session);
       return res.json({ username: authUsername });
@@ -184,6 +249,71 @@ router.post('/login', requireCsrf, async (req, res) => {
   }
 });
 
+router.post('/mfa/verify-login', requireCsrf, async (req, res) => {
+  if (!isDbConnected && !allowInMemoryFallback) {
+    return res.status(503).json({ message: 'Admin login is unavailable until persistent storage is connected.' });
+  }
+
+  try {
+    const challengeToken = parseCookies(req.headers.cookie)[mfaChallengeCookieName];
+    const challenge = await consumeMfaChallenge(challengeToken);
+    if (!challenge) return res.status(401).json({ message: 'MFA challenge expired. Start login again.' });
+
+    const admin = await getAdminRecord(challenge.adminId);
+    if (!admin?.mfaEnabled || !admin.mfaSecret) {
+      await destroyMfaChallenge(challengeToken);
+      clearMfaChallengeCookie(res);
+      return res.status(401).json({ message: 'MFA is not configured for this account.' });
+    }
+
+    const code = normalizeText(req.body?.code, 32);
+    let valid = false;
+    let timeStep = null;
+    let backupCodes = admin.mfaBackupCodes || [];
+    const secret = decryptSecret(admin.mfaSecret);
+    const totp = await verifyTotp(secret, code, admin.mfaLastUsedStep || -1);
+    if (totp.valid) {
+      valid = true;
+      timeStep = totp.timeStep;
+    } else {
+      const normalizedBackupCode = normalizeBackupCode(code);
+      for (const backupCode of backupCodes) {
+        if (backupCode.usedAt || !await bcrypt.compare(normalizedBackupCode, backupCode.hash)) continue;
+        backupCode.usedAt = new Date();
+        valid = true;
+        break;
+      }
+    }
+
+    if (!valid) {
+      await incrementMfaChallengeAttempts(challenge);
+      return res.status(401).json({ message: 'Invalid MFA code.' });
+    }
+
+    await destroyMfaChallenge(challengeToken);
+    clearMfaChallengeCookie(res);
+    const changes = timeStep === null
+      ? { mfaBackupCodes: backupCodes }
+      : { mfaBackupCodes: backupCodes, mfaLastUsedStep: timeStep };
+    await updateAdminRecord(challenge.adminId, changes);
+    await destroyAdminSessions(challenge.adminId);
+
+    const csrfToken = parseCookies(req.headers.cookie)[csrfCookieName] || '';
+    if (!csrfToken) return res.status(403).json({ message: 'CSRF bootstrap required.' });
+    const session = await createSession({
+      adminId: challenge.adminId,
+      tokenVersion: memoryStore.adminCredentials.tokenVersion || 0,
+      csrfToken,
+      mfaVerified: true,
+    });
+    setSessionCookies(res, session);
+    return res.json({ username: admin.username });
+  } catch (error) {
+    console.error('MFA verification failed:', error.message);
+    return res.status(401).json({ message: 'MFA verification failed.' });
+  }
+});
+
 // ─── AUTHENTICATED ADMIN ROUTES ───────────────────────────────────────────────
 router.post('/logout', protect, requireCsrf, async (req, res) => {
   await destroySession(req.sessionToken);
@@ -196,6 +326,111 @@ router.use(requireCsrf);
 
 router.get('/me', (req, res) => {
   res.json({ status: 'authenticated', user: req.user });
+});
+
+router.get('/mfa/status', async (req, res) => {
+  const admin = await getAdminRecord(req.user.id);
+  res.json(safeMfaStatus(admin));
+});
+
+router.post('/mfa/setup', async (req, res) => {
+  if (!requireAdminStorage(res)) return;
+  try {
+    const admin = await getAdminRecord(req.user.id);
+    if (admin.mfaEnabled) return res.status(400).json({ message: 'MFA is already enabled.' });
+
+    const setup = createTotpSetup(admin.username || getAdminUsername());
+    const encrypted = encryptSecret(setup.secret);
+    await updateAdminRecord(req.user.id, {
+      mfaPendingSecret: { ...encrypted, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+    });
+
+    return res.json({
+      qrCodeDataUrl: await toDataURL(setup.uri, { errorCorrectionLevel: 'M' }),
+      manualKey: setup.secret,
+      expiresInSeconds: 600,
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.post('/mfa/confirm', async (req, res) => {
+  if (!requireAdminStorage(res)) return;
+  try {
+    const admin = await getAdminRecord(req.user.id);
+    const pending = admin.mfaPendingSecret;
+    if (!pending?.expiresAt || new Date(pending.expiresAt) <= new Date()) {
+      return res.status(400).json({ message: 'MFA setup has expired. Start setup again.' });
+    }
+
+    const secret = decryptSecret(pending);
+    const result = await verifyTotp(secret, req.body?.code, -1);
+    if (!result.valid) return res.status(400).json({ message: 'Invalid authenticator code.' });
+
+    const backupCodes = generateBackupCodes();
+    await updateAdminRecord(req.user.id, {
+      mfaEnabled: true,
+      mfaSecret: { iv: pending.iv, ciphertext: pending.ciphertext, authTag: pending.authTag },
+      mfaPendingSecret: emptyMfaSecret(),
+      mfaBackupCodes: await hashBackupCodes(backupCodes),
+      // Setup confirmation is not a login authentication event. Do not burn
+      // the current time step before the user's first MFA login.
+      mfaLastUsedStep: -1,
+      tokenVersion: (admin.tokenVersion || memoryStore.adminCredentials.tokenVersion || 0) + 1,
+    });
+    await destroyAdminSessions(req.user.id);
+    clearSessionCookies(res);
+    return res.json({ backupCodes });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.post('/mfa/disable', async (req, res) => {
+  if (!requireAdminStorage(res)) return;
+  try {
+    const admin = await getAdminRecord(req.user.id);
+    if (!admin.mfaEnabled) return res.status(400).json({ message: 'MFA is not enabled.' });
+    const password = typeof req.body?.currentPassword === 'string' ? req.body.currentPassword : '';
+    if (!await bcrypt.compare(password, getAdminPasswordHash())) {
+      return res.status(400).json({ message: 'Current password is incorrect.' });
+    }
+    const result = await verifyTotp(decryptSecret(admin.mfaSecret), req.body?.code, admin.mfaLastUsedStep || -1);
+    if (!result.valid) return res.status(400).json({ message: 'Invalid authenticator code.' });
+
+    await updateAdminRecord(req.user.id, {
+      mfaEnabled: false,
+      mfaSecret: emptyMfaSecret(),
+      mfaPendingSecret: emptyMfaSecret(),
+      mfaBackupCodes: [],
+      mfaLastUsedStep: -1,
+      tokenVersion: (admin.tokenVersion || memoryStore.adminCredentials.tokenVersion || 0) + 1,
+    });
+    await destroyAdminSessions(req.user.id);
+    clearSessionCookies(res);
+    return res.json({ message: 'MFA disabled. Sign in again.' });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+});
+
+router.post('/mfa/regenerate-backup-codes', async (req, res) => {
+  if (!requireAdminStorage(res)) return;
+  try {
+    const admin = await getAdminRecord(req.user.id);
+    if (!admin.mfaEnabled) return res.status(400).json({ message: 'Enable MFA before generating recovery codes.' });
+    const result = await verifyTotp(decryptSecret(admin.mfaSecret), req.body?.code, admin.mfaLastUsedStep || -1);
+    if (!result.valid) return res.status(400).json({ message: 'Invalid authenticator code.' });
+    const backupCodes = generateBackupCodes();
+    await updateAdminRecord(req.user.id, {
+      mfaBackupCodes: await hashBackupCodes(backupCodes),
+      mfaLastUsedStep: result.timeStep,
+    });
+    return res.json({ backupCodes });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
 });
 
 router.get('/status', (req, res) => {

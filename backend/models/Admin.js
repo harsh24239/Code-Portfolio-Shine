@@ -6,6 +6,20 @@ const adminSchema = new mongoose.Schema(
     username: { type: String, required: true, unique: true, default: 'admin' },
     password: { type: String, required: true },
     tokenVersion: { type: Number, default: 0 },
+    mfaEnabled: { type: Boolean, default: false },
+    mfaSecret: {
+      iv: { type: String, default: '' },
+      ciphertext: { type: String, default: '' },
+      authTag: { type: String, default: '' },
+    },
+    mfaPendingSecret: {
+      iv: { type: String, default: '' },
+      ciphertext: { type: String, default: '' },
+      authTag: { type: String, default: '' },
+      expiresAt: { type: Date, default: null },
+    },
+    mfaBackupCodes: [{ hash: { type: String }, usedAt: { type: Date, default: null } }],
+    mfaLastUsedStep: { type: Number, default: -1 },
   },
   { timestamps: true }
 );

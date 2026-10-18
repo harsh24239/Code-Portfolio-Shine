@@ -9,6 +9,7 @@ const loginError = document.getElementById('login-error');
 const btnLogout = document.getElementById('btn-logout');
 const btnChangePassTrigger = document.getElementById('btn-change-pass-trigger');
 const btnChangeUsernameTrigger = document.getElementById('btn-change-username-trigger');
+const btnMfaTrigger = document.getElementById('btn-mfa-trigger');
 const btnForgotPass = document.getElementById('btn-forgot-pass');
 
 // Tabs
@@ -16,6 +17,7 @@ const tabBtns = document.querySelectorAll('.tab-btn');
 const tabContents = document.querySelectorAll('.tab-content');
 
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+let mfaLoginPending = false;
 
 async function bootstrapCsrf() {
   const res = await fetch(`${API_BASE}/admin/csrf`, { credentials: 'include' });
@@ -59,6 +61,16 @@ function setupEventListeners() {
   });
 
   document.getElementById('password-form')?.addEventListener('submit', handleChangePassword);
+  btnMfaTrigger?.addEventListener('click', openMfaModal);
+  document.getElementById('mfa-confirm-form')?.addEventListener('submit', handleMfaConfirm);
+  document.getElementById('btn-start-mfa')?.addEventListener('click', startMfaSetup);
+  document.getElementById('btn-regenerate-recovery')?.addEventListener('click', regenerateRecoveryCodes);
+  document.getElementById('btn-disable-mfa')?.addEventListener('click', disableMfa);
+  document.getElementById('btn-close-backup')?.addEventListener('click', () => {
+    document.getElementById('mfa-backup-panel').classList.add('hidden');
+    isLoggedOut = true;
+    showLogin();
+  });
 
   tabBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -106,14 +118,25 @@ async function handleLogin(e) {
 
   try {
     await bootstrapCsrf();
-    const res = await adminFetch(`${API_BASE}/admin/login`, {
+    const endpoint = mfaLoginPending ? `${API_BASE}/admin/mfa/verify-login` : `${API_BASE}/admin/login`;
+    const body = mfaLoginPending
+      ? { code: document.getElementById('login-mfa-code').value }
+      : { username, password };
+    const res = await adminFetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify(body),
     });
 
     const data = await res.json();
-    if (res.ok && data.username) {
+    if (res.ok && data.mfaRequired) {
+      mfaLoginPending = true;
+      document.getElementById('mfa-login-group').classList.remove('hidden');
+      document.getElementById('login-mfa-code').focus();
+      document.getElementById('login-submit').textContent = 'VERIFY MFA →';
+      loginError.textContent = 'Authenticator verification required.';
+    } else if (res.ok && data.username) {
+      mfaLoginPending = false;
       isLoggedOut = false;
       if (data.username) {
         document.getElementById('user-display').textContent = `Logged in as ${data.username}`;
@@ -122,6 +145,9 @@ async function handleLogin(e) {
       loadAllData();
     } else {
       loginError.textContent = data.message || 'Invalid username or password';
+      if (mfaLoginPending && res.status === 401) {
+        document.getElementById('login-mfa-code').value = '';
+      }
     }
   } catch {
     loginError.textContent = 'Server connection failed or rate limit reached.';
@@ -214,6 +240,11 @@ async function verifyAuth() {
 function showLogin() {
   const loginPass = document.getElementById('login-password');
   if (loginPass) loginPass.value = '';
+  mfaLoginPending = false;
+  document.getElementById('mfa-login-group')?.classList.add('hidden');
+  const mfaCodeInput = document.getElementById('login-mfa-code');
+  if (mfaCodeInput) mfaCodeInput.value = '';
+  document.getElementById('login-submit')?.replaceChildren(document.createTextNode('ACCESS HQ →'));
   loginOverlay.classList.remove('hidden');
   appContainer.classList.add('hidden');
 }
@@ -238,11 +269,114 @@ function handleLogout() {
 // --- LOAD ALL DATA ---
 async function loadAllData() {
   loadSystemStatus();
+  loadMfaStatus();
   loadProfile();
   loadProjects();
   loadSkills();
   loadTestimonials();
   loadMessages();
+}
+
+async function loadMfaStatus() {
+  const statusText = document.getElementById('mfa-status-text');
+  if (!statusText) return;
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/mfa/status`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Unable to load MFA status.');
+    statusText.textContent = data.enabled
+      ? `MFA is enabled. ${data.recoveryCodesRemaining} recovery code(s) remain.`
+      : 'MFA is not enabled. Protect this admin account with an authenticator app.';
+    document.getElementById('mfa-enabled-panel').classList.toggle('hidden', !data.enabled);
+    document.getElementById('mfa-setup-panel').classList.toggle('hidden', data.enabled);
+    document.getElementById('mfa-recovery-count').textContent = `${data.recoveryCodesRemaining} recovery code(s) remaining.`;
+  } catch (error) {
+    statusText.textContent = error.message;
+  }
+}
+
+async function openMfaModal() {
+  document.getElementById('mfa-modal').classList.remove('hidden');
+  document.getElementById('mfa-backup-panel').classList.add('hidden');
+  await loadMfaStatus();
+}
+
+async function startMfaSetup() {
+  const setupPanel = document.getElementById('mfa-setup-panel');
+  const statusText = document.getElementById('mfa-status-text');
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/mfa/setup`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Unable to start MFA setup.');
+    document.getElementById('mfa-qr').src = data.qrCodeDataUrl;
+    document.getElementById('mfa-manual-key').textContent = data.manualKey;
+    document.getElementById('mfa-confirm-code').value = '';
+    document.getElementById('mfa-confirm-msg').textContent = '';
+    setupPanel.classList.remove('hidden');
+    statusText.textContent = 'Scan the code, then confirm one authenticator code.';
+  } catch (error) {
+    statusText.textContent = error.message;
+  }
+}
+
+async function handleMfaConfirm(event) {
+  event.preventDefault();
+  const msg = document.getElementById('mfa-confirm-msg');
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/mfa/confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: document.getElementById('mfa-confirm-code').value }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'MFA confirmation failed.');
+    showBackupCodes(data.backupCodes);
+  } catch (error) {
+    msg.textContent = error.message;
+  }
+}
+
+function showBackupCodes(codes = []) {
+  document.getElementById('mfa-setup-panel').classList.add('hidden');
+  document.getElementById('mfa-enabled-panel').classList.add('hidden');
+  document.getElementById('mfa-backup-panel').classList.remove('hidden');
+  document.getElementById('mfa-backup-codes').textContent = codes.join('\n');
+}
+
+async function regenerateRecoveryCodes() {
+  const code = window.prompt('Enter your current authenticator code to regenerate recovery codes:');
+  if (!code) return;
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/mfa/regenerate-backup-codes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Unable to regenerate recovery codes.');
+    showBackupCodes(data.backupCodes);
+  } catch (error) {
+    document.getElementById('mfa-enabled-msg').textContent = error.message;
+  }
+}
+
+async function disableMfa() {
+  const currentPassword = window.prompt('Enter your current admin password:');
+  const code = window.prompt('Enter your current authenticator code:');
+  if (!currentPassword || !code) return;
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/mfa/disable`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword, code }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Unable to disable MFA.');
+    alert(data.message || 'MFA disabled.');
+    handleLogout();
+  } catch (error) {
+    document.getElementById('mfa-enabled-msg').textContent = error.message;
+  }
 }
 
 async function loadSystemStatus() {

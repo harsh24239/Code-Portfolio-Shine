@@ -121,6 +121,11 @@ const syncFromMongoDB = async () => {
       memoryStore.adminCredentials.username = admin.username;
       memoryStore.adminCredentials.passwordHash = admin.password;
       memoryStore.adminCredentials.tokenVersion = admin.tokenVersion || 0;
+      memoryStore.adminCredentials.mfaEnabled = Boolean(admin.mfaEnabled);
+      memoryStore.adminCredentials.mfaSecret = admin.mfaSecret;
+      memoryStore.adminCredentials.mfaPendingSecret = admin.mfaPendingSecret;
+      memoryStore.adminCredentials.mfaBackupCodes = admin.mfaBackupCodes || [];
+      memoryStore.adminCredentials.mfaLastUsedStep = admin.mfaLastUsedStep || -1;
       console.log(`✓ Admin (${admin.username}) loaded from MongoDB`);
     } else {
       const created = await Admin.create({

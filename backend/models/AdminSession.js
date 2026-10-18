@@ -5,6 +5,7 @@ const adminSessionSchema = new mongoose.Schema(
     tokenHash: { type: String, required: true, unique: true, index: true },
     adminId: { type: String, required: true, index: true },
     tokenVersion: { type: Number, required: true },
+    mfaVerified: { type: Boolean, default: false },
     csrfHash: { type: String, required: true },
     expiresAt: { type: Date, required: true },
   },

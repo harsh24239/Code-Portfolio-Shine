@@ -26,8 +26,13 @@
           <label>PASSWORD</label>
           <input type="password" id="login-password" required placeholder="••••••••">
         </div>
+        <div id="mfa-login-group" class="form-group hidden">
+          <label>AUTHENTICATOR OR RECOVERY CODE</label>
+          <input type="text" id="login-mfa-code" inputmode="numeric" autocomplete="one-time-code" placeholder="000000 or recovery code">
+          <small class="field-hint">Open your authenticator app, or use one unused recovery code.</small>
+        </div>
         <div id="login-error" class="error-text"></div>
-        <button type="submit" class="btn-primary">ACCESS HQ →</button>
+        <button type="submit" id="login-submit" class="btn-primary">ACCESS HQ →</button>
       </form>
     </div>
   </div>
@@ -43,6 +48,7 @@
         </div>
         <div class="user-group">
           <span id="user-display">Logged in as Admin</span>
+          <button id="btn-mfa-trigger" class="btn-ghost-sm">SECURITY / MFA</button>
           <button id="btn-change-username-trigger" class="btn-ghost-sm">SECURITY / USERNAME</button>
           <button id="btn-change-pass-trigger" class="btn-ghost-sm">SECURITY / PASSWORD</button>
           <button id="btn-logout" class="btn-ghost-sm">LOGOUT</button>
@@ -250,6 +256,47 @@
           <button type="button" class="btn-ghost modal-close">CANCEL</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MULTI-FACTOR SECURITY MODAL -->
+  <div id="mfa-modal" class="modal-overlay hidden">
+    <div class="modal-card wide">
+      <div class="brand-badge">SECURITY HARDENING</div>
+      <h3>MULTI-FACTOR AUTHENTICATION</h3>
+      <p id="mfa-status-text" class="modal-sub">Loading MFA status...</p>
+      <div id="mfa-setup-panel" class="hidden">
+        <button type="button" id="btn-start-mfa" class="btn-primary">START MFA SETUP</button>
+        <p class="modal-sub">Scan this QR code with an authenticator app, then enter the six-digit code to confirm enrollment.</p>
+        <div class="mfa-qr-shell"><img id="mfa-qr" alt="Authenticator app setup QR code"></div>
+        <p class="mfa-manual">Manual key: <code id="mfa-manual-key"></code></p>
+        <form id="mfa-confirm-form">
+          <div class="form-group">
+            <label>CONFIRM AUTHENTICATOR CODE</label>
+            <input type="text" id="mfa-confirm-code" inputmode="numeric" autocomplete="one-time-code" required placeholder="000000">
+          </div>
+          <div id="mfa-confirm-msg" class="error-text"></div>
+          <button type="submit" class="btn-primary">ENABLE MFA</button>
+        </form>
+      </div>
+      <div id="mfa-enabled-panel" class="hidden">
+        <div class="security-badge">● MFA ACTIVE</div>
+        <p id="mfa-recovery-count" class="modal-sub"></p>
+        <div class="form-actions">
+          <button type="button" id="btn-regenerate-recovery" class="btn-ghost">REGENERATE RECOVERY CODES</button>
+          <button type="button" id="btn-disable-mfa" class="btn-danger-sm">DISABLE MFA</button>
+        </div>
+        <div id="mfa-enabled-msg" class="error-text"></div>
+      </div>
+      <div id="mfa-backup-panel" class="hidden">
+        <h4>STORE THESE RECOVERY CODES</h4>
+        <p class="modal-sub">Each code works once. This is the only time the complete set will be shown.</p>
+        <pre id="mfa-backup-codes" class="backup-codes"></pre>
+        <button type="button" id="btn-close-backup" class="btn-primary">I SAVED THEM</button>
+      </div>
+      <div class="form-actions" style="margin-top: 1.5rem;">
+        <button type="button" class="btn-ghost modal-close">CLOSE</button>
+      </div>
     </div>
   </div>
 
