@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -16,6 +15,7 @@ import { Profile } from './models/Profile.js';
 import { Project } from './models/Project.js';
 import { Skill } from './models/Skill.js';
 import { FocusArea } from './models/FocusArea.js';
+import { createRateLimiter } from './middleware/rateLimit.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,15 +48,15 @@ app.use(['/admin', '/api/admin'], (req, res, next) => {
 });
 
 // Rate Limiting
-const loginLimiter = rateLimit({
+const loginLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: { message: 'Too many login attempts. Please try again after 15 minutes.' },
+  limit: 5,
+  message: 'Too many login attempts. Please try again after 15 minutes.',
 });
-const contactLimiter = rateLimit({
+const contactLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
-  max: 10,
-  message: { message: 'Transmission limit reached. Please try again later.' },
+  limit: 10,
+  message: 'Transmission limit reached. Please try again later.',
 });
 
 // CORS
