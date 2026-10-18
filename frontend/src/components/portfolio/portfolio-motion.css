@@ -54,7 +54,7 @@ nav.nav-desktop { position: static; height: auto; background: transparent; borde
 .skill-item { background: #190404; padding: 2.25rem 1.75rem; }
 .skill-item:hover { background: #240707; }
 .skill-name { font-family: 'Manrope', system-ui, sans-serif !important; font-weight: 700; letter-spacing: -.025em; font-size: 17px; line-height: 1.5; }
-.skill-desc { color: var(--presentation-muted); font-size: 14.5px; line-height: 1.65; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.skill-desc { color: var(--presentation-muted); font-size: 14.5px; line-height: 1.65; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
 .skill-icon { width: 29px; height: 29px; margin-bottom: 1.6rem; stroke-width: 1; }
 .skill-rank { gap: 4px; margin-top: 1.4rem; }
 .skill-rank-pip { width: 23px; height: 2px; background: #6a3d3d; }
