@@ -67,17 +67,17 @@ const allowedOrigins = process.env.ALLOWED_ORIGIN
 if (isProduction) app.set('trust proxy', 1);
 
 app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('CORS Policy: Access denied from this origin.'));
-      }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
-    credentials: true,
+  cors((req, callback) => {
+    const origin = req.get('Origin');
+    const requestOrigin = `${req.protocol}://${req.get('Host')}`;
+    const allowed = !origin || origin === requestOrigin || allowedOrigins.includes(origin);
+
+    callback(null, {
+      origin: allowed,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
+      credentials: true,
+    });
   })
 );
 
