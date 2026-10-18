@@ -19,6 +19,7 @@ const tabContents = document.querySelectorAll('.tab-content');
 
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 let mfaLoginPending = false;
+const securityAuditState = { page: 1, limit: 25 };
 
 async function bootstrapCsrf() {
   const res = await fetch(`${API_BASE}/admin/csrf`, { credentials: 'include' });
@@ -66,6 +67,25 @@ function setupEventListeners() {
   btnSecurityTrigger?.addEventListener('click', () => activateTab('security'));
   document.getElementById('btn-revoke-other-sessions')?.addEventListener('click', revokeOtherSessions);
   document.getElementById('security-sessions-list')?.addEventListener('click', handleSessionAction);
+  document.getElementById('security-audit-event')?.addEventListener('change', () => {
+    securityAuditState.page = 1;
+    loadSecurityAudit();
+  });
+  document.getElementById('security-audit-outcome')?.addEventListener('change', () => {
+    securityAuditState.page = 1;
+    loadSecurityAudit();
+  });
+  document.getElementById('btn-refresh-security-audit')?.addEventListener('click', loadSecurityAudit);
+  document.getElementById('btn-security-audit-prev')?.addEventListener('click', () => {
+    if (securityAuditState.page > 1) {
+      securityAuditState.page -= 1;
+      loadSecurityAudit();
+    }
+  });
+  document.getElementById('btn-security-audit-next')?.addEventListener('click', () => {
+    securityAuditState.page += 1;
+    loadSecurityAudit();
+  });
   document.getElementById('mfa-confirm-form')?.addEventListener('submit', handleMfaConfirm);
   document.getElementById('btn-start-mfa')?.addEventListener('click', startMfaSetup);
   document.getElementById('btn-regenerate-recovery')?.addEventListener('click', regenerateRecoveryCodes);
@@ -331,10 +351,21 @@ async function loadSecuritySessions() {
 async function loadSecurityAudit() {
   const list = document.getElementById('security-audit-list');
   if (!list) return;
+  const status = document.getElementById('security-audit-status');
+  const eventFilter = document.getElementById('security-audit-event')?.value || '';
+  const outcomeFilter = document.getElementById('security-audit-outcome')?.value || '';
+  const params = new URLSearchParams({ page: securityAuditState.page, limit: securityAuditState.limit });
+  if (eventFilter) params.set('event', eventFilter);
+  if (outcomeFilter) params.set('outcome', outcomeFilter);
   try {
-    const res = await adminFetch(`${API_BASE}/admin/security/audit?limit=50`);
+    const res = await adminFetch(`${API_BASE}/admin/security/audit?${params.toString()}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Unable to load the audit log.');
+    securityAuditState.page = data.page;
+    if (status) status.textContent = `${data.total} event(s) recorded`;
+    document.getElementById('security-audit-page').textContent = `PAGE ${data.page} / ${data.totalPages}`;
+    document.getElementById('btn-security-audit-prev').disabled = data.page <= 1;
+    document.getElementById('btn-security-audit-next').disabled = data.page >= data.totalPages;
     list.innerHTML = data.events.length
       ? data.events.map((event) => `
         <article class="security-item audit-${escapeHtml(event.outcome)}">
@@ -350,6 +381,7 @@ async function loadSecurityAudit() {
         </article>`).join('')
       : '<p class="modal-sub">No security events recorded yet.</p>';
   } catch (error) {
+    if (status) status.textContent = '';
     list.innerHTML = `<p class="error-text">${escapeHtml(error.message)}</p>`;
   }
 }

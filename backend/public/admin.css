@@ -508,6 +508,48 @@ textarea:focus-visible {
   margin-right: 0.25rem;
 }
 
+.audit-toolbar,
+.audit-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.audit-toolbar { margin-bottom: 1rem; }
+.audit-toolbar select {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 0.45rem 0.6rem;
+}
+
+.audit-toolbar select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.audit-pagination {
+  justify-content: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* MESSAGES INBOX */
 .messages-stack {
   display: flex;

@@ -388,7 +388,16 @@ router.post('/security/sessions/revoke-others', async (req, res) => {
 
 router.get('/security/audit', async (req, res) => {
   try {
-    return res.json({ events: await listAuditEvents(req.query.limit) });
+    return res.json({
+      ...await listAuditEvents({
+        page: req.query.page,
+        limit: req.query.limit,
+        event: req.query.event,
+        outcome: req.query.outcome,
+        from: req.query.from,
+        to: req.query.to,
+      }),
+    });
   } catch (error) {
     return res.status(500).json({ message: 'Unable to load the audit log.' });
   }

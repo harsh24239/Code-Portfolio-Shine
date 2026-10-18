@@ -12,6 +12,8 @@ const adminAuditLogSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-adminAuditLogSchema.index({ createdAt: -1 });
+// MongoDB removes audit records after six months. The descending sort still
+// uses this index in reverse, while the TTL keeps the collection bounded.
+adminAuditLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 180 * 24 * 60 * 60 });
 
 export const AdminAuditLog = mongoose.model('AdminAuditLog', adminAuditLogSchema);

@@ -91,7 +91,39 @@
               <h3>SECURITY AUDIT LOG</h3>
               <p>Recent authentication and account-security events for this admin account.</p>
             </div>
+            <div class="audit-toolbar">
+              <label class="sr-only" for="security-audit-event">Filter audit events</label>
+              <select id="security-audit-event">
+                <option value="">ALL EVENTS</option>
+                <option value="login_success">LOGIN SUCCESS</option>
+                <option value="login_failure">LOGIN FAILURE</option>
+                <option value="login_mfa_required">MFA CHALLENGE</option>
+                <option value="mfa_success">MFA SUCCESS</option>
+                <option value="mfa_failure">MFA FAILURE</option>
+                <option value="logout">LOGOUT</option>
+                <option value="mfa_enabled">MFA ENABLED</option>
+                <option value="mfa_disabled">MFA DISABLED</option>
+                <option value="recovery_codes_regenerated">RECOVERY CODES</option>
+                <option value="username_changed">USERNAME CHANGED</option>
+                <option value="password_changed">PASSWORD CHANGED</option>
+                <option value="session_revoked">SESSION REVOKED</option>
+                <option value="sessions_revoked">SESSIONS REVOKED</option>
+              </select>
+              <label class="sr-only" for="security-audit-outcome">Filter audit outcome</label>
+              <select id="security-audit-outcome">
+                <option value="">ALL RESULTS</option>
+                <option value="success">SUCCESS</option>
+                <option value="failure">FAILURE</option>
+              </select>
+              <button type="button" id="btn-refresh-security-audit" class="btn-ghost-sm">REFRESH</button>
+            </div>
+            <div id="security-audit-status" class="modal-sub"></div>
             <div id="security-audit-list" class="security-list"></div>
+            <div class="audit-pagination">
+              <button type="button" id="btn-security-audit-prev" class="btn-ghost-sm">← NEWER</button>
+              <span id="security-audit-page" class="security-date">PAGE 1 / 1</span>
+              <button type="button" id="btn-security-audit-next" class="btn-ghost-sm">OLDER →</button>
+            </div>
           </div>
         </div>
       </section>

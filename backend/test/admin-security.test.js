@@ -157,6 +157,12 @@ test('keeps sessions independently revocable and records the action', async () =
   assert.equal(audit.response.status, 200);
   assert.ok(audit.body.events.some((event) => event.event === 'login_success'));
   assert.ok(audit.body.events.some((event) => event.event === 'sessions_revoked'));
+
+  const filteredAudit = await first.request('/api/admin/security/audit?event=login_success&limit=1&page=1');
+  assert.equal(filteredAudit.response.status, 200);
+  assert.equal(filteredAudit.body.total, 2);
+  assert.equal(filteredAudit.body.events.length, 1);
+  assert.equal(filteredAudit.body.totalPages, 2);
 });
 
 test('locks repeated login failures before accepting the correct password', async () => {
