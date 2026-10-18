@@ -7,7 +7,7 @@
 .nav-actions-right{gap:9px}.nav-links{gap:1.6rem}
 
 /* Original photograph, custom light field. */
-.portrait-field{z-index:1}.portrait-field canvas{opacity:0;transition:opacity 1s}.hero[data-portrait-ready='true'] .portrait-field canvas{opacity:1}.hero[data-portrait-ready='true'] .hero-bg-image img{opacity:0}
+.portrait-field{z-index:1}.portrait-field canvas{opacity:0;will-change:filter;transition:opacity 1s,filter .45s ease}.hero[data-portrait-ready='true'] .portrait-field canvas{opacity:1}.hero[data-portrait-ready='true'] .hero-bg-image img{opacity:0}.hero[data-portrait-hover='true'] .portrait-field canvas{filter:contrast(1.12) saturate(1.18) drop-shadow(0 0 22px #d4000040)}
 .portrait-field::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,#0a0000f5 0%,#0a0000dc 23%,#0a000069 46%,transparent 76%),linear-gradient(0deg,#0a0000 0%,transparent 38%)}
 .hero{min-height:max(860px,100svh)}.hero-text{max-width:720px;padding-bottom:6rem}.hero-title-main{font-size:clamp(3.5rem,8.2vw,7.4rem)}.hero-title-code,.hero-title-nowrap{text-shadow:0 12px 60px #0004}.hero-title-accent{letter-spacing:.11em}
 .hero-stats{max-width:510px}.hero-stat-value{font-size:2.25rem}

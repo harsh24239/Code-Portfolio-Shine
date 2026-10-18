@@ -96,7 +96,12 @@ export default function PortfolioMotion({ enabled = true }: { enabled?: boolean 
           const depth = element.matches('.skill-item');
           const project = element.matches('.project-card');
           const fromLeft = element.matches('.skills-heading-col, .projects-header, .philosophy-text-col, #about h2') || element.matches('.skill-item:nth-child(odd), .contact-layout > div:first-child');
-          gsap.from(element, { ...(depth ? { '--reveal-y': '26px', '--reveal-x': fromLeft ? '-24px' : '24px' } : { x: project ? 0 : fromLeft ? -32 : 32, y: project ? 18 : 16 }), opacity: 0, duration: project ? .7 : 1, ease: 'power3.out', scrollTrigger: { trigger: element, start: 'top 93%', once: true } });
+          const reveal = depth
+            ? { '--reveal-y': '26px', '--reveal-x': fromLeft ? '-24px' : '24px' }
+            : project
+              ? { '--project-lift': '30px', '--project-tilt': '4deg' }
+              : { x: fromLeft ? -32 : 32, y: 16 };
+          gsap.from(element, { ...reveal, opacity: 0, duration: project ? .82 : 1, ease: 'power3.out', scrollTrigger: { trigger: element, start: 'top 93%', once: true } });
           if (element.matches('.skill-item')) {
             const pips = element.querySelectorAll('.skill-rank-pip');
             if (pips.length) gsap.from(pips, { scaleX: 0, transformOrigin: 'left', stagger: .06, duration: .55, ease: 'power2.out', scrollTrigger: { trigger: element, start: 'top 87%', once: true } });

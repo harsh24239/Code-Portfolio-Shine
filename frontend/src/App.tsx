@@ -80,7 +80,7 @@ const DEFAULT_PROFILE: ProfileData = {
   title1: 'CODE',
   titleAccent: 'IN THE',
   title2: 'SHADOWS',
-  subtext: '3rd-Year Computer Science B.Tech student & Web Developer. I build clean web applications, integrate intelligent AI workflows, and solve complex DSA problems.',
+  subtext: 'Computer science student and web developer building clean products, AI workflows, and reliable systems.',
   projectsShipped: '6+',
   yearsCoding: '3+',
   clientsServed: '100+',
@@ -621,7 +621,7 @@ export default function App() {
                   THE <br />TECH <br />
                   <span style={{ color: 'rgb(194, 0, 0)', WebkitTextFillColor: 'rgb(194, 0, 0)' }}>ARSENAL</span>
                 </h2>
-                <p>Every tool mastered through real-world battle. From frontend finesse to backend fortresses — this is the stack that ships production-grade code.</p>
+                <p>A practical stack for shipping interfaces, APIs, and intelligent systems.</p>
               </div>
               <div className="skills-grid">
                 {skills.map((skill, index) => {
@@ -658,7 +658,7 @@ export default function App() {
                 <h2>THE<br />DOSSIER</h2>
               </div>
               <div className="projects-header-aside">
-                <p>{projects.length || 'A small set of'} {projects.length === 1 ? 'system' : 'systems'}. Different constraints. One standard: make the work useful, legible, and built to hold up under scrutiny.</p>
+                <p>{projects.length || 'A small set of'} {projects.length === 1 ? 'system' : 'systems'} built to be useful, legible, and reliable.</p>
                 <span className="projects-header-meta">{projects.length} builds <span aria-hidden="true">·</span> {projects.length ? `${Math.min(...projects.map((project) => Number.parseInt(project.year, 10) || new Date().getFullYear()))} — ${Math.max(...projects.map((project) => Number.parseInt(project.year, 10) || new Date().getFullYear()))}` : 'Selected work'}</span>
               </div>
             </div>

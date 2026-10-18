@@ -92,6 +92,11 @@ const fragment = `
     float lift=clamp(frontier*.8+nearPointer*.38+wake*energy*.55,0.0,1.0);
     vec3 coarseSource=portraitAt((coarseCell+.5)/coarseGrid,cover);
     color+=codeInk(coarseSource,.65)*coarseGlyph*sparse*lift*amount*.75;
+    // A few larger fragments drift out of alignment before snapping back into the portrait.
+    float fracture=clamp((frontier*1.4+nearPointer*.7+wake*.35)*amount,0.0,1.0);
+    vec2 shardOffset=(vec2(hash(coarseCell+vec2(41.0,17.0)),hash(coarseCell+vec2(73.0,29.0)))-.5)*.05*fracture;
+    vec3 shardSource=portraitAt((coarseCell+.5)/coarseGrid+shardOffset,cover);
+    color+=(codeInk(shardSource,.9)-codeInk(coarseSource,.2))*coarseGlyph*sparse*fracture*.7;
     // A fine red edge light accompanies the transformation, using the original palette.
     color+=vec3(.024,.001,.001)*frontier*amount*(1.0-glyph);
     gl_FragColor=vec4(max(color,vec3(0.0)),1.0);
@@ -209,7 +214,7 @@ export default function HeroStage({ enabled = true }: { enabled?: boolean }) {
       interacted = true; clearTimeout(previewTimer); previewUntil = 0;
       const box = hero.getBoundingClientRect();
       const over = event.target instanceof Element ? event.target : null;
-      const onPortrait = event.clientX > box.left + box.width * .42 && !over?.closest('a, button');
+       const onPortrait = event.clientX > box.left + box.width * .42 && !over?.closest('.hero-text, a, button');
       const now = performance.now();
       if (onPortrait) {
         const x=(event.clientX-box.left)/box.width, y=1-(event.clientY-box.top)/box.height;
