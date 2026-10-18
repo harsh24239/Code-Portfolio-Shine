@@ -1,6 +1,6 @@
 # Simple animated portfolio
 
-The original portrait, crimson palette, Fraunces display type, Manrope body type, IBM Plex Mono metadata, profile copy, project source links and section order remain intact.
+The original portrait, crimson palette, Fraunces / IBM Plex Mono typography, profile copy, project source links and section order remain intact.
 
 The page contains the original hero, skills, projects, philosophy, background and contact sections. Search, the hero project index, side navigation, project filters, project-study dialogs, skill shortcut buttons, extra hero labels, email-copy control and giant footer signature have been removed. Projects are presented as a featured case-study lead followed by concise supporting cards, with each visual communicating the project's system shape before the description, technology stack, year and source link. The motion preference is a small control in the footer.
 

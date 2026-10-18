@@ -336,7 +336,7 @@
 #projects .project-title {
   margin: 0 0 16px;
   color: var(--text);
-  font-family: 'Fraunces', system-ui, serif !important;
+  font-family: 'IBM Plex Mono', system-ui, sans-serif !important;
   font-size: clamp(21px, 2vw, 28px);
   font-weight: 700;
   letter-spacing: -0.035em;
