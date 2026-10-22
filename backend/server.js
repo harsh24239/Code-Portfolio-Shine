@@ -153,7 +153,7 @@ const syncFromMongoDB = async () => {
 
     const syncCollection = async (Model, defaults, sort, storeKey, label) => {
       const docs = await Model.find().sort(sort);
-      if (docs.length > 0) {
+      if (docs.length > 0 || profile) {
         memoryStore[storeKey] = docs.map(toPlainObj);
         console.log(`✓ ${docs.length} ${label} loaded from MongoDB`);
         return;
@@ -181,7 +181,7 @@ const toPlainObj = (doc) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5050;
 
 const startServer = async () => {
   assertProductionConfig();
@@ -195,9 +195,15 @@ const startServer = async () => {
   }
 
   startupReady = true;
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`\n🚀 Server listening on http://localhost:${PORT}`);
     console.log(`🔒 Admin Panel: http://localhost:${PORT}/admin\n`);
+  });
+  server.on('error', (error) => {
+    console.error(error.code === 'EADDRINUSE'
+      ? `✗ Port ${PORT} is already in use. Set PORT to an available port and restart.`
+      : `✗ HTTP server failed: ${error.message}`);
+    process.exit(1);
   });
 };
 

@@ -6,9 +6,11 @@ import useMotionState from './components/portfolio/useMotionState';
 import './components/portfolio/interface-rich.css';
 import './components/portfolio/motion-detail.css';
 import './components/portfolio/projects.css';
+import './components/portfolio/responsive.css';
 import heroImg from '@assets/43aacf07-6d68-4564-9e49-16083d623024_1785459834010.jpg';
+import { fetchPortfolio, mergeProfile } from './lib/portfolio-api';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const API_BASE = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
 const HeroStage = lazy(() => import('./components/portfolio/HeroStage'));
 
 const safeExternalUrl = (value: string | undefined, fallback = '#contact') => {
@@ -19,12 +21,6 @@ const safeExternalUrl = (value: string | undefined, fallback = '#contact') => {
   } catch {
     return fallback;
   }
-};
-
-const conciseCopy = (value: string | undefined, fallback: string, limit: number) => {
-  const copy = value?.trim();
-  if (!copy) return fallback;
-  return copy.length <= limit ? copy : fallback;
 };
 
 interface Project {
@@ -376,11 +372,13 @@ export default function App() {
   const [projects, setProjects] = useState<Project[]>(DEFAULT_PROJECTS);
   const [skills, setSkills] = useState<Skill[]>(DEFAULT_SKILLS);
   const [focusAreas, setFocusAreas] = useState<FocusArea[]>(DEFAULT_FOCUS);
+  const [dataStatus, setDataStatus] = useState<'loading' | 'connected' | 'unavailable'>('loading');
+  const [dataAttempt, setDataAttempt] = useState(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { enabled: motionEnabled, reduced: reducedMotion, toggle: toggleMotion } = useMotionState();
   const [heroEnhancementReady, setHeroEnhancementReady] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const mobileDrawerRef = useRef<HTMLDivElement>(null);
+  const mobileDrawerRef = useRef<HTMLDialogElement>(null);
 
   // Contact form state
   const [contactName, setContactName] = useState('');
@@ -415,50 +413,66 @@ export default function App() {
     if (!mobileNavOpen) return;
 
     const drawer = mobileDrawerRef.current;
+    if (!drawer) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const focusable = drawer
-      ? Array.from(drawer.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'))
-      : [];
-    focusable[0]?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setMobileNavOpen(false);
-        return;
-      }
-      if (event.key !== 'Tab' || focusable.length < 2) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
+    // A native modal lives above filtered/transformed ancestors and keeps the
+    // background inert, including keyboard focus, while the mobile menu is open.
+    drawer.showModal();
+    const desktop = matchMedia('(min-width: 901px)');
+    const closeOnDesktop = () => { if (desktop.matches) setMobileNavOpen(false); };
+    desktop.addEventListener('change', closeOnDesktop);
     return () => {
+      drawer.close();
       document.body.style.overflow = previousOverflow;
-      document.removeEventListener('keydown', handleKeyDown);
+      desktop.removeEventListener('change', closeOnDesktop);
       menuButtonRef.current?.focus();
     };
   }, [mobileNavOpen]);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/portfolio`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!data) return;
-        if (data.profile) setProfile(data.profile);
-        if (Array.isArray(data.projects) && data.projects.length > 0) setProjects(data.projects);
-        if (Array.isArray(data.skills) && data.skills.length > 0) setSkills(data.skills);
-        if (Array.isArray(data.focusAreas) && data.focusAreas.length > 0) setFocusAreas(data.focusAreas);
-      })
-      .catch(() => {/* Keep fallbacks */});
-  }, []);
+    const controller = new AbortController();
+    let retryTimer = 0;
+    let failed = false;
+    setDataStatus('loading');
+    const load = async (attempt = 0) => {
+      try {
+        const data = await fetchPortfolio(`${API_BASE}/api/portfolio`, controller.signal);
+        if (controller.signal.aborted) return;
+        if (data.profile) setProfile(mergeProfile(DEFAULT_PROFILE, data.profile));
+        setProjects(data.projects as Project[]);
+        setSkills(data.skills as Skill[]);
+        setFocusAreas(data.focusAreas as FocusArea[]);
+        failed = false;
+        setDataStatus('connected');
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        if (attempt < 2) {
+          retryTimer = window.setTimeout(() => load(attempt + 1), (attempt + 1) * 2500);
+        } else {
+          failed = true;
+          console.warn('Live portfolio data could not be loaded:', error);
+          setDataStatus('unavailable');
+        }
+      }
+    };
+    const reconnect = () => {
+      if (failed) {
+        failed = false;
+        setDataStatus('loading');
+        void load();
+      }
+    };
+    void load();
+    window.addEventListener('online', reconnect);
+    window.addEventListener('focus', reconnect);
+    return () => {
+      controller.abort();
+      window.clearTimeout(retryTimer);
+      window.removeEventListener('online', reconnect);
+      window.removeEventListener('focus', reconnect);
+    };
+  }, [dataAttempt]);
 
   const handleContactSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -504,8 +518,8 @@ export default function App() {
   const featured = projects.find((p) => p.featured) ?? projects[0];
   const rest = projects.filter((p) => p !== featured);
   const orderedProjects = featured ? [featured, ...rest] : projects;
-  const heroSubtext = conciseCopy(profile.subtext, DEFAULT_PROFILE.subtext, 145);
-  const statusDetail = conciseCopy(profile.statusDetail, DEFAULT_PROFILE.statusDetail, 120);
+  const heroSubtext = profile.subtext;
+  const statusDetail = profile.statusDetail;
   return (
     <>
       <PortfolioMotion enabled={motionEnabled} />
@@ -545,18 +559,24 @@ export default function App() {
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer */}
-        {mobileNavOpen && (
-          <div className="mobile-nav-overlay" role="presentation" onClick={() => setMobileNavOpen(false)}>
-            <div
-              ref={mobileDrawerRef}
-              id="mobile-navigation"
-              className="mobile-nav-drawer"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="mobile-navigation-title"
-              onClick={(e) => e.stopPropagation()}
-            >
+      </nav>
+
+      {/* The modal's top layer stays independent of the fixed, blurred navbar. */}
+      {mobileNavOpen && (
+          <dialog
+            ref={mobileDrawerRef}
+            id="mobile-navigation"
+            className="mobile-nav-overlay"
+            aria-labelledby="mobile-navigation-title"
+            onCancel={(event) => { event.preventDefault(); setMobileNavOpen(false); }}
+          >
+            <div className="mobile-nav-header">
+              <a className="nav-logo" href="#" onClick={() => setMobileNavOpen(false)}>HARSH.DEV</a>
+              <button type="button" className="mobile-nav-close" aria-label="Close navigation menu" onClick={() => setMobileNavOpen(false)}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="mobile-nav-drawer">
               <h2 id="mobile-navigation-title" className="sr-only">Navigation menu</h2>
               <ul className="mobile-nav-links">
                 <li><a href="#skills" onClick={() => setMobileNavOpen(false)}>Skills</a></li>
@@ -565,13 +585,12 @@ export default function App() {
                 <li><a href="#about" onClick={() => setMobileNavOpen(false)}>Focus</a></li>
                 <li><a href="#contact" onClick={() => setMobileNavOpen(false)}>Contact</a></li>
               </ul>
-              <a className="btn-primary" href="#contact" onClick={() => setMobileNavOpen(false)} style={{ width: '100%', justifyContent: 'center', marginTop: '1rem' }}>
+              <a className="btn-primary mobile-nav-cta" href="#contact" onClick={() => setMobileNavOpen(false)}>
                 Hire Me →
               </a>
             </div>
-          </div>
-        )}
-      </nav>
+          </dialog>
+      )}
 
       <main>
         {/* HERO */}
@@ -938,7 +957,12 @@ export default function App() {
               <div className="footer-col-heading">System Specs</div>
               <ul className="footer-nav-list">
                 <li><span style={{ color: 'var(--fg)' }}>Tech: React + Node.js + FastAPI</span></li>
-                <li><span style={{ color: 'var(--fg)' }}>Status: Operational</span></li>
+                <li aria-live="polite">
+                  <span>Status: {dataStatus === 'connected' ? 'Operational' : dataStatus === 'loading' ? 'Loading updates' : 'Live updates unavailable'}</span>
+                  {dataStatus === 'unavailable' && (
+                    <button type="button" className="data-retry" onClick={() => setDataAttempt((attempt) => attempt + 1)}>Retry</button>
+                  )}
+                </li>
                 <li><span style={{ color: 'var(--fg)' }}>Location: India</span></li>
               </ul>
             </div>

@@ -1,0 +1,90 @@
+/* Keep navigation above the page, independent of the navbar's backdrop filter. */
+.mobile-nav-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--text);
+  background: #100202;
+  backdrop-filter: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.mobile-nav-overlay:not([open]) { display: none; }
+.mobile-nav-overlay[open] { display: flex; flex-direction: column; }
+.mobile-nav-overlay::backdrop { background: var(--bg); }
+
+.mobile-nav-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  min-height: calc(var(--nav-height) + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) max(1.25rem, env(safe-area-inset-right, 0px)) 0 max(1.25rem, env(safe-area-inset-left, 0px));
+  border-bottom: 1px solid var(--presentation-line);
+  background: #100202;
+}
+
+.mobile-nav-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--presentation-line);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.mobile-nav-drawer {
+  width: 100%;
+  max-width: 36rem;
+  flex: 1 0 auto;
+  margin-inline: auto;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+  border: 0;
+  gap: 2rem;
+}
+
+.mobile-nav-links { gap: 0; }
+.mobile-nav-links a {
+  display: flex;
+  align-items: center;
+  min-height: clamp(3.5rem, 9svh, 5rem);
+  padding-block: 0.65rem;
+  border-bottom: 1px solid var(--presentation-line);
+  font-size: clamp(1.7rem, 5vw, 2.5rem);
+}
+.mobile-nav-cta { width: 100%; justify-content: center; margin-top: auto; min-height: 50px; }
+
+/* A bounded, softer shade replaces the black band that grew with screen width.
+   Both the static portrait and the WebGL portrait use exactly the same shade. */
+@media (min-width: 991px) {
+  .hero {
+    --hero-shade: linear-gradient(90deg, #0a0000a6 0px, #0a00008c min(28vw, 380px), #0a000033 min(52vw, 720px), transparent min(78vw, 1080px)), linear-gradient(0deg, #0a0000 0%, transparent 28%);
+  }
+  .hero-bg-image::before, .portrait-field::after { background: var(--hero-shade); }
+}
+
+/* Allow the composition to use wider screens without a growing empty gutter. */
+@media (min-width: 1600px) {
+  .hero > .container, nav[aria-label='Primary navigation'] > .container { max-width: 1920px; }
+}
+
+@media (max-width: 640px) {
+  .hero-title-main { font-size: clamp(2.35rem, 11.7vw, 4.8rem); }
+  .hero-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+  .hero-stat-label { font-size: 0.65rem; letter-spacing: 0.04em; overflow-wrap: normal; }
+  .hero-scroll-hint { bottom: 1rem; }
+}

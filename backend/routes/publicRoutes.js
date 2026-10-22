@@ -33,15 +33,15 @@ router.get('/portfolio', async (req, res) => {
         delete p._id; delete p.__v; delete p.createdAt; delete p.updatedAt;
         Object.assign(memoryStore.profile, p);
       }
-      if (projects.length > 0) memoryStore.projects = projects.map(toPlain);
-      if (skills.length > 0) memoryStore.skills = skills.map(toPlain);
-      if (focusAreas.length > 0) memoryStore.focusAreas = focusAreas.map(toPlain);
+      memoryStore.projects = projects.map(toPlain);
+      memoryStore.skills = skills.map(toPlain);
+      memoryStore.focusAreas = focusAreas.map(toPlain);
 
       return res.json({
         profile: profile || memoryStore.profile,
-        projects: projects.length > 0 ? projects : memoryStore.projects,
-        skills: skills.length > 0 ? skills : memoryStore.skills,
-        focusAreas: focusAreas.length > 0 ? focusAreas : memoryStore.focusAreas,
+        projects,
+        skills,
+        focusAreas,
       });
     }
 
