@@ -1,0 +1,315 @@
+/* Graphite artwork in the original landscape hero composition. */
+.hero { min-height: max(860px, 100svh); position: relative; overflow: hidden; perspective: none; }
+.hero > .container { display: block; position: relative; z-index: 2; pointer-events: none; }
+.hero-text { max-width: 720px; padding: 4rem 0 5.5rem; pointer-events: auto; }
+.hero-title-main { font-size: clamp(3.5rem, 8.2vw, 7.4rem); }
+.hero-title-accent { font-size: .62em; }
+.hero-sub { max-width: 39ch; }
+.hero-stats { gap: 1.5rem; }
+.hero-eyebrow { font-size: 12px; }
+.hero-title-accent::after { content: ''; display: block; width: 3em; height: 5px; margin-top: .16em; border-top: 1px solid #53656f55; border-bottom: 1px solid #53656f22; rotate: -1deg; }
+
+.portrait-study { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; margin: 0; padding: 0; z-index: 1; pointer-events: none; }
+.portrait-sheet::after { content: ''; position: absolute; inset: 0; z-index: 2; background: linear-gradient(90deg, #f7f5f0 0%, #f7f5f0d9 10%, #f7f5f000 35%), linear-gradient(0deg, #f7f5f0 0%, #f7f5f000 12%); pointer-events: none; }
+.portrait-study-caption { display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 11px; letter-spacing: .06em; color: var(--muted); }
+.portrait-sheet { position: absolute; top: var(--nav-height); right: -12vw; width: min(78vw, 1680px); height: clamp(890px, calc(100svh - 64px), 1060px); isolation: isolate; overflow: clip; }
+.portrait-photo, .portrait-study .portrait-field { position: absolute; inset: 0; width: 100%; height: 100%; }
+.portrait-photo { display: block; object-fit: contain; transition: opacity .65s; }
+/* Keep the native drawing and its interactive tiles registered at every size. */
+.portrait-photo, .portrait-study .portrait-field { scale: 1.055; transform-origin: 65% 12%; }
+.portrait-study .portrait-field { transform: none; z-index: 1; }
+.portrait-study .portrait-field::after { content: none; }
+.hero[data-portrait-hover='true'] .portrait-study .portrait-field canvas { filter: none; }
+.portrait-photo { opacity: 1; }
+.hero[data-portrait-ready='true'] .portrait-study .portrait-field canvas { opacity: 0; transition: opacity .22s ease; }
+.hero[data-portrait-hover='true'] .portrait-study .portrait-field canvas { opacity: 1; }
+.portrait-guides { position: absolute; inset: 8% 5%; z-index: 2; width: 90%; height: 84%; pointer-events: none; stroke: #53656f44; stroke-width: .8; }
+.portrait-guides > path:first-child { display: none; }
+.portrait-guides .portrait-construction { stroke: #53656f15; stroke-dasharray: 3 7; }
+.portrait-pencil-stroke { stroke: #53656f80; }
+.portrait-margin-note { position: absolute; right: calc(12vw + 1.5rem); top: 42%; z-index: 3; writing-mode: vertical-rl; font-family: 'Fraunces', serif !important; font-style: italic; font-size: 16px; letter-spacing: .01em; color: #687372; }
+.portrait-study-caption { position: absolute; right: max(clamp(1rem, 5vw, 4rem), calc((100vw - 1920px) / 2 + 4rem)); bottom: 1.25rem; z-index: 3; padding: 0; pointer-events: auto; }
+.portrait-study-caption > span { display: none; }
+.portrait-toggle { padding: 8px 0; border: 0; border-bottom: 1px dashed #53656f66; color: var(--text); background: transparent; cursor: pointer; font: inherit; letter-spacing: 0; min-height: 40px; }
+.portrait-toggle:hover, .portrait-toggle[aria-pressed='true'] { color: var(--accent); border-bottom-style: solid; }
+
+/* The chapter labels and pencil rules give each section a clear place. */
+.skills-eyebrow::before { content: '01 / '; }.projects-eyebrow::before { content: '02 / '; }.philosophy-eyebrow::before { content: '03 / '; }.testimonials-eyebrow::before { content: '04 / '; }.contact-eyebrow::before { content: '05 / '; }
+.skills-eyebrow::before, .projects-eyebrow::before, .philosophy-eyebrow::before, .testimonials-eyebrow::before, .contact-eyebrow::before { color: #8b9697; letter-spacing: 0; margin-right: .5rem; }
+#skills { background: #eeeee7; }
+#skills > .container { position: relative; }
+#skills .skills-heading-col h2 { position: relative; }
+#skills .skills-heading-col h2 > span { position: relative; }
+#skills .skills-heading-col h2 > span::after { content: ''; position: absolute; left: 0; right: -8%; bottom: -10px; height: 8px; border-top: 1px solid #53656f80; border-bottom: 1px solid #53656f33; rotate: -2deg; }
+#skills .skills-grid { gap: 1rem; }
+#skills .skill-item { position: relative; padding: 2rem 1.5rem; border: 1px solid #53656f2b; background: #faf9f466; }
+#skills .skill-item:nth-child(odd) { border-right: 1px solid #53656f2b; }
+#skills .skill-item:nth-child(2n) { translate: 0 1rem; }
+#skills .skill-item:hover { background: var(--paper-white); border-color: #53656f66; }
+.skill-index { position: absolute; top: 1.8rem; right: 1.3rem; color: #7a8588; font-size: 11px; letter-spacing: .05em; }
+#skills .skill-icon { width: 38px; height: 38px; stroke-width: 1.25; rotate: -3deg; margin-bottom: 1.4rem; }
+.skill-rank-pip.filled { background: repeating-linear-gradient(130deg, #53656f 0, #53656f 1px, transparent 1px, transparent 3px); height: 4px; }
+
+/* Drawings are conceptual diagrams of the actual project stack. */
+#projects .project-card { box-shadow: 0 2px 2px #303a4005; }
+#projects .project-card:has(.project-card-link:hover), #projects .project-card:has(.project-card-link:focus-visible) { box-shadow: 0 12px 28px #303a4009; }
+#projects .project-card-image { padding: 3rem 1rem 1.25rem; background: #eeeee7; }
+#projects .project-card-image::before { inset: 10px; background-size: 24px 24px; border: 1px solid #53656f16; }
+#projects .project-card-image::after { opacity: .5; }
+.project-cover-label { letter-spacing: .09em; }
+.sketch-project { display: block; width: min(100%, 520px); height: auto; stroke: #515f63; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+.sketch-project text { fill: #4e5b60; stroke: none; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .02em; }
+.sketch-project .sketch-label { font-size: 9px; fill: #7b8688; }
+.sketch-project .sketch-hand { font-family: 'Fraunces', serif; font-size: 14px; font-style: italic; letter-spacing: 0; fill: #657875; }
+.sketch-outline { stroke-width: 1.6; }
+.sketch-registration { stroke-width: .7; opacity: .45; }
+.sketch-shadow { stroke: none; }
+.sketch-trace { stroke: #6d807c; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.project-card-link:hover .sketch-trace, .project-card-link:focus-visible .sketch-trace { animation: pencil-draw 1.3s ease both; }
+.sketch-trace-return { animation-delay: .2s !important; }
+.project-card-link:hover .sketch-layer { animation: pencil-layer .7s ease both; animation-delay: calc(var(--sketch-layer) * 70ms); }
+@keyframes pencil-draw { from { stroke-dashoffset: 1; opacity: .2; } to { stroke-dashoffset: 0; opacity: 1; } }
+@keyframes pencil-layer { from { translate: -5px 2px; opacity: .4; } to { translate: 0 0; opacity: 1; } }
+.project-proof { border-left: 0; border-top: 1px dashed #53656f40; padding: 1rem 0 0; }
+.project-status { border-color: #6d807c55; rotate: -3deg; color: #576c65; }
+
+/* A quote in the margin, followed by four deliberate working principles. */
+#philosophy { background: #eceee8; }
+.philosophy-quote { position: relative; font-family: 'Fraunces', serif !important; font-style: italic; font-size: clamp(1.8rem, 3vw, 2.5rem); border-left: 0; padding: 1.5rem 0 1.25rem; line-height: 1.4; }
+.philosophy-quote::before { content: '“'; position: absolute; left: -.45em; top: -.25em; font-family: 'Fraunces', serif; font-size: 5rem; color: #53656f26; }
+.philosophy-quote::after { content: ''; position: absolute; left: 0; bottom: 0; width: 72%; height: 4px; border-top: 1px solid #53656f66; border-bottom: 1px solid #53656f26; rotate: -1deg; }
+.tenets-list { background: #faf9f438; padding-inline: 1.5rem; border-left: 1px solid #53656f26; }
+.tenet-marker { font-family: 'Fraunces', serif !important; font-style: italic; font-size: 1.4rem; color: #6e7e78; }
+.tenet-item { border-bottom-style: dashed; }
+.tenet-item:first-child { border-top: 0; }
+.tenet-item:last-child { border-bottom: 0; }
+
+/* Each focus area has an individual illustrated margin, not another badge. */
+#about .skills-grid { gap: 1.75rem; }
+#about .skill-item { position: relative; border-top: 0; border-bottom: 1px solid var(--presentation-line); }
+.focus-drawing { display: block; width: 105px; height: 88px; margin: 0 0 1.5rem; stroke: #5b6c6e; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; rotate: -3deg; }
+#about .skill-item:nth-child(2n) .focus-drawing { rotate: 3deg; }
+#about .skill-item:hover .focus-drawing .sketch-trace { animation: pencil-draw 1.1s ease both; }
+
+/* The form reads like a small sheet of correspondence. */
+#contact { background: #eeeee7; }
+#contact::before { display: none; }
+.contact-bg-kanji { opacity: .025; }
+.contact-availability { background: transparent; border: 0; padding: 0 0 1.75rem; border-bottom: 1px dashed var(--presentation-line); }
+.correspondence-sheet { position: relative; isolation: isolate; background: #fcfbf7; padding: 2rem; border: 1px solid var(--presentation-line); box-shadow: 7px 9px 0 #53656f08; }
+.correspondence-sheet::before { content: ''; position: absolute; top: -17px; right: 26px; width: 15px; height: 45px; border: 2px solid #8d9693; border-radius: 12px; rotate: 17deg; pointer-events: none; }
+.correspondence-sheet::after { content: ''; position: absolute; top: -10px; right: 30px; width: 7px; height: 32px; border: 1px solid #8d9693; border-radius: 9px; rotate: 17deg; pointer-events: none; }
+.correspondence-sheet input, .correspondence-sheet textarea { background: transparent !important; border: 0 !important; border-bottom: 1px solid #53656f40 !important; }
+.correspondence-sheet input:focus, .correspondence-sheet textarea:focus { border-color: var(--accent) !important; box-shadow: 0 1px var(--accent); }
+.contact-channel:hover .contact-channel-icon { rotate: -7deg; }
+.footer-logo { position: relative; }
+.footer-logo::after { content: ''; display: block; width: 5rem; height: 3px; border-top: 1px solid #53656f66; rotate: -4deg; margin-top: .5rem; }
+
+/* A working notebook in the toolkit margin. */
+.toolkit-drawing { display: block; width: min(100%, 320px); height: auto; margin-top: 3rem; color: #5f7072; stroke: currentColor; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; rotate: -3deg; }
+.toolkit-shadow { fill: #53656f0a; stroke: none; }
+.toolkit-drawing text { fill: #697a77; stroke: none; font-family: 'Fraunces', serif; font-size: 15px; font-style: italic; }
+.skills-heading-col:hover .toolkit-drawing .sketch-trace { animation: pencil-draw 1.2s ease both; }
+
+/* Larger focus plates give the illustrations and the work equal weight. */
+#about .skills-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+#about .focus-card { display: grid; grid-template-columns: 120px minmax(0, 1fr); align-items: start; gap: 2rem; padding: 2rem !important; border: 1px solid #53656f2b; background: #fcfbf780; }
+#about .focus-card:hover { background: #fcfbf7; border-color: #53656f66; }
+#about .focus-drawing { width: 120px; height: 110px; margin: 0; }
+.focus-copy { min-width: 0; }
+#about .focus-copy .skill-name { line-height: 1.35; }
+
+/* A charcoal drawing-board finish, with paper-white text throughout. */
+footer.site-footer {
+  --bg: #272c2e; --text: #f7f5f0; --fg: #d5dbd6; --muted: #c8d0ca;
+  --link: #f0f2ec; --link-hover: #ffffff; --accent: #ecf0e8;
+  --presentation-muted: #d5dbd6; --presentation-line: #f7f5f033;
+  position: relative; color: var(--text); background: #272c2e;
+  border-top: 0; padding-top: clamp(3.5rem, 7vw, 6rem); overflow: hidden;
+}
+footer.site-footer::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .22; background: repeating-linear-gradient(124deg, transparent 0, transparent 4px, #f7f5f006 4px, #f7f5f006 5px); }
+footer.site-footer > .container { position: relative; z-index: 1; }
+.footer-closing { padding-bottom: 3.5rem; margin-bottom: 3.5rem; border-bottom: 1px solid var(--presentation-line); }
+.footer-closing-note { font-family: 'Fraunces', serif !important; font-style: italic; font-size: 1.2rem; color: #d5dbd6; margin-bottom: 1.25rem; }
+.footer-invitation { display: flex; justify-content: space-between; align-items: center; gap: 1rem; text-decoration: none; color: var(--text); font-family: 'Fraunces', serif !important; font-size: clamp(3rem, 6.6vw, 6rem); letter-spacing: -.045em; line-height: 1.05; }
+.footer-invitation > span, .footer-invitation em { font-family: 'Fraunces', serif !important; }
+.footer-invitation em { font-weight: 400; color: #e1e8df; }
+.footer-invitation svg { width: clamp(55px, 8vw, 110px); height: auto; flex-shrink: 0; stroke: #e1e8df; stroke-width: 1.3; transition: translate .35s ease; }
+.footer-invitation svg path:last-child { opacity: .3; }
+.footer-invitation:hover svg { translate: 5px -5px; }
+footer .footer-logo, footer .footer-nav-list a, footer .footer-mark { color: var(--text); }
+footer .footer-logo::after { border-color: #f7f5f088; }
+footer .footer-tagline, footer .footer-col-heading, footer .footer-legal, footer .footer-motion { color: #d5dbd6; }
+footer .footer-nav-list a:hover, footer .footer-motion:hover { color: white; }
+footer .footer-divider { border-color: var(--presentation-line); }
+
+/* An actual drawing instrument, anchored exactly at its graphite tip. */
+.pencil-cursor.pointer-aura, .pencil-cursor.pointer-aura[data-mode='action'] { width: 36px; height: 48px; translate: 0 0; border: 0; border-radius: 0; background: none; scale: 1; color: #303a40; transition: opacity .15s; }
+.pencil-body { position: absolute; left: -4px; top: -44px; width: 36px; height: 48px; overflow: visible; transform-origin: 4px 44px; rotate: 18deg; stroke: #303a40; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; transition: rotate .2s; filter: drop-shadow(1px 2px 1px #262b2e26); }
+.pencil-wood { fill: #e5dbc5; }.pencil-barrel { fill: #f7f5f0; }.pencil-glint { stroke: #fff; }
+.pencil-cursor[data-mode='action'] .pencil-body { rotate: 36deg; }
+.pencil-cursor[data-down='true'] .pencil-body { rotate: 45deg; }
+.pencil-cursor[data-surface='dark'] .pencil-body { filter: drop-shadow(0 0 1px #fff9); }
+.pencil-action-mark { position: absolute; width: 42px; height: 16px; left: -19px; top: 5px; stroke: currentColor; stroke-width: .8; opacity: 0; transition: opacity .2s; }
+.pencil-cursor[data-mode='action'] .pencil-action-mark { opacity: .6; }
+.pencil-cursor[data-surface='dark'] { color: #f7f5f0; }
+.pencil-trail { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1599; pointer-events: none; opacity: 0; overflow: hidden; }
+.pencil-trail path { stroke: #455351; stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; }
+.pencil-trail[data-surface='dark'] path { stroke: #f4f1e3; }
+body:has(dialog[open]) .pencil-trail { display: none; }
+
+/* Distinct materials make the chapters feel like one collected body of work. */
+#skills { background: #e3e5dc; border-top: 1px solid #53656f33; border-bottom: 1px solid #53656f33; }
+#skills::before { inset: 0; height: auto; background: repeating-linear-gradient(90deg, transparent 0, transparent 79px, #53656f0c 79px, #53656f0c 80px); pointer-events: none; }
+#skills .skills-heading-col { position: relative; }
+#skills .skills-heading-col::before { content: '01'; position: absolute; top: -100px; left: -14px; font-family: 'Fraunces', serif; font-size: 190px; letter-spacing: -.08em; line-height: 1; color: #53656f0d; pointer-events: none; }
+#skills .skill-item { background: #f8f6ee; border-color: #717b6e40; box-shadow: 4px 5px 0 #53654e0d; }
+#skills .skill-item:nth-child(3n+2) { background: #eeeee3; }
+#skills .skill-item:hover { background: #fffcf3; box-shadow: 6px 8px 0 #53654e14; }
+#skills .skill-index { color: #6f796c; border-bottom: 1px solid #7b85775c; padding-bottom: 5px; }
+#skills .skill-icon { width: 43px; height: 43px; padding: 5px; background: #69775e0c; }
+.toolkit-drawing { color: #53634f; }
+
+#projects { background: #eee9df; }
+#projects .project-card { border-color: #8c8c7d55; box-shadow: 5px 6px 0 #535c5014; }
+#projects .project-card-image { background: #35423e; border-color: #53665b; }
+#projects .project-card:nth-child(2) .project-card-image { background: #3b4547; }
+#projects .project-card:nth-child(3) .project-card-image { background: #44483e; }
+#projects .project-card-image::before { background-image: linear-gradient(#e6ebdc0b 1px, transparent 1px), linear-gradient(90deg, #e6ebdc0b 1px, transparent 1px); border-color: #f7f5f01c; mask-image: none; }
+#projects .project-card-image::after { background: #d8e1cb; }
+#projects .sketch-project { color: #dae1cf; stroke: #d9e0ce; stroke-width: 1.15; }
+#projects .sketch-project text { fill: #f3f2df; }
+#projects .sketch-project .sketch-label { fill: #bdcabb; }
+#projects .sketch-project .sketch-hand { fill: #dce4c9; }
+#projects .sketch-trace { stroke: #f4ebc8; }
+#projects .sketch-registration { opacity: .35; }
+#projects .project-cover-number, #projects .project-cover-label, #projects .project-cover-corner { color: #d5dfce; }
+#projects .project-card-featured .project-title { font-family: 'Fraunces', serif !important; font-weight: 600; letter-spacing: -.035em; }
+#projects .project-card-body { background: #faf7ed; }
+
+#philosophy { --text: #f7f5e9; --fg: #d0d6c9; --accent: #d5dec7; --presentation-muted: #c8d0c3; --presentation-line: #d4dfcb33; background: #303a36; isolation: isolate; }
+#philosophy > .container { position: relative; z-index: 1; }
+#philosophy::before { content: ''; position: absolute; inset: 0; z-index: 0; opacity: .35; background: repeating-linear-gradient(132deg, transparent 0, transparent 8px, #d5dec707 8px, #d5dec707 9px); pointer-events: none; }
+#philosophy .philosophy-eyebrow { color: #d6dfc8; }
+#philosophy h2 { color: #f7f5e9; }
+#philosophy .philosophy-quote { color: #e3e8d8; }
+#philosophy .philosophy-quote::before { color: #d7e2ca33; }
+#philosophy .philosophy-quote::after { border-color: #d7e2ca66; }
+#philosophy .philosophy-stripe { background: #e0e8d333; }
+#philosophy .tenets-list { background: #f7f5f005; border-color: #d4dfcb33; padding-inline: 2rem; }
+#philosophy .tenet-marker { color: #d6dfc8; font-size: 2rem; min-width: 32px; line-height: 1.15; }
+#philosophy .tenet-title { color: #f7f5e9; }
+
+#about { background-color: #f4f0e6; background-image: radial-gradient(#53656f23 .7px, transparent .7px); background-size: 16px 16px; }
+#about .focus-card { background: #fcfaf1; border-color: #747d6b45; border-left: 3px solid #89947c; box-shadow: 4px 5px 0 #53654e0c; }
+#about .focus-card:nth-child(2n) { background: #eeeede; border-left-color: #6c807d; }
+#about .focus-card:hover { background: #fffdf4; border-color: #66775b88; }
+#about .focus-drawing { background: #7687690c; padding: 8px; stroke: #53664f; border-radius: 47% 41% 45% 38%; }
+#about .focus-copy .project-tag { color: #5e7055; }
+
+#contact { background: #e0e3d7; }
+#contact .contact-layout { align-items: start; }
+#contact .contact-channel { border-bottom-style: dashed; }
+#contact .contact-channel-icon { background: #f7f5e7; border: 1px solid #66775b30; padding: 8px; width: 39px; height: 39px; rotate: -4deg; }
+#contact .contact-availability { margin-top: 2rem; padding: 1.6rem; background: #f7f5e75c; border: 1px solid #66775b33; border-left: 3px solid #718569; }
+#contact .correspondence-sheet { background-color: #fcf9ef; background-image: repeating-linear-gradient(0deg, transparent 0, transparent 31px, #65795e09 31px, #65795e09 32px); box-shadow: 8px 10px 0 #76836720, 0 16px 45px #303a3610; border-color: #6e7b6555; }
+#contact .correspondence-sheet::before, #contact .correspondence-sheet::after { border-color: #737d70; }
+
+@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) { .pencil-cursor, .pencil-trail { display: none; } }
+html[data-motion='off'] .pencil-trail { display: none; }
+
+/* A graphite vignette frames the paper; drawings get a much lighter rubbed mark. */
+.hero-corner-shading { position: absolute; inset: 0; pointer-events: none; z-index: 3; overflow: hidden; }
+.hero-corner { position: absolute; display: block; color: #535957; width: clamp(340px, 41vw, 660px); height: auto; pointer-events: none; mix-blend-mode: multiply; }
+.hero-corner-top { top: -90px; left: -95px; opacity: .72; }
+.hero-corner-right { top: -110px; right: -170px; scale: -1 1; opacity: .28; }
+.hero-corner-left { bottom: -155px; left: -120px; scale: 1 -1; opacity: .44; }
+.hero-corner-bottom { bottom: -120px; right: -130px; rotate: 180deg; opacity: .5; }
+.toolkit-study { position: relative; width: min(100%, 320px); margin-top: 3rem; isolation: isolate; }
+.graphite-smudge { position: absolute; display: block; pointer-events: none; color: #535957; overflow: visible; }
+.toolkit-rub { width: 110%; height: auto; left: -5%; top: 37%; rotate: -7deg; opacity: .55; z-index: -1; }
+#about .focus-rub { width: 145px; height: auto; left: 16px; top: 50px; rotate: -14deg; opacity: .5; z-index: -1; }
+#projects .project-rub { width: 70%; height: auto; left: 14%; top: 40%; color: #d5ddcd; rotate: -9deg; opacity: .25; z-index: 0; }
+.toolkit-study .toolkit-drawing { position: relative; width: 100%; max-width: none; margin: 0; }
+#projects .sketch-project { position: relative; z-index: 1; }
+#about .focus-drawing { position: relative; background: none; border-radius: 0; }
+#about .focus-card { isolation: isolate; }
+.correspondence-sheet { scroll-margin-top: 90px; }
+.contact-delivery-note { margin: 0; color: var(--fg); font-size: 11px; line-height: 1.7; text-align: center; }
+.contact-delivery-note a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+
+@media (min-width: 1600px) {
+  .hero > .container { max-width: 1920px; }
+  .portrait-sheet { right: calc((100vw - 1920px) / 2 - 160px); }
+}
+@media (max-width: 1100px) {
+  .hero-title-main { font-size: clamp(3.4rem, 8vw, 6rem); }
+  .hero-text { max-width: 64%; }
+  .portrait-sheet { width: 84vw; right: -21vw; }
+  .portrait-margin-note { right: calc(21vw + 1.5rem); font-size: 13px; }
+}
+@media (max-width: 900px) {
+  .hero { min-height: 820px; }
+  .hero-text { padding: 3.5rem 0 5rem; max-width: 65%; }
+  .hero-title-main { font-size: clamp(3rem, 8vw, 5rem); }
+  .hero-sub { font-size: .94rem; max-width: 34ch; }
+  .hero-eyebrow { font-size: 11px; }
+  .portrait-sheet { width: 96vw; right: -31vw; height: 802px; }
+  .portrait-margin-note { display: none; }
+  .portrait-study-caption { font-size: 10px; }
+  .hero-stats { gap: .75rem; }
+  .hero-stat-value { font-size: 1.8rem; }
+  .hero-stat-label { font-size: .7rem; }
+  #skills .skill-item:nth-child(2n) { translate: none; }
+  .toolkit-study { max-width: 280px; margin-top: 2rem; }
+  #about .focus-card { grid-template-columns: 85px minmax(0, 1fr); gap: 1.3rem; padding: 1.5rem 1.2rem !important; }
+  #about .focus-drawing { width: 85px; height: 80px; }
+}
+@media (max-width: 760px) {
+  #about .skills-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .hero { min-height: 850px; }
+  .hero > .container { display: block; padding-top: 0; padding-bottom: 0; }
+  .hero-text { display: flex; padding: 3rem 0 4rem; max-width: 100%; }
+  .hero-eyebrow { font-size: 11px; margin-bottom: 1.5rem; }
+  .hero-title-main { font-size: clamp(2.7rem, 11.7vw, 4.8rem); }
+  .hero-title-accent { font-size: .62em; }
+  .hero-title-accent::after { height: 2px; }
+  .portrait-sheet { top: var(--nav-height); right: -32%; bottom: auto; width: 132%; height: 786px; }
+  .portrait-sheet::after { background: linear-gradient(90deg, #f7f5f0fa 0%, #f7f5f0de 36%, #f7f5f045 80%), linear-gradient(0deg, #f7f5f0 0%, #f7f5f000 40%); }
+  .portrait-study-caption, .portrait-guides { display: none; }
+  .hero-sub { max-width: 36ch; margin-top: 1.6rem; font-size: .94rem; text-wrap: pretty; }
+  .hero-actions { margin-top: 1.6rem; }
+  .hero-stats { margin-top: 2rem; }
+  .hero-scroll-hint { display: none; }
+  #skills .skills-grid { gap: .75rem; }
+  #skills .skill-item { padding: 1.65rem 1.3rem; }
+  .skill-index { top: 1.6rem; }
+  .toolkit-study { width: 230px; margin-top: 2rem; }
+  .portrait-photo, .portrait-study .portrait-field { scale: 1.035; transform-origin: 70% 12%; }
+  .hero-corner-top { width: 350px; top: -85px; left: -145px; opacity: .55; }
+  .hero-corner-right { width: 330px; right: -200px; opacity: .2; }
+  .hero-corner-left { width: 320px; bottom: -120px; left: -160px; opacity: .32; }
+  .hero-corner-bottom { width: 350px; bottom: -130px; right: -170px; opacity: .38; }
+  #about .focus-rub { width: 100px; left: 8px; top: 38px; opacity: .4; }
+  #projects .project-card-image { padding-inline: .5rem; min-height: 235px; }
+  #projects .project-card-featured .project-card-image { min-height: 260px; }
+  .tenets-list { padding-inline: 1rem; }
+  .philosophy-quote { font-size: 1.9rem; }
+  #about .skills-grid { grid-template-columns: 1fr; gap: 1rem; }
+  #about .focus-card { grid-template-columns: 75px minmax(0, 1fr); gap: 1rem; }
+  #about .focus-drawing { width: 75px; height: 75px; }
+  #about .skill-item .skill-name { font-size: 1.1rem !important; }
+  #about .skill-item .skill-desc { font-size: .9rem; }
+  #about .skill-item .project-tag { font-size: 11px; }
+  .correspondence-sheet { padding: 1.3rem; box-shadow: 4px 6px 0 #53656f08; }
+  .footer-closing { padding-bottom: 2.5rem; margin-bottom: 2.5rem; }
+  .footer-invitation { font-size: clamp(2.3rem, 9vw, 3.5rem); }
+  .footer-invitation svg { width: 45px; height: 45px; margin-left: .5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sketch-trace, .sketch-layer { animation: none !important; }
+}
+html[data-motion='off'] .sketch-trace, html[data-motion='off'] .sketch-layer { animation: none !important; }
+
