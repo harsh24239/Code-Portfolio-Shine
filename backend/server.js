@@ -49,14 +49,22 @@ app.use(['/admin', '/api/admin'], (req, res, next) => {
 
 // Rate Limiting
 const loginLimiter = createRateLimiter({
+  namespace: 'admin-login',
   windowMs: 15 * 60 * 1000,
   limit: 5,
   message: 'Too many login attempts. Please try again after 15 minutes.',
 });
 const contactLimiter = createRateLimiter({
+  namespace: 'contact',
   windowMs: 60 * 60 * 1000,
   limit: 10,
   message: 'Transmission limit reached. Please try again later.',
+});
+const mfaLimiter = createRateLimiter({
+  namespace: 'admin-mfa-login',
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  message: 'Too many MFA verification attempts. Please try again later.',
 });
 
 // CORS
@@ -81,11 +89,12 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+app.use(express.json({ limit: '128kb' }));
+app.use(express.urlencoded({ extended: false, limit: '128kb', parameterLimit: 30 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/admin/login', loginLimiter);
+app.use('/api/admin/mfa/verify-login', mfaLimiter);
 app.use('/api/contact', contactLimiter);
 
 app.use('/api', publicRoutes);
@@ -103,6 +112,16 @@ app.get('/health', (req, res) => {
     status: ready ? 'OK' : 'DEGRADED',
     message: ready ? 'Shadow Portfolio Backend Operational' : 'Service is not ready.',
   });
+});
+
+// Return stable JSON without echoing parser errors, stack traces or request bodies.
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  const status = [400, 413, 415].includes(error.status) ? error.status : 500;
+  const message = status === 413 ? 'Request body is too large.'
+    : status === 415 ? 'Unsupported request encoding.'
+      : status === 400 ? 'Invalid request body.' : 'Request could not be completed.';
+  return res.status(status).json({ message });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -8,7 +8,8 @@ gsap.registerPlugin(ScrollTrigger);
 /** One motion system for entrances, scroll choreography, navigation and pointer depth. */
 export default function PortfolioMotion({ enabled = true }: { enabled?: boolean }) {
   const cursorRef = useRef<HTMLDivElement>(null);
-  const dotRef = useRef<HTMLDivElement>(null);
+  const trailRef = useRef<SVGSVGElement>(null);
+  const strokeRef = useRef<SVGPathElement>(null);
   useEffect(() => {
     const hero = document.querySelector<HTMLElement>('.hero');
     if (!hero) return;
@@ -119,23 +120,25 @@ export default function PortfolioMotion({ enabled = true }: { enabled?: boolean 
     const sections = navLinks.map(link => document.querySelector<HTMLElement>(link.hash)).filter((section): section is HTMLElement => !!section);
     let cursorFrame = 0;
     let progressFrame = 0;
-    let cursorX = 0, cursorY = 0, targetX = 0, targetY = 0;
     const cursor = cursorRef.current;
-    const dot = dotRef.current;
-    let cursorTime = 0;
+    const trail = trailRef.current;
+    const stroke = strokeRef.current;
+    let marks: { x: number; y: number; time: number }[] = [];
     const follow = () => {
       const now = performance.now();
-      const dt = Math.min((now - cursorTime) / 1000, .05);
-      cursorTime = now;
-      const ease = 1 - Math.exp(-dt * 19);
-      cursorX += (targetX - cursorX) * ease;
-      cursorY += (targetY - cursorY) * ease;
-      if (cursor) cursor.style.transform = `translate3d(${cursorX}px,${cursorY}px,0)`;
-      cursorFrame = Math.abs(targetX - cursorX) + Math.abs(targetY - cursorY) > .15 ? requestAnimationFrame(follow) : 0;
+      marks = marks.filter(point => now - point.time < 340);
+      if (stroke && trail) {
+        const path = marks.map((point, index) => `${index ? 'L' : 'M'}${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' ');
+        stroke.setAttribute('d', path);
+        trail.style.opacity = marks.length > 1 ? String(.28 * Math.max(0, 1 - (now - marks[marks.length - 1].time) / 340)) : '0';
+      }
+      cursorFrame = marks.length ? requestAnimationFrame(follow) : 0;
     };
     const hideCursor = () => {
       if (cursor) { delete cursor.dataset.visible; delete cursor.dataset.down; }
-      if (dot) delete dot.dataset.visible;
+      if (trail) trail.style.opacity = '0';
+      if (stroke) stroke.setAttribute('d', '');
+      marks = [];
       delete document.documentElement.dataset.cursor;
       cancelAnimationFrame(cursorFrame); cursorFrame = 0;
     };
@@ -143,15 +146,20 @@ export default function PortfolioMotion({ enabled = true }: { enabled?: boolean 
       if (!enabled || !cursor || preference.matches || !finePointer.matches || event.pointerType !== 'mouse' || document.querySelector('dialog[open]')) { hideCursor(); return; }
       const target = event.target instanceof Element ? event.target : null;
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) { hideCursor(); return; }
-      if (!cursor.dataset.visible) { cursorX = event.clientX; cursorY = event.clientY; }
-      targetX = event.clientX; targetY = event.clientY;
+      // The pencil tip tracks the real pointer exactly; only its short graphite trail lingers.
+      cursor.style.transform = `translate3d(${event.clientX}px,${event.clientY}px,0)`;
       document.documentElement.dataset.cursor = 'on';
       cursor.dataset.visible = 'true';
-      const actionable = target?.closest('a, button');
-      const mode = actionable ? 'action' : 'default';
-      cursor.dataset.mode = mode;
-      if (dot) { dot.dataset.visible = 'true'; dot.dataset.mode = mode; dot.style.transform = `translate3d(${targetX}px,${targetY}px,0)`; }
-      if (!cursorFrame) { cursorTime = performance.now(); cursorFrame = requestAnimationFrame(follow); }
+      cursor.dataset.mode = target?.closest('a, button') ? 'action' : 'default';
+      const surface = target?.closest('#philosophy, footer, .project-card-image') ? 'dark' : 'paper';
+      cursor.dataset.surface = surface;
+      if (trail) trail.dataset.surface = surface;
+      const last = marks[marks.length - 1];
+      if (!last || Math.hypot(event.clientX-last.x,event.clientY-last.y)>3) {
+        marks.push({ x: event.clientX, y: event.clientY, time: performance.now() });
+        if (marks.length > 24) marks.shift();
+      }
+      if (!cursorFrame) cursorFrame = requestAnimationFrame(follow);
     };
     const pressCursor = () => { if (cursor?.dataset.visible) cursor.dataset.down = 'true'; };
     const releaseCursor = () => { if (cursor) delete cursor.dataset.down; };
@@ -229,7 +237,15 @@ export default function PortfolioMotion({ enabled = true }: { enabled?: boolean 
   }, [enabled]);
   return <>
     <div className="reading-progress" aria-hidden="true" />
-    <div className="cursor-dot" ref={dotRef} aria-hidden="true" />
-    <div className="pointer-aura" ref={cursorRef} aria-hidden="true" />
+    <svg className="pencil-trail" ref={trailRef} aria-hidden="true"><path ref={strokeRef} fill="none" /></svg>
+    <div className="pointer-aura pencil-cursor" ref={cursorRef} aria-hidden="true">
+      <svg className="pencil-body" viewBox="0 0 36 48" fill="none">
+        <path className="pencil-wood" d="m4 44 3-15L25 4l8 6-18 25z" />
+        <path className="pencil-barrel" d="M7 29 25 4l8 6-18 25z" />
+        <path d="m7 29 8 6M10 30 28 6M4 44l5-3-4-3zM25 4l2-3 8 6-2 3" />
+        <path className="pencil-glint" d="m13 27 14-19" />
+      </svg>
+      <svg className="pencil-action-mark" viewBox="0 0 48 18" fill="none"><path d="M4 12c11-6 24-7 39-5M8 16l29-4" /></svg>
+    </div>
   </>;
 }

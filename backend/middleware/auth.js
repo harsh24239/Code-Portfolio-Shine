@@ -3,6 +3,7 @@ import { allowInMemoryFallback, sessionCookieName } from '../config/security.js'
 import { memoryStore } from '../store/memoryStore.js';
 import { getSession, destroySession, touchSession } from '../store/sessionStore.js';
 import { parseCookies } from '../utils/cookies.js';
+import { Admin } from '../models/Admin.js';
 
 export const protect = async (req, res, next) => {
   try {
@@ -12,7 +13,10 @@ export const protect = async (req, res, next) => {
 
     const token = parseCookies(req.headers.cookie)[sessionCookieName];
     const session = await getSession(token);
-    if (!session || session.tokenVersion !== (memoryStore.adminCredentials.tokenVersion || 0)) {
+    const admin = session && (isDbConnected
+      ? await Admin.findById(session.adminId).select('tokenVersion mfaEnabled')
+      : memoryStore.adminCredentials);
+    if (!session || !admin || session.tokenVersion !== (admin.tokenVersion || 0) || (admin.mfaEnabled && !session.mfaVerified)) {
       if (token) await destroySession(token);
       return res.status(401).json({ message: 'Not authorized, session expired.' });
     }

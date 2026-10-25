@@ -1,5 +1,5 @@
 import './index.css';
-import { lazy, Suspense, useState, useEffect, useRef, FormEvent } from 'react';
+import { useState, useEffect, useRef, FormEvent } from 'react';
 import { Pause, Play } from 'lucide-react';
 import PortfolioMotion from './components/portfolio/PortfolioMotion';
 import useMotionState from './components/portfolio/useMotionState';
@@ -7,11 +7,16 @@ import './components/portfolio/interface-rich.css';
 import './components/portfolio/motion-detail.css';
 import './components/portfolio/projects.css';
 import './components/portfolio/responsive.css';
-import heroImg from '@assets/43aacf07-6d68-4564-9e49-16083d623024_1785459834010.jpg';
+import './components/portfolio/paper-theme.css';
+import './components/portfolio/sketchbook.css';
+import PortraitStudy from './components/portfolio/PortraitStudy';
+import HeroCornerShading from './components/portfolio/HeroCornerShading';
+import GraphiteSmudge from './components/portfolio/GraphiteSmudge';
+import { FocusDrawing, SketchProjectVisual, ToolkitDrawing } from './components/portfolio/SketchArtwork';
 import { fetchPortfolio, mergeProfile } from './lib/portfolio-api';
+import { contactEmailLink, submitContact } from './lib/contact-api';
 
 const API_BASE = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
-const HeroStage = lazy(() => import('./components/portfolio/HeroStage'));
 
 const safeExternalUrl = (value: string | undefined, fallback = '#contact') => {
   if (!value) return fallback;
@@ -291,42 +296,7 @@ function getProjectBrief(project: Project, kind: ProjectKind) {
 }
 
 function renderProjectVisual(kind: ProjectKind) {
-  if (kind === 'ai') {
-    return (
-      <div className="project-signal project-signal-ai">
-        <div className="signal-grid" />
-        <div className="signal-ai-flow">
-          <span>ASK</span><i aria-hidden="true" />
-          <span>RETRIEVE</span><i aria-hidden="true" />
-          <span>RESPOND</span>
-        </div>
-        <div className="signal-orbit signal-orbit-one" />
-        <div className="signal-orbit signal-orbit-two" />
-      </div>
-    );
-  }
-
-  if (kind === 'data') {
-    return (
-      <div className="project-signal project-signal-data">
-        <div className="signal-dashboard-head"><span /> <span /> <span /></div>
-        <div className="signal-dashboard-main">
-          <div className="signal-chart"><i /><i /><i /><i /><i /></div>
-          <div className="signal-table"><span /><span /><span /><span /></div>
-        </div>
-        <div className="signal-dashboard-footer"><span /><span /><span /></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="project-signal project-signal-systems">
-      <div className="signal-stack"><span>UI</span><span>SERVICE</span><span>DAO</span></div>
-      <div className="signal-stack-line signal-stack-line-one" />
-      <div className="signal-stack-line signal-stack-line-two" />
-      <span className="signal-stack-caption">SECURE DATA FLOW</span>
-    </div>
-  );
+  return <SketchProjectVisual kind={kind} />;
 }
 
 function ProjectCard({ project, index, isFeatured = false }: { project: Project; index: number; isFeatured?: boolean }) {
@@ -344,6 +314,7 @@ function ProjectCard({ project, index, isFeatured = false }: { project: Project;
           <span className="project-cover-number">{String(index + 1).padStart(2, '0')}</span>
           <span className="project-cover-label">{isFeatured ? 'Featured build' : presentation.kindLabel}</span>
           <span className="project-cover-corner">↗</span>
+          <GraphiteSmudge className="project-rub" />
           {renderProjectVisual(presentation.kind)}
         </div>
         <div className="project-card-body">
@@ -385,7 +356,7 @@ export default function App() {
   const [contactEmail, setContactEmail] = useState('');
   const [contactSubject, setContactSubject] = useState('');
   const [contactMessage, setContactMessage] = useState('');
-  const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'success' | 'saved' | 'error'>('idle');
   const [contactError, setContactError] = useState('');
 
   useEffect(() => {
@@ -476,6 +447,7 @@ export default function App() {
 
   const handleContactSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (contactStatus === 'sending' || contactStatus === 'saved') return;
     if (!contactName.trim() || !contactEmail.trim() || !contactMessage.trim()) {
       setContactError('Complete your name, email, and message before transmitting.');
       setContactStatus('error');
@@ -485,31 +457,22 @@ export default function App() {
     setContactStatus('sending');
 
     try {
-      const res = await fetch(`${API_BASE}/api/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: contactName,
-          email: contactEmail,
-          subject: contactSubject,
-          message: contactMessage,
-        }),
+      const delivery = await submitContact(`${API_BASE}/api/contact`, {
+        name: contactName.trim(),
+        email: contactEmail.trim(),
+        subject: contactSubject.trim(),
+        message: contactMessage.trim(),
       });
-
-      if (res.ok) {
+      if (delivery === 'accepted') {
         setContactStatus('success');
         setContactName('');
         setContactEmail('');
         setContactSubject('');
         setContactMessage('');
         setContactError('');
-        setTimeout(() => setContactStatus('idle'), 5000);
-      } else {
-        setContactError(`Transmission failed. Please email directly to ${profile.email}.`);
-        setContactStatus('error');
-      }
+      } else setContactStatus('saved');
     } catch {
-      setContactError(`Transmission failed. Please email directly to ${profile.email}.`);
+      setContactError('I couldn’t confirm receipt. Your message is still here; you can use the direct email link below.');
       setContactStatus('error');
     }
   };
@@ -595,11 +558,8 @@ export default function App() {
       <main>
         {/* HERO */}
         <header className="hero" aria-label="Hero">
-          <div className="hero-bg-image" aria-hidden="true">
-            <img src={heroImg} alt="" loading="eager" />
-          </div>
-          <Suspense fallback={null}>{heroEnhancementReady && <HeroStage enabled={motionEnabled} />}</Suspense>
-
+          <HeroCornerShading />
+          <PortraitStudy interactive={heroEnhancementReady} motionEnabled={motionEnabled} />
           <div className="container">
             <div className="hero-text">
               <p className="hero-eyebrow">
@@ -635,15 +595,10 @@ export default function App() {
 
           <div className="hero-scroll-hint" aria-hidden="true">
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-              <polyline points="2,5 7,10 12,5" fill="none" stroke="#4a4040" strokeWidth="1.5" />
+              <polyline points="2,5 7,10 12,5" fill="none" stroke="currentColor" strokeWidth="1.5" />
             </svg>
             Scroll
           </div>
-          {heroEnhancementReady && (
-            <div className="hero-interaction-note" aria-hidden="true">
-              <span>01</span> Hover portrait to decode
-            </div>
-          )}
         </header>
 
         {/* SKILLS */}
@@ -654,9 +609,13 @@ export default function App() {
                 <p className="skills-eyebrow">SKILLS &amp; STACK</p>
                 <h2>
                   THE <br />TECH <br />
-                  <span style={{ color: 'rgb(194, 0, 0)', WebkitTextFillColor: 'rgb(194, 0, 0)' }}>ARSENAL</span>
+                  <span style={{ color: 'var(--accent)', WebkitTextFillColor: 'var(--accent)' }}>ARSENAL</span>
                 </h2>
                 <p>A practical stack for shipping interfaces, APIs, and intelligent systems.</p>
+                <div className="toolkit-study">
+                  <GraphiteSmudge className="toolkit-rub" />
+                  <ToolkitDrawing />
+                </div>
               </div>
               <div className="skills-grid">
                 {skills.map((skill, index) => {
@@ -667,6 +626,7 @@ export default function App() {
 
                   return (
                     <div className="skill-item" key={String(getItemId(skill) || index)}>
+                      <span className="skill-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
                       {renderSkillIcon(skill.iconType, index)}
                       <div className="skill-name">{title}</div>
                       <p className="skill-desc">{description}</p>
@@ -712,9 +672,9 @@ export default function App() {
                 <p className="philosophy-eyebrow">The Code</p>
                 <h2>HOW THE<br />SHADOW<br />OPERATES</h2>
                 <blockquote className="philosophy-quote">
-                  "Mastery is not speed.<br />
+                  Mastery is not speed.<br />
                   It is the elimination<br />
-                  of wasted motion."
+                  of wasted motion.
                 </blockquote>
                 <p className="philosophy-body">Years of practice have produced one conclusion: every unnecessary element is a vulnerability. The strongest systems are not complex — they are ruthlessly refined.</p>
               </div>
@@ -742,10 +702,14 @@ export default function App() {
             <h2 className="testimonials-heading">OPERATIONAL FOCUS</h2>
             <div className="skills-grid" style={{ marginTop: '2.5rem' }}>
               {focusAreas.map((f, i) => (
-                <div className="skill-item" key={String(getItemId(f) || i)} style={{ padding: '2.25rem 1.75rem' }}>
-                  <div className="project-tag" style={{ marginBottom: '0.75rem' }}>{f.tag}</div>
-                  <div className="skill-name" style={{ fontSize: '1.35rem', marginBottom: '0.75rem' }}>{f.title}</div>
-                  <p className="skill-desc">{f.desc}</p>
+                <div className="skill-item focus-card" key={String(getItemId(f) || i)}>
+                  <GraphiteSmudge className="focus-rub" />
+                  <FocusDrawing index={i} />
+                  <div className="focus-copy">
+                    <div className="project-tag" style={{ marginBottom: '0.75rem' }}>{f.tag}</div>
+                    <div className="skill-name" style={{ fontSize: '1.35rem', marginBottom: '0.75rem' }}>{f.title}</div>
+                    <p className="skill-desc">{f.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -829,15 +793,17 @@ export default function App() {
                   <p className="contact-avail-detail">{statusDetail}</p>
                 </div>
 
-                <form onSubmit={handleContactSubmit} aria-label="Contact form" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <form className="correspondence-sheet" onSubmit={handleContactSubmit} onChange={() => { if (contactStatus !== 'sending') { setContactStatus('idle'); setContactError(''); } }} aria-label="Contact form" aria-busy={contactStatus === 'sending'} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div className="contact-inputs-row">
                     <label className="sr-only" htmlFor="contact-name">Your name</label>
                     <input
                       id="contact-name"
+                      disabled={contactStatus === 'sending'}
                       type="text"
                       placeholder="YOUR NAME"
                       aria-label="Your name"
                       autoComplete="name"
+                      maxLength={120}
                       required
                       value={contactName}
                       onChange={(e) => setContactName(e.target.value)}
@@ -854,10 +820,12 @@ export default function App() {
                     <label className="sr-only" htmlFor="contact-email">Your email</label>
                     <input
                       id="contact-email"
+                      disabled={contactStatus === 'sending'}
                       type="email"
                       placeholder="YOUR EMAIL"
                       aria-label="Your email"
                       autoComplete="email"
+                      maxLength={254}
                       required
                       value={contactEmail}
                       onChange={(e) => setContactEmail(e.target.value)}
@@ -875,9 +843,11 @@ export default function App() {
                   <label className="sr-only" htmlFor="contact-subject">Subject or inquiry</label>
                   <input
                     id="contact-subject"
+                    disabled={contactStatus === 'sending'}
                     type="text"
                     placeholder="SUBJECT / INQUIRY"
                     aria-label="Subject or inquiry"
+                    maxLength={200}
                     value={contactSubject}
                     onChange={(e) => setContactSubject(e.target.value)}
                     style={{
@@ -892,9 +862,11 @@ export default function App() {
                   <label className="sr-only" htmlFor="contact-message">Your message</label>
                   <textarea
                     id="contact-message"
+                    disabled={contactStatus === 'sending'}
                     placeholder="YOUR TRANSMISSION MESSAGE..."
                     aria-label="Your message"
                     rows={4}
+                    maxLength={16000}
                     required
                     value={contactMessage}
                     onChange={(e) => setContactMessage(e.target.value)}
@@ -912,19 +884,24 @@ export default function App() {
                   <button
                     type="submit"
                     className="btn-primary"
-                    disabled={contactStatus === 'sending'}
+                    disabled={contactStatus === 'sending' || contactStatus === 'saved'}
                     style={{ width: '100%', justifyContent: 'center' }}
                   >
-                    {contactStatus === 'sending' ? 'TRANSMITTING...' : 'TRANSMIT SIGNAL →'}
+                    {contactStatus === 'sending' ? 'TRANSMITTING...' : contactStatus === 'saved' ? 'MESSAGE SAVED ✓' : 'TRANSMIT SIGNAL →'}
                   </button>
 
+                  <p className="contact-delivery-note">Prefer email? <a href={contactEmailLink(profile.email, { name: contactName, email: contactEmail, subject: contactSubject, message: contactMessage })}>{profile.email}</a></p>
+
                   {contactStatus === 'success' && (
-                    <p role="status" aria-live="polite" style={{ color: '#40ff80', fontSize: 'var(--text-sm)', textAlign: 'center' }}>
-                      ✓ Signal transmitted successfully! Check your inbox soon.
+                    <p role="status" aria-live="polite" style={{ color: 'var(--success)', fontSize: 'var(--text-sm)', textAlign: 'center' }}>
+                      ✓ Message sent to my email. I’ll reply to the address you provided.
                     </p>
                   )}
+                  {contactStatus === 'saved' && (
+                    <p role="status" aria-live="polite" className="contact-delivery-note">Your message is saved in my portfolio inbox. Email delivery wasn’t confirmed; you can also use the email link above.</p>
+                  )}
                   {contactStatus === 'error' && (
-                    <p role="alert" aria-live="assertive" style={{ color: '#ff6060', fontSize: 'var(--text-sm)', textAlign: 'center' }}>
+                    <p role="alert" aria-live="assertive" style={{ color: 'var(--error)', fontSize: 'var(--text-sm)', textAlign: 'center' }}>
                       ⚠ {contactError}
                     </p>
                   )}
@@ -938,6 +915,13 @@ export default function App() {
       {/* FOOTER */}
       <footer className="site-footer">
         <div className="container">
+          <div className="footer-closing">
+            <p className="footer-closing-note">One more idea?</p>
+            <a href="#contact" className="footer-invitation">
+              <span>Let’s make<br /><em>something good.</em></span>
+              <svg viewBox="0 0 110 110" fill="none" aria-hidden="true"><path d="M17 91 91 17M32 17h59v59" /><path d="m21 94 74-73M35 13l60 1 1 62" /></svg>
+            </a>
+          </div>
           <div className="footer-inner">
             <div className="footer-brand">
               <a className="footer-logo" href="#">HARSH.DEV</a>
