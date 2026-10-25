@@ -100,7 +100,7 @@ export const sendPasswordResetOTP = async ({ otpCode, actionName = 'Security Ver
   const targetEmail = process.env.NOTIFY_EMAIL || process.env.EMAIL_USER;
 
   if (!emailUser || !emailPass) {
-    console.log(`ℹ ${actionName} OTP [ ${otpCode} ] generated for Admin verification.`);
+    console.info('Admin verification email is not configured. No email was sent.');
     return false;
   }
 

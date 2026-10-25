@@ -1,8 +1,13 @@
 export const parseCookies = (header = '') => Object.fromEntries(
-  header.split(';').map((part) => part.trim()).filter(Boolean).map((part) => {
+  header.split(';').map((part) => part.trim()).filter(Boolean).flatMap((part) => {
     const separator = part.indexOf('=');
-    if (separator === -1) return [part, ''];
-    return [part.slice(0, separator), decodeURIComponent(part.slice(separator + 1))];
+    if (separator === -1) return [];
+    try {
+      return [[part.slice(0, separator), decodeURIComponent(part.slice(separator + 1))]];
+    } catch {
+      // A malformed cookie must not turn a public request into a server error.
+      return [];
+    }
   }),
 );
 

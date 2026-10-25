@@ -24,7 +24,9 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: Number(process.env.PORT) || 3000,
-      host: '0.0.0.0',
+      // Keep development source and debugging endpoints off the local network.
+      // LAN testing can be explicitly enabled with DEV_SERVER_HOST when needed.
+      host: process.env.DEV_SERVER_HOST || '127.0.0.1',
       proxy: {
         '/api': {
           target: env.API_PROXY_TARGET || 'http://127.0.0.1:5050',

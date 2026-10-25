@@ -3,6 +3,7 @@ import { once } from 'node:events';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import test, { afterEach, beforeEach } from 'node:test';
+import { generate } from 'otplib';
 
 const backendDir = fileURLToPath(new URL('../', import.meta.url));
 let nextPort = 5300;
@@ -23,6 +24,7 @@ const startServer = async () => {
       ADMIN_USERNAME: 'testadmin',
       ADMIN_PASSWORD: 'test-password-123',
       SESSION_SECRET: 'test-session-secret-that-is-long-enough-123',
+      MFA_ENCRYPTION_KEY: '01'.repeat(32),
       PORT: String(port),
     },
     stdio: ['ignore', 'ignore', 'pipe'],
@@ -229,4 +231,72 @@ test('enforces the shared in-memory limiter and clears login throttles', async (
   assert.equal((await getLoginThrottle(key)).blocked, true);
   await clearLoginThrottle(key);
   assert.equal((await getLoginThrottle(key)).blocked, false);
+});
+
+test('parallel MFA verification cannot reuse a challenge or recovery code', async () => {
+  const client = new TestClient(activeServer.baseUrl);
+  assert.equal((await client.login()).response.status, 200);
+  const post = (user, path, code) => user.request(path, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': user.csrfToken },
+    body: JSON.stringify(code === undefined ? {} : { code }),
+  });
+  const setup = await post(client, '/api/admin/mfa/setup');
+  assert.equal(setup.response.status, 200);
+  const confirmed = await post(client, '/api/admin/mfa/confirm', await generate({ secret: setup.body.manualKey }));
+  assert.equal(confirmed.response.status, 200);
+  assert.equal(confirmed.body.backupCodes.length, 10);
+  assert.equal((await client.login()).body.mfaRequired, true);
+
+  const results = await Promise.all(Array.from({ length: 8 }, () => post(client, '/api/admin/mfa/verify-login', confirmed.body.backupCodes[0])));
+  assert.equal(results.filter(result => result.response.status === 200).length, 1);
+  assert.ok(results.every(result => [200, 401].includes(result.response.status)));
+
+  const second = new TestClient(activeServer.baseUrl);
+  assert.equal((await second.login()).body.mfaRequired, true);
+  assert.equal((await post(second, '/api/admin/mfa/verify-login', confirmed.body.backupCodes[0])).response.status, 401);
+  assert.equal((await post(second, '/api/admin/mfa/verify-login', confirmed.body.backupCodes[1])).response.status, 200);
+  assert.equal((await second.request('/api/admin/me')).response.status, 200);
+});
+
+test('MFA verification has its own rate limit and cannot consume the password-login budget', async () => {
+  const client = new TestClient(activeServer.baseUrl);
+  await client.bootstrapCsrf();
+  for (let attempt = 0; attempt < 21; attempt += 1) {
+    const result = await client.request('/api/admin/mfa/verify-login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': client.csrfToken },
+      body: JSON.stringify({ code: 'invalid' }),
+    });
+    assert.equal(result.response.status, attempt < 20 ? 401 : 429);
+  }
+  assert.equal((await client.login()).response.status, 200);
+});
+
+test('malformed and oversized requests return safe errors without exposing internals', async () => {
+  const client = new TestClient(activeServer.baseUrl);
+  const invalid = await client.request('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{not-json' });
+  assert.equal(invalid.response.status, 400);
+  assert.deepEqual(invalid.body, { message: 'Invalid request body.' });
+  const oversized = await client.request('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'x'.repeat(140000) }) });
+  assert.equal(oversized.response.status, 413);
+  assert.deepEqual(oversized.body, { message: 'Request body is too large.' });
+  const csrf = await client.request('/api/admin/csrf', { headers: { Cookie: 'broken=%E0%A4%A' } });
+  assert.equal(csrf.response.status, 200);
+  assert.ok(csrf.body.csrfToken);
+  const denied = await client.request('/api/admin/messages');
+  assert.equal(denied.response.status, 401);
+  assert.match(denied.response.headers.get('cache-control'), /no-store/);
+  assert.equal(denied.response.headers.get('x-content-type-options'), 'nosniff');
+  assert.match(denied.response.headers.get('content-security-policy'), /frame-ancestors 'none'/);
+});
+
+test('password changes reject values that bcrypt would silently truncate', async () => {
+  const client = new TestClient(activeServer.baseUrl);
+  assert.equal((await client.login()).response.status, 200);
+  const result = await client.request('/api/admin/change-password', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': client.csrfToken },
+    body: JSON.stringify({ currentPassword: 'test-password-123', newPassword: '🔒'.repeat(19) }),
+  });
+  assert.equal(result.response.status, 400);
+  assert.match(result.body.message, /72 UTF-8 bytes/);
+  assert.equal((await client.request('/api/admin/me')).response.status, 200);
 });

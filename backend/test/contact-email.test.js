@@ -70,6 +70,8 @@ test('missing sender configuration does not attempt a network call', async (t) =
 test('contact endpoint retains the saved message when email is unavailable and confirms provider acceptance accurately', async (t) => {
   configure();
   mongoose.connection.readyState = 1;
+  const { memoryStore } = await import('../store/memoryStore.js');
+  const initialCacheSize = memoryStore.messages.length;
   const create = t.mock.method(Message, 'create', async (data) => ({ ...data, _id: 'saved-message-1', createdAt: new Date() }));
   let accepted = false;
   const send = t.mock.method(globalThis, 'fetch', async () => accepted ? Response.json({ id: 'provider-1' }) : Response.json({ message: 'Unavailable' }, { status: 503 }));
@@ -93,4 +95,5 @@ test('contact endpoint retains the saved message when email is unavailable and c
   response = await post(fields);
   assert.equal((await response.json()).emailDelivery, 'accepted');
   assert.equal(create.mock.callCount(), 2, 'each valid request keeps its persistent inbox copy');
+  assert.equal(memoryStore.messages.length, initialCacheSize, 'MongoDB messages must not accumulate in process memory');
 });

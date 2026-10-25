@@ -151,10 +151,11 @@ export const verifyCsrf = (session, csrfToken) => Boolean(
   ),
 );
 
-export const createMfaChallenge = async (adminId) => {
+export const createMfaChallenge = async (adminId, tokenVersion = 0) => {
   const token = crypto.randomBytes(32).toString('base64url');
   const challenge = {
     adminId: String(adminId),
+    tokenVersion,
     expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     attempts: 0,
   };
@@ -173,31 +174,41 @@ export const consumeMfaChallenge = async (token) => {
   if (!token) return null;
   const challengeHash = digest(token);
   if (isDbConnected) {
-    const challenge = await AdminMfaChallenge.findOne({ challengeHash });
-    if (!challenge || challenge.expiresAt <= new Date() || challenge.attempts >= 5) {
-      if (challenge) await AdminMfaChallenge.deleteOne({ _id: challenge._id });
-      return null;
-    }
+    // Reserve an attempt before any expensive verification; concurrent guesses
+    // must compete for the same five slots across every server instance.
+    const challenge = await AdminMfaChallenge.findOneAndUpdate(
+      { challengeHash, expiresAt: { $gt: new Date() }, attempts: { $lt: 5 } },
+      { $inc: { attempts: 1 } },
+      { new: true },
+    );
+    if (!challenge) return null;
     return { ...challenge.toObject(), challengeHash };
   }
 
   if (!allowInMemoryFallback) return null;
   const challenge = memoryMfaChallenges.get(challengeHash);
-  if (!challenge || challenge.expiresAt <= new Date() || challenge.attempts >= 5) {
+  if (!challenge || challenge.expiresAt <= new Date()) {
     memoryMfaChallenges.delete(challengeHash);
     return null;
   }
+  if (challenge.attempts >= 5) return null;
+  challenge.attempts += 1;
   return { ...challenge, challengeHash };
 };
 
-export const incrementMfaChallengeAttempts = async (challenge) => {
-  if (!challenge) return;
+export const redeemMfaChallenge = async (token) => {
+  if (!token) return false;
+  const challengeHash = digest(token);
   if (isDbConnected) {
-    await AdminMfaChallenge.updateOne({ _id: challenge._id }, { $inc: { attempts: 1 } });
-    return;
+    const result = await AdminMfaChallenge.deleteOne({
+      challengeHash, expiresAt: { $gt: new Date() }, attempts: { $gte: 1, $lte: 5 },
+    });
+    return result.deletedCount === 1;
   }
-  const current = memoryMfaChallenges.get(challenge.challengeHash);
-  if (current) current.attempts += 1;
+  if (!allowInMemoryFallback) return false;
+  const challenge = memoryMfaChallenges.get(challengeHash);
+  if (!challenge || challenge.expiresAt <= new Date() || challenge.attempts < 1 || challenge.attempts > 5) return false;
+  return memoryMfaChallenges.delete(challengeHash);
 };
 
 export const destroyMfaChallenge = async (token) => {

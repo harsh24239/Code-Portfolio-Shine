@@ -12,7 +12,8 @@ import { FocusArea } from '../models/FocusArea.js';
 import { Message } from '../models/Message.js';
 import { protect } from '../middleware/auth.js';
 import { requireCsrf, issueCsrfToken } from '../middleware/csrf.js';
-import { consumeMfaChallenge, createMfaChallenge, createSession, destroyAdminSessions, destroyMfaChallenge, destroySession, incrementMfaChallengeAttempts, listAdminSessions, revokeAdminSession, revokeOtherAdminSessions } from '../store/sessionStore.js';
+import { consumeMfaChallenge, createMfaChallenge, createSession, destroyAdminSessions, destroyMfaChallenge, destroySession, redeemMfaChallenge, listAdminSessions, revokeAdminSession, revokeOtherAdminSessions } from '../store/sessionStore.js';
+import { claimMfaProof } from '../store/mfaProofStore.js';
 import { listAuditEvents, recordAuditEvent } from '../store/auditStore.js';
 import { clearLoginThrottle, getLoginThrottle, registerLoginFailure } from '../store/loginThrottleStore.js';
 import { appendCookie, parseCookies, serializeCookie } from '../utils/cookies.js';
@@ -217,7 +218,7 @@ router.post('/login', requireCsrf, async (req, res) => {
     if (isValid) {
       await clearLoginThrottle(loginKey);
       if (authAdmin.mfaEnabled) {
-        const challenge = await createMfaChallenge(authUserId);
+        const challenge = await createMfaChallenge(authUserId, authAdmin.tokenVersion || 0);
         setMfaChallengeCookie(res, challenge.token);
         await recordAuditEvent({ event: 'login_mfa_required', adminId: authUserId, req });
         return res.json({ mfaRequired: true, username: authUsername });
@@ -227,7 +228,7 @@ router.post('/login', requireCsrf, async (req, res) => {
       if (!csrfToken) return res.status(403).json({ message: 'CSRF bootstrap required.' });
       const session = await createSession({
         adminId: authUserId,
-        tokenVersion: memoryStore.adminCredentials.tokenVersion || 0,
+        tokenVersion: authAdmin.tokenVersion || 0,
         csrfToken,
         mfaVerified: true,
         ip: req.ip,
@@ -267,7 +268,7 @@ router.post('/mfa/verify-login', requireCsrf, async (req, res) => {
     }
 
     const admin = await getAdminRecord(challenge.adminId);
-    if (!admin?.mfaEnabled || !admin.mfaSecret) {
+    if (!admin?.mfaEnabled || !admin.mfaSecret || challenge.tokenVersion !== (admin.tokenVersion || 0)) {
       await destroyMfaChallenge(challengeToken);
       clearMfaChallengeCookie(res);
       return res.status(401).json({ message: 'MFA is not configured for this account.' });
@@ -276,7 +277,7 @@ router.post('/mfa/verify-login', requireCsrf, async (req, res) => {
     const code = normalizeText(req.body?.code, 32);
     let valid = false;
     let timeStep = null;
-    let backupCodes = admin.mfaBackupCodes || [];
+    let backupHash = '';
     const secret = decryptSecret(admin.mfaSecret);
     const totp = await verifyTotp(secret, code, admin.mfaLastUsedStep || -1);
     if (totp.valid) {
@@ -284,31 +285,35 @@ router.post('/mfa/verify-login', requireCsrf, async (req, res) => {
       timeStep = totp.timeStep;
     } else {
       const normalizedBackupCode = normalizeBackupCode(code);
-      for (const backupCode of backupCodes) {
+      for (const backupCode of /^[A-F0-9]{10}$/.test(normalizedBackupCode) ? admin.mfaBackupCodes || [] : []) {
         if (backupCode.usedAt || !await bcrypt.compare(normalizedBackupCode, backupCode.hash)) continue;
-        backupCode.usedAt = new Date();
+        backupHash = backupCode.hash;
         valid = true;
         break;
       }
     }
 
     if (!valid) {
-      await incrementMfaChallengeAttempts(challenge);
       await recordAuditEvent({ event: 'mfa_failure', outcome: 'failure', adminId: challenge.adminId, req, details: 'invalid_code' });
       return res.status(401).json({ message: 'Invalid MFA code.' });
     }
 
-    await destroyMfaChallenge(challengeToken);
+    if (!await redeemMfaChallenge(challengeToken) || !await claimMfaProof({
+      adminId: challenge.adminId,
+      tokenVersion: challenge.tokenVersion,
+      secretCiphertext: admin.mfaSecret.ciphertext,
+      timeStep,
+      backupHash,
+    })) {
+      await recordAuditEvent({ event: 'mfa_failure', outcome: 'failure', adminId: challenge.adminId, req, details: 'proof_already_used_or_revoked' });
+      return res.status(401).json({ message: 'MFA verification expired or was already used. Start login again.' });
+    }
     clearMfaChallengeCookie(res);
-    const changes = timeStep === null
-      ? { mfaBackupCodes: backupCodes }
-      : { mfaBackupCodes: backupCodes, mfaLastUsedStep: timeStep };
-    await updateAdminRecord(challenge.adminId, changes);
     const csrfToken = parseCookies(req.headers.cookie)[csrfCookieName] || '';
     if (!csrfToken) return res.status(403).json({ message: 'CSRF bootstrap required.' });
     const session = await createSession({
       adminId: challenge.adminId,
-      tokenVersion: memoryStore.adminCredentials.tokenVersion || 0,
+      tokenVersion: challenge.tokenVersion,
       csrfToken,
       mfaVerified: true,
       ip: req.ip,
@@ -469,11 +474,14 @@ router.post('/mfa/disable', async (req, res) => {
     const admin = await getAdminRecord(req.user.id);
     if (!admin.mfaEnabled) return res.status(400).json({ message: 'MFA is not enabled.' });
     const password = typeof req.body?.currentPassword === 'string' ? req.body.currentPassword : '';
-    if (!await bcrypt.compare(password, getAdminPasswordHash())) {
+    if (!await bcrypt.compare(password, admin.password || admin.passwordHash || '')) {
       return res.status(400).json({ message: 'Current password is incorrect.' });
     }
     const result = await verifyTotp(decryptSecret(admin.mfaSecret), req.body?.code, admin.mfaLastUsedStep || -1);
     if (!result.valid) return res.status(400).json({ message: 'Invalid authenticator code.' });
+    if (!await claimMfaProof({ adminId: req.user.id, tokenVersion: admin.tokenVersion || 0, secretCiphertext: admin.mfaSecret.ciphertext, timeStep: result.timeStep })) {
+      return res.status(400).json({ message: 'Authenticator code was already used. Wait for a new code.' });
+    }
 
     await updateAdminRecord(req.user.id, {
       mfaEnabled: false,
@@ -499,6 +507,9 @@ router.post('/mfa/regenerate-backup-codes', async (req, res) => {
     if (!admin.mfaEnabled) return res.status(400).json({ message: 'Enable MFA before generating recovery codes.' });
     const result = await verifyTotp(decryptSecret(admin.mfaSecret), req.body?.code, admin.mfaLastUsedStep || -1);
     if (!result.valid) return res.status(400).json({ message: 'Invalid authenticator code.' });
+    if (!await claimMfaProof({ adminId: req.user.id, tokenVersion: admin.tokenVersion || 0, secretCiphertext: admin.mfaSecret.ciphertext, timeStep: result.timeStep })) {
+      return res.status(400).json({ message: 'Authenticator code was already used. Wait for a new code.' });
+    }
     const backupCodes = generateBackupCodes();
     await updateAdminRecord(req.user.id, {
       mfaBackupCodes: await hashBackupCodes(backupCodes),
@@ -530,7 +541,9 @@ router.put('/change-username', async (req, res) => {
 
   try {
     // Verify current password
-    const hash = getAdminPasswordHash();
+    const admin = await getAdminRecord(req.user.id);
+    if (!admin) return res.status(401).json({ message: 'Admin account is unavailable.' });
+    const hash = admin.password || admin.passwordHash || '';
     const isMatch = await bcrypt.compare(currentPassword, hash);
     if (!isMatch) {
       return res.status(400).json({ message: 'Current password incorrect.' });
@@ -540,13 +553,10 @@ router.put('/change-username', async (req, res) => {
 
     // 1. Save to MongoDB (permanent)
     if (isDbConnected) {
-      const admin = await Admin.findOne();
-      if (admin) {
-        admin.username = trimmed;
-        admin.tokenVersion = (admin.tokenVersion || 0) + 1;
-        await admin.save();
-        memoryStore.adminCredentials.tokenVersion = admin.tokenVersion;
-      }
+      admin.username = trimmed;
+      admin.tokenVersion = (admin.tokenVersion || 0) + 1;
+      await admin.save();
+      memoryStore.adminCredentials.tokenVersion = admin.tokenVersion;
     }
 
     // 2. Update in-memory cache
@@ -569,13 +579,15 @@ router.put('/change-password', async (req, res) => {
   const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
 
   if (!requireAdminStorage(res)) return;
-  if (!currentPassword || newPassword.length < 12) {
-    return res.status(400).json({ message: 'Current password and new password (min 12 chars) required.' });
+  if (!currentPassword || newPassword.length < 12 || Buffer.byteLength(newPassword, 'utf8') > 72) {
+    return res.status(400).json({ message: 'Current password and a new password of at least 12 characters and at most 72 UTF-8 bytes are required.' });
   }
 
   try {
     // Verify current password
-    const hash = getAdminPasswordHash();
+    const admin = await getAdminRecord(req.user.id);
+    if (!admin) return res.status(401).json({ message: 'Admin account is unavailable.' });
+    const hash = admin.password || admin.passwordHash || '';
     const isMatch = await bcrypt.compare(currentPassword, hash);
     if (!isMatch) {
       return res.status(400).json({ message: 'Current password incorrect.' });
@@ -586,13 +598,10 @@ router.put('/change-password', async (req, res) => {
 
     // 1. Save to MongoDB (permanent) — store pre-hashed value, Admin pre-save hook skips re-hash
     if (isDbConnected) {
-      const admin = await Admin.findOne();
-      if (admin) {
-        admin.password = newHash; // already hashed — hook skips because starts with '$2'
-        admin.tokenVersion = (admin.tokenVersion || 0) + 1;
-        await admin.save();
-        memoryStore.adminCredentials.tokenVersion = admin.tokenVersion;
-      }
+      admin.password = newHash;
+      admin.tokenVersion = (admin.tokenVersion || 0) + 1;
+      await admin.save();
+      memoryStore.adminCredentials.tokenVersion = admin.tokenVersion;
     }
 
     // 2. Update in-memory cache

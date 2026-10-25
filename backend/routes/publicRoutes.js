@@ -91,13 +91,6 @@ router.post('/contact', async (req, res) => {
         message,
       });
       messageId = doc._id;
-      memoryStore.messages.unshift({
-        _id: String(doc._id),
-        name, email,
-        subject,
-        message,
-        createdAt: doc.createdAt,
-      });
     } else {
       const newMsg = {
         _id: String(Date.now()),
@@ -107,6 +100,7 @@ router.post('/contact', async (req, res) => {
         createdAt: new Date().toISOString(),
       };
       memoryStore.messages.unshift(newMsg);
+      memoryStore.messages.splice(100);
       messageId = newMsg._id;
     }
 
