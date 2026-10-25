@@ -40,8 +40,8 @@ jobs:
       - name: Run backend tests
         run: npm test
 
-      - name: Audit production dependencies
-        run: npm audit --omit=dev
+      - name: Audit all dependencies
+        run: npm audit
 
   frontend:
     name: Frontend typecheck and build
@@ -72,5 +72,5 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Audit production dependencies
-        run: npm audit --omit=dev
+      - name: Audit all dependencies
+        run: npm audit
