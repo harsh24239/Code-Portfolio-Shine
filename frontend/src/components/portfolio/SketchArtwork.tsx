@@ -1,6 +1,6 @@
 import { useId, type CSSProperties } from 'react';
 
-export function SketchProjectVisual({ kind }: { kind: 'ai' | 'data' | 'systems' }) {
+export function SketchProjectVisual({ kind }: { kind: 'ai' | 'data' | 'systems' | 'agent-safety' | 'vr' }) {
   const id = useId().replace(/:/g, '');
   return <svg className={`sketch-project sketch-project-${kind}`} viewBox="0 0 480 300" fill="none" aria-hidden="true">
     <defs>
@@ -8,7 +8,42 @@ export function SketchProjectVisual({ kind }: { kind: 'ai' | 'data' | 'systems' 
       <marker id={`arrow-${id}`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="m1 1 7 4-7 4" stroke="currentColor" fill="none" /></marker>
     </defs>
     <g className="sketch-registration"><path d="M20 44V22H45M435 22H460V44M20 255V278H45M435 278H460V255" /><path d="M31 286H450" /><path d="M50 282v8m380-8v8" /></g>
-    {kind === 'ai' ? <>
+    {kind === 'agent-safety' ? <>
+      <path className="sketch-shadow" d="M42 72h128v142H42zM222 77l47 12 45-12v75l-46 43-46-43z" fill={`url(#hatch-${id})`} />
+      <path className="sketch-outline" d="m35 63 132-2 1 143-133 2zM37 86h128" />
+      <circle cx="47" cy="75" r="2" /><circle cx="57" cy="75" r="2" /><circle cx="67" cy="75" r="2" />
+      <path d="M51 106h65m-65 12h93M51 135h94v20H51zM51 176h51" />
+      <path d="M59 145h76" strokeWidth="7" opacity=".5" />
+      <text className="sketch-label" x="43" y="225">REDACTED SCREEN</text>
+      <path className="sketch-trace" pathLength="1" d="M170 132h39" markerEnd={`url(#arrow-${id})`} />
+      <path className="sketch-outline" d="m218 69 50 13 49-13v84l-49 45-50-45z" />
+      <path d="m230 86 38 10 37-10v61l-37 35-38-35z" opacity=".4" />
+      <path className="sketch-trace" pathLength="1" d="m248 130 14 15 27-32" />
+      <text x="232" y="225">ACTION GATE</text>
+      <path className="sketch-trace" pathLength="1" d="M320 132h28" markerEnd={`url(#arrow-${id})`} />
+      <path d="M357 91h78v90h-78zM368 108h48m-48 27h48m-48 27h48" />
+      <circle cx="369" cy="108" r="3" /><circle cx="369" cy="135" r="3" /><circle cx="369" cy="162" r="3" />
+      <text className="sketch-label" x="356" y="202">ALLOW / BLOCK</text>
+      <text className="sketch-label" x="356" y="217">OWNER REVIEW</text>
+      <path d="M267 202v42h128v-13" strokeDasharray="3 5" opacity=".5" />
+      <text className="sketch-hand" x="224" y="43">a pause before action.</text>
+      <text className="sketch-label" x="58" y="265">AEGISVM / COMPUTER-USE AGENTS</text>
+    </> : kind === 'vr' ? <>
+      <path className="sketch-shadow" d="m49 101 110-4 19 28-9 62-113 3-17-59zM281 66h145v154H281z" fill={`url(#hatch-${id})`} />
+      <path className="sketch-outline" d="M48 103q57-17 115-4l18 30-10 53q-20 13-40 1l-17-16-18 18q-21 11-43-1l-14-52z" />
+      <path d="M57 117q49-11 97-4l10 19-7 35q-16 7-29-6l-15-12-20 18q-13 8-27-1l-10-34zM49 105q-9-48 58-48 62 0 57 44M58 101q-1-32 48-32 45 0 48 29" />
+      <circle cx="73" cy="135" r="3" /><circle cx="147" cy="133" r="3" />
+      <text x="58" y="211">UNITY / OPENXR</text>
+      <path className="sketch-trace" pathLength="1" d="M182 137c28-1 32-26 58-26" markerEnd={`url(#arrow-${id})`} />
+      <path d="M267 211V75m0 136 146-10m-146 10 59-64" markerEnd={`url(#arrow-${id})`} />
+      <path d="m281 196 116-8m-100-8 114-8m-99-7 109-7M293 204l48-57m-18 55 48-57m-18 54 46-56" opacity=".2" />
+      <path className="sketch-trace" pathLength="1" d="M280 184c21 12 20-85 47-77s24 61 48 36 24-65 43-69" />
+      <path d="M280 201c21 9 24-62 48-57s27 45 49 26 24-59 41-55" opacity=".35" />
+      <text className="sketch-label" x="276" y="240">LIVE 3D GRAPHS</text>
+      <path d="M54 243h117m-117 10h117" opacity=".35" /><circle cx="95" cy="243" r="4" /><circle cx="143" cy="253" r="4" />
+      <text className="sketch-label" x="54" y="274">ADJUST / EXPLORE</text>
+      <text className="sketch-hand" x="264" y="43">step inside the equation.</text>
+    </> : kind === 'ai' ? <>
       <path className="sketch-shadow" d="M48 66h137v145H48z" fill={`url(#hatch-${id})`} />
       <path className="sketch-outline" d="m41 58 137-2 2 145-138 2zM43 82h133" />
       <circle cx="54" cy="70" r="2" /><circle cx="64" cy="70" r="2" /><circle cx="74" cy="70" r="2" />
