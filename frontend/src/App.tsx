@@ -272,10 +272,18 @@ function renderSkillIcon(iconType?: string, index: number = 0) {
   }
 }
 
-type ProjectKind = 'ai' | 'data' | 'systems';
+type ProjectKind = 'ai' | 'data' | 'systems' | 'agent-safety' | 'vr';
 
 function getProjectPresentation(project: Project): { kind: ProjectKind; kindLabel: string; signal: string } {
   const searchable = `${project.title} ${project.tag} ${project.description}`.toLowerCase();
+
+  if (/aegisvm/.test(searchable)) {
+    return { kind: 'agent-safety', kindLabel: 'AI agent safety', signal: 'ACTION GATE / HUMAN REVIEW' };
+  }
+
+  if (/spatialmath/.test(searchable)) {
+    return { kind: 'vr', kindLabel: 'Spatial learning', signal: 'UNITY / OPENXR / MATHEMATICS' };
+  }
 
   if (/langgraph|fastapi|rag|agentic|ai/.test(searchable)) {
     return { kind: 'ai', kindLabel: 'Agentic AI', signal: 'RAG / ORCHESTRATION' };
@@ -290,6 +298,8 @@ function getProjectPresentation(project: Project): { kind: ProjectKind; kindLabe
 
 function getProjectBrief(project: Project, kind: ProjectKind) {
   if (project.description.trim().length <= 120) return project.description;
+  if (kind === 'agent-safety') return 'A visual safety gate for computer-use agents, with sensitive-data redaction, action previews, and owner review.';
+  if (kind === 'vr') return 'Explore differential equations in VR through interactive 3D graphs, live parameters, and blackboard explanations.';
   if (kind === 'ai') return 'Grounded placement prep with LangGraph orchestration and a focused FastAPI interface.';
   if (kind === 'data') return 'Role-based credential review with audit trails and clear operational visibility.';
   return 'Layered university workflows with secure access and tested data persistence.';
